@@ -1,0 +1,120 @@
+name: CI
+
+# Push CI runs on main and release/** only; a working branch costs nothing
+# until it opens a pull request, which runs the same job on the same SHA.
+# workflow_dispatch runs it on demand for any branch. A change that touches
+# only Markdown runs nothing here, except Markdown under testdata/, which the
+# tests pin; public-hygiene.yml checks every change, Markdown included. In
+# `paths` a later pattern overrides an earlier one.
+on:
+  push:
+    branches: [main, 'release/**']
+    # A release tag runs the check job and the release gate below.
+    tags: ['v*']
+    paths: ['**', '!**/*.md', 'testdata/**']
+  pull_request:
+    branches: [main]
+    paths: ['**', '!**/*.md', 'testdata/**']
+    # ready_for_review starts CI when a draft is marked ready; the check job
+    # skips while the PR is a draft.
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # One run per branch; a new push supersedes the last, except on main.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+  check:
+    name: gofmt, vet, tests, no Tzun imports, reproducible build
+    # While the repository is not public, the runner comes from the
+    # organisation's runner variable when it is set; once it is public,
+    # GitHub-hosted always. Keeping self-hosted runners away from public
+    # repositories is an organisation setting (runner groups), not something
+    # this file can enforce. `a && b || c` yields b when a is true and b is
+    # truthy (a label list or a runner name always is), and c otherwise.
+    runs-on: ${{ github.event.repository.private && fromJSON(vars.TZUN_RUNNER_LABELS || '"ubuntu-latest"') || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # The toolchain go.mod pins. The next step refuses any other.
+          go-version: '1.27.1'
+          cache-dependency-path: go.sum
+
+      - name: Toolchain is the pinned one
+        env:
+          GOTOOLCHAIN: local
+        run: |
+          want="go$(sed -n 's/^toolchain go//p' go.mod)"
+          got="$(go env GOVERSION)"
+          echo "go.mod pins $want; runner has $got"
+          test "$got" = "$want"
+
+      - name: go.mod and go.sum are tidy
+        # A dependency the code imports is never left marked indirect, and
+        # nothing is required that the build does not use.
+        run: go mod tidy -diff
+
+      - name: gofmt
+        run: |
+          out="$(gofmt -l .)"
+          if [ -n "$out" ]; then echo "gofmt needed:"; echo "$out"; exit 1; fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Tests (the vector corpus runner included)
+        run: go test -count=1 ./...
+
+      - name: Tests under the release build tags
+        # A release is built with -tags purego (scripts/reproducible-build.sh),
+        # which swaps gnark-crypto's assembly for Go; the suite runs on that
+        # build too.
+        run: go test -count=1 -tags purego ./...
+
+      - name: No Tzun imports
+        run: scripts/check-no-tzun-imports.sh
+
+      - name: Reproducible build
+        # Two clean builds of one target, each with its own tree path, build
+        # cache and module cache, keep the job short; the release gate
+        # rebuilds every target a release publishes. The SHA-256 printed here
+        # is the one a rebuild on another machine must match.
+        run: scripts/reproducible-build.sh linux/amd64
+
+  release-gate:
+    # Only for a release tag: every target's reproducible build and the
+    # mutation tests (scripts/release-gate.sh). It reads nothing but this
+    # repository.
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: release gate
+    # GitHub-hosted on purpose: a release's reproducible builds come from a
+    # fresh VM. It runs once per release tag.
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: go.sum
+
+      - name: Release gate
+        run: scripts/release-gate.sh

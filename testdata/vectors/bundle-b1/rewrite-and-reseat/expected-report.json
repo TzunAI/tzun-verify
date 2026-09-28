@@ -1,0 +1,139 @@
+{
+  "reportVersion": "tzun-verify-report/1",
+  "bundleVersion": "b1",
+  "subject": {
+    "evidenceId": "83ba9826-f728-4429-9525-68aa41714294",
+    "canonicalDigest": "3cea06adf538a67bd94bffcad0702b01a162f27f69fffc082530eb43344dd9bf"
+  },
+  "inputs": {
+    "trustAnchors": [
+      "ff7a3693418d56cd8bcb35756c75dc0d380e7fc9f37390297142a7bdcdfc5860"
+    ],
+    "evmHeaderSources": [
+      {
+        "chain": "eip155:31337",
+        "finality": "finalized"
+      }
+    ],
+    "publisherManifest": "f9a030928f1426a2b8a36ed313d32f2109157a285176b4bdd603bee5a9d316e2",
+    "frameOrigins": null,
+    "vkeys": null,
+    "mdsRoots": null
+  },
+  "checks": [
+    {
+      "id": "bundle",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "subject",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "record.digest",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "record.chainLink",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "custody.ledger",
+      "outcome": "not-checked",
+      "reason": "not_applicable"
+    },
+    {
+      "id": "ts.record.token",
+      "outcome": "checked-wrong",
+      "reason": "imprint_mismatch"
+    },
+    {
+      "id": "ts.record.trust",
+      "outcome": "not-checked",
+      "reason": "blocked_by:ts.record.token"
+    },
+    {
+      "id": "signoff.expectation",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "signoff.key",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor",
+      "outcome": "checked-wrong",
+      "reason": "merkle_proof_invalid"
+    },
+    {
+      "id": "anchor.spec",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.checkpoint",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.origin",
+      "outcome": "checked-correct",
+      "facts": {
+        "originAuthenticated": false,
+        "namespace": "test",
+        "chainChecked": true
+      }
+    },
+    {
+      "id": "anchor.leafIndex",
+      "outcome": "checked-correct",
+      "facts": {
+        "leafIndexChecked": true
+      }
+    },
+    {
+      "id": "anchor.inclusion",
+      "outcome": "checked-wrong",
+      "reason": "merkle_proof_invalid"
+    },
+    {
+      "id": "anchor.anchorInclusion",
+      "outcome": "not-checked",
+      "reason": "blocked_by:anchor.inclusion"
+    },
+    {
+      "id": "anchor.newer",
+      "outcome": "checked-wrong",
+      "reason": "merkle_proof_invalid"
+    },
+    {
+      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors]",
+      "outcome": "not-checked",
+      "reason": "blocked_by:anchor"
+    },
+    {
+      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861]",
+      "outcome": "not-checked",
+      "reason": "blocked_by:anchor"
+    }
+  ],
+  "summary": {
+    "mode": null,
+    "coverage": null,
+    "manifestEnforced": null,
+    "rungs": [],
+    "keyKind": null,
+    "keyAssurance": null,
+    "uv": null,
+    "actorBound": null,
+    "existedBy": null,
+    "anchorNetwork": null,
+    "anchorNamespace": "test",
+    "anchorOriginAuthenticated": false,
+    "outcomes": {
+      "checked-correct": 9,
+      "checked-wrong": 4,
+      "not-checked": 6,
+      "abstain": 0
+    }
+  }
+}

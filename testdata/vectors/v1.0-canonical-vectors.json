@@ -1,0 +1,667 @@
+{
+  "schemaVersion": "v1.0",
+  "description": "Conformance vectors for canonical serialization v1.0 (Record \u00a73). Entries under `negativeVectors` MUST be refused by every implementation; a canonicalizer that returns bytes for any of them is broken.",
+  "vectors": [
+    {
+      "id": "V01",
+      "description": "Simple flat object \u2014 keys reordered alphabetically",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "r": "approve"
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V02",
+      "description": "Nested object with unsorted keys \u2014 recursive sort",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "z": 1,
+          "a": 2,
+          "m": {
+            "zz": true,
+            "aa": false
+          }
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"a\":2,\"m\":{\"aa\":false,\"zz\":true},\"z\":1},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V03",
+      "description": "Null value preserved",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "score": null,
+          "label": "good"
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"label\":\"good\",\"score\":null},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V04",
+      "description": "Array preserves insertion order",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "items": [
+            "c",
+            "a",
+            "b"
+          ]
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"items\":[\"c\",\"a\",\"b\"]},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V05",
+      "description": "Empty object",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {},
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V06",
+      "description": "Numeric types \u2014 integer, decimal, large integer",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "count": 1,
+          "ratio": 0.5,
+          "big": 1000000
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"big\":1000000,\"count\":1,\"ratio\":0.5},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V07",
+      "description": "Boolean values",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "flagged": true,
+          "override": false
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"flagged\":true,\"override\":false},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V08",
+      "description": "Deeply nested \u2014 3 levels",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "l1": {
+            "l2": {
+              "l3": "deep"
+            }
+          }
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"l1\":{\"l2\":{\"l3\":\"deep\"}}},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V09",
+      "description": "Special characters in strings \u2014 quotes and ampersand",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "r": "approve"
+        },
+        "humanAction": "approved",
+        "humanReason": "User said \"yes\" & confirmed",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"User said \\\"yes\\\" & confirmed\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V10",
+      "description": "Unicode passthrough \u2014 no normalization",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "r": "approve"
+        },
+        "humanAction": "approved",
+        "humanReason": "Approved \u2014 r\u00e9sum\u00e9 reviewed",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"Approved \u2014 r\u00e9sum\u00e9 reviewed\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V11",
+      "description": "Undefined converted to null",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "score": "UNDEFINED_MARKER",
+          "label": "good"
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "note": "An implementation whose language has an undefined value passes it for aiOutput.score. In JSON, UNDEFINED_MARKER signals this. The canonical output must serialize undefined as null.",
+      "canonical": "{\"aiOutput\":{\"label\":\"good\",\"score\":null},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V12",
+      "description": "Array of objects \u2014 objects in arrays get key-sorted too",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "items": [
+            {
+              "z": 1,
+              "a": 2
+            },
+            {
+              "b": 3,
+              "c": 4
+            }
+          ]
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"items\":[{\"a\":2,\"z\":1},{\"b\":3,\"c\":4}]},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V13",
+      "description": "Control characters in string \u2014 tab and newline",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "r": "approve"
+        },
+        "humanAction": "approved",
+        "humanReason": "line1\nline2\ttab",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"line1\\nline2\\ttab\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V14",
+      "description": "Empty string values",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "r": ""
+        },
+        "humanAction": "",
+        "humanReason": "",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"r\":\"\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"\",\"humanReason\":\"\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V15",
+      "description": "Numeric edge cases \u2014 zero, negative, small decimal",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "zero": 0,
+          "neg": -1,
+          "small": 0.001
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "canonical": "{\"aiOutput\":{\"neg\":-1,\"small\":0.001,\"zero\":0},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V16",
+      "description": "Unicode supplementary characters (emoji) in keys and values \u2014 verifies Unicode code point sort order",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "aiOutput": {
+          "\ud83d\udd12": "locked",
+          "a": "first",
+          "\ud83d\udcca": "chart"
+        },
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1
+      },
+      "note": "JavaScript's default .sort() uses UTF-16 code unit comparison. For supplementary characters (emoji), this produces the same order as Unicode code point order within the BMP and supplementary planes separately. Keys sort as: 'a' (U+0061), '\ud83d\udcca' (U+1F4CA), '\ud83d\udd12' (U+1F512) \u2014 ASCII before supplementary, then supplementary by code point.",
+      "canonical": "{\"aiOutput\":{\"a\":\"first\",\"\ud83d\udcca\":\"chart\",\"\ud83d\udd12\":\"locked\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V17",
+      "kind": "envelope-v1.0",
+      "description": "aiBom === null canonicalizes as the literal null",
+      "input": {
+        "aiOutput": {
+          "r": "approve"
+        },
+        "aiSystemId": "sys1",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "evidenceId": "abc",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "sequenceNumber": 1,
+        "signoffExpectation": null,
+        "aiBom": null
+      },
+      "canonical": "{\"aiBom\":null,\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1,\"signoffExpectation\":null}"
+    },
+    {
+      "id": "V18",
+      "kind": "envelope-v1.0",
+      "description": "Minimal aiBom \u2014 only modelDescriptorDigest populated; siblings explicit null",
+      "input": {
+        "aiOutput": {
+          "r": "approve"
+        },
+        "aiSystemId": "sys1",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "evidenceId": "abc",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "sequenceNumber": 1,
+        "signoffExpectation": null,
+        "aiBom": {
+          "modelDescriptorDigest": "sha256:abc",
+          "vendorFingerprint": null,
+          "promptTemplate": null,
+          "inferenceParameters": null,
+          "infrastructure": null
+        }
+      },
+      "canonical": "{\"aiBom\":{\"inferenceParameters\":null,\"infrastructure\":null,\"modelDescriptorDigest\":\"sha256:abc\",\"promptTemplate\":null,\"vendorFingerprint\":null},\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1,\"signoffExpectation\":null}"
+    },
+    {
+      "id": "V19",
+      "kind": "envelope-v1.0",
+      "description": "Fully-populated aiBom \u2014 every sub-object + stopSequences in insertion order",
+      "note": "stopSequences keeps its insertion order: array elements are never reordered (Record \u00a73.3).",
+      "input": {
+        "aiOutput": {
+          "r": "approve"
+        },
+        "aiSystemId": "sys1",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "evidenceId": "abc",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "sequenceNumber": 1,
+        "signoffExpectation": null,
+        "aiBom": {
+          "modelDescriptorDigest": "sha256:abc",
+          "vendorFingerprint": "fp-001",
+          "promptTemplate": {
+            "templateId": "tpl-1",
+            "templateDigest": "sha256:tpl"
+          },
+          "inferenceParameters": {
+            "temperature": 0.7,
+            "topP": 0.9,
+            "maxTokens": 1024,
+            "seed": 42,
+            "stopSequences": [
+              "END",
+              "STOP"
+            ]
+          },
+          "infrastructure": {
+            "provider": "openai",
+            "region": "us-east-1",
+            "apiVersion": "2024-10-01",
+            "endpoint": "https://api.openai.com"
+          }
+        }
+      },
+      "canonical": "{\"aiBom\":{\"inferenceParameters\":{\"maxTokens\":1024,\"seed\":42,\"stopSequences\":[\"END\",\"STOP\"],\"temperature\":0.7,\"topP\":0.9},\"infrastructure\":{\"apiVersion\":\"2024-10-01\",\"endpoint\":\"https://api.openai.com\",\"provider\":\"openai\",\"region\":\"us-east-1\"},\"modelDescriptorDigest\":\"sha256:abc\",\"promptTemplate\":{\"templateDigest\":\"sha256:tpl\",\"templateId\":\"tpl-1\"},\"vendorFingerprint\":\"fp-001\"},\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1,\"signoffExpectation\":null}"
+    },
+    {
+      "id": "V22",
+      "description": "Number rendering follows JS Number::toString \u2014 1e-6/1e21 thresholds, unpadded exponent, >17-significant-digit integer-valued floats",
+      "note": "Every literal is written with an exponent or a decimal point on purpose: without one, a reader that keeps integers apart from floats parses it back as an integer, and integers outside +/-(2^53-1) are refused rather than rendered differently by different implementations. Negative zero is covered by a unit test instead \u2014 JSON cannot carry it.",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1,
+        "aiOutput": {
+          "expNegFive": 1e-05,
+          "expNegSix": 1e-06,
+          "expNegSeven": 1e-07,
+          "exp21": 1e+21,
+          "exp20": 1e+20,
+          "maxDouble": 1.7976931348623157e+308,
+          "minSubnormal": 5e-324,
+          "wideInteger": 1.2345678901234568e+20,
+          "addFloat": 0.30000000000000004,
+          "maxSafeInteger": 9007199254740991,
+          "minSafeInteger": -9007199254740991
+        }
+      },
+      "canonical": "{\"aiOutput\":{\"addFloat\":0.30000000000000004,\"exp20\":100000000000000000000,\"exp21\":1e+21,\"expNegFive\":0.00001,\"expNegSeven\":1e-7,\"expNegSix\":0.000001,\"maxDouble\":1.7976931348623157e+308,\"maxSafeInteger\":9007199254740991,\"minSafeInteger\":-9007199254740991,\"minSubnormal\":5e-324,\"wideInteger\":123456789012345680000},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V24",
+      "description": "Object key order discriminates UTF-16 code-unit sort from Unicode code-point sort",
+      "note": "V16's three keys sort identically under both orderings, which its own note admits, so it cannot catch a sort regression. This one can: U+FF01 is a BMP key whose single code unit is 0xFF01; U+1F600 is astral and its FIRST code unit is 0xD83D. UTF-16 order puts the emoji first; code-point order puts U+FF01 first. Any switch to code-point key ordering in any implementation changes these bytes.",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1,
+        "aiOutput": {
+          "\uff01": 1,
+          "\ud83d\ude00": 2,
+          "a": 3
+        }
+      },
+      "canonical": "{\"aiOutput\":{\"a\":3,\"\ud83d\ude00\":2,\"\uff01\":1},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V25",
+      "description": "Object key containing a quote and a colon is escaped, not structural",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1,
+        "aiOutput": {
+          "a\"b:c": 1,
+          "a": 2
+        }
+      },
+      "canonical": "{\"aiOutput\":{\"a\":2,\"a\\\"b:c\":1},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1}"
+    },
+    {
+      "id": "V26",
+      "kind": "envelope-v1.0",
+      "description": "signoffExpectation { policyDigest } is hashed as a nested object (Record \u00a74.1, \u00a76.1)",
+      "input": {
+        "aiOutput": {
+          "r": "approve"
+        },
+        "aiSystemId": "sys1",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "evidenceId": "abc",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "sequenceNumber": 1,
+        "signoffExpectation": {
+          "policyDigest": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4"
+        },
+        "aiBom": null
+      },
+      "canonical": "{\"aiBom\":null,\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1,\"signoffExpectation\":{\"policyDigest\":\"8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4\"}}"
+    },
+    {
+      "id": "V27",
+      "kind": "envelope-v1.0",
+      "description": "signoffExpectation { statementDigest, sessionSeq } is hashed with its members sorted (Record \u00a74.1, \u00a76.1)",
+      "note": "sessionSeq is supplied before statementDigest; the canonical form sorts them.",
+      "input": {
+        "aiOutput": {
+          "r": "approve"
+        },
+        "aiSystemId": "sys1",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "evidenceId": "abc",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "sequenceNumber": 1,
+        "signoffExpectation": {
+          "sessionSeq": 12,
+          "statementDigest": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae"
+        },
+        "aiBom": null
+      },
+      "canonical": "{\"aiBom\":null,\"aiOutput\":{\"r\":\"approve\"},\"aiSystemId\":\"sys1\",\"capturedAt\":\"2026-01-01T00:00:00Z\",\"evidenceId\":\"abc\",\"humanAction\":\"approved\",\"humanReason\":\"ok\",\"sequenceNumber\":1,\"signoffExpectation\":{\"sessionSeq\":12,\"statementDigest\":\"2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\"}}"
+    }
+  ],
+  "negativeVectors": [
+    {
+      "id": "N01",
+      "description": "Lone UTF-16 surrogate in a string value is refused, not silently mangled",
+      "expectError": "lone surrogate",
+      "note": "The sentinel LONE_SURROGATE_D800 stands in for a real unpaired U+D800; JSON text cannot carry one, so each harness substitutes it before serializing.",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1,
+        "aiOutput": {
+          "s": "a LONE_SURROGATE_D800 b"
+        }
+      }
+    },
+    {
+      "id": "N02",
+      "description": "NaN is refused \u2014 non-finite numbers have no canonical rendering",
+      "expectError": "non-finite",
+      "note": "The sentinel NAN_MARKER stands in for NaN, which JSON cannot carry.",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1,
+        "aiOutput": {
+          "n": "NAN_MARKER"
+        }
+      }
+    },
+    {
+      "id": "N03",
+      "description": "Nesting past MAX_DEPTH is refused rather than truncated or looped",
+      "expectError": "nesting depth",
+      "input": {
+        "evidenceId": "abc",
+        "aiSystemId": "sys1",
+        "humanAction": "approved",
+        "humanReason": "ok",
+        "capturedAt": "2026-01-01T00:00:00Z",
+        "sequenceNumber": 1,
+        "aiOutput": {
+          "n": {
+            "n": {
+              "n": {
+                "n": {
+                  "n": {
+                    "n": {
+                      "n": {
+                        "n": {
+                          "n": {
+                            "n": {
+                              "n": {
+                                "n": {
+                                  "n": {
+                                    "n": {
+                                      "n": {
+                                        "n": {
+                                          "n": {
+                                            "n": {
+                                              "n": {
+                                                "n": {
+                                                  "n": {
+                                                    "n": {
+                                                      "n": {
+                                                        "n": {
+                                                          "n": {
+                                                            "n": {
+                                                              "n": {
+                                                                "n": {
+                                                                  "n": {
+                                                                    "n": {
+                                                                      "n": {
+                                                                        "n": {
+                                                                          "n": {
+                                                                            "n": {
+                                                                              "n": {
+                                                                                "n": {
+                                                                                  "n": {
+                                                                                    "n": {
+                                                                                      "n": {
+                                                                                        "n": {
+                                                                                          "n": {
+                                                                                            "n": {
+                                                                                              "n": {
+                                                                                                "n": {
+                                                                                                  "n": {
+                                                                                                    "n": {
+                                                                                                      "n": {
+                                                                                                        "n": {
+                                                                                                          "n": {
+                                                                                                            "n": {
+                                                                                                              "n": {
+                                                                                                                "n": {
+                                                                                                                  "n": {
+                                                                                                                    "n": {
+                                                                                                                      "n": {
+                                                                                                                        "n": {
+                                                                                                                          "n": {
+                                                                                                                            "n": {
+                                                                                                                              "n": {
+                                                                                                                                "n": {
+                                                                                                                                  "n": {
+                                                                                                                                    "n": {
+                                                                                                                                      "n": {
+                                                                                                                                        "n": {
+                                                                                                                                          "n": 1
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

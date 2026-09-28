@@ -1,0 +1,174 @@
+{
+  "reportVersion": "tzun-verify-report/1",
+  "bundleVersion": "b1",
+  "subject": {
+    "evidenceId": "307e314d-9269-408b-a572-5a51d40708a9",
+    "canonicalDigest": "6e1f3b99676c722cc5dfd13b0dbda95c430ca4eec8f50c8b3c541ca0a1e8776a"
+  },
+  "inputs": {
+    "trustAnchors": [
+      "ff7a3693418d56cd8bcb35756c75dc0d380e7fc9f37390297142a7bdcdfc5860"
+    ],
+    "evmHeaderSources": [
+      {
+        "chain": "eip155:31337",
+        "finality": "finalized"
+      }
+    ],
+    "publisherManifest": "f9a030928f1426a2b8a36ed313d32f2109157a285176b4bdd603bee5a9d316e2",
+    "frameOrigins": null,
+    "vkeys": null,
+    "mdsRoots": null
+  },
+  "checks": [
+    {
+      "id": "bundle",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "subject",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "record.digest",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "record.chainLink",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "custody.ledger",
+      "outcome": "not-checked",
+      "reason": "not_applicable"
+    },
+    {
+      "id": "ts.record.token",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "ts.record.trust",
+      "outcome": "checked-correct",
+      "facts": {
+        "genTime": "2026-09-27T14:09:40.874Z",
+        "authority": "Tzun Corpus Timestamping Authority"
+      }
+    },
+    {
+      "id": "signoff.expectation",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "signoff.key",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.spec",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.checkpoint",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.origin",
+      "outcome": "checked-correct",
+      "facts": {
+        "originAuthenticated": true,
+        "namespace": "test",
+        "chainChecked": true
+      }
+    },
+    {
+      "id": "anchor.leafIndex",
+      "outcome": "checked-correct",
+      "facts": {
+        "leafIndexChecked": true
+      }
+    },
+    {
+      "id": "anchor.inclusion",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.anchorInclusion",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.publication[0]",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "anchor.evm.tx[0]",
+      "outcome": "checked-correct",
+      "facts": {
+        "transactionId": "0x320fd362a9361a4be9ae17432ef4f72da115722e71c39303dd4e9485573eeb51",
+        "txType": 2,
+        "sender": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
+        "signedChainId": "31337"
+      }
+    },
+    {
+      "id": "anchor.evm.canonical[0]",
+      "outcome": "checked-correct",
+      "facts": {
+        "chain": "eip155:31337",
+        "namespace": "test",
+        "network": null,
+        "blockTime": "2026-09-27T13:09:41.000Z",
+        "inclusion": "tx_proof",
+        "finality": "finalized"
+      }
+    },
+    {
+      "id": "anchor.newer",
+      "outcome": "checked-correct",
+      "facts": {
+        "treeSize": 3,
+        "anchorSize": 3
+      }
+    },
+    {
+      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors]",
+      "outcome": "checked-wrong",
+      "reason": "log_inconsistent_with_anchor"
+    },
+    {
+      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861]",
+      "outcome": "checked-correct",
+      "facts": {
+        "fromSize": 2,
+        "toSize": 3
+      }
+    }
+  ],
+  "summary": {
+    "mode": null,
+    "coverage": null,
+    "manifestEnforced": null,
+    "rungs": [],
+    "keyKind": null,
+    "keyAssurance": null,
+    "uv": null,
+    "actorBound": null,
+    "existedBy": {
+      "at": "2026-09-27T13:09:41.000Z",
+      "source": "evm-calldata",
+      "check": "anchor"
+    },
+    "anchorNetwork": null,
+    "anchorNamespace": "test",
+    "anchorOriginAuthenticated": true,
+    "outcomes": {
+      "checked-correct": 19,
+      "checked-wrong": 1,
+      "not-checked": 2,
+      "abstain": 0
+    }
+  }
+}

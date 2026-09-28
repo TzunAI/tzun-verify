@@ -1,0 +1,903 @@
+{
+  "description": "Records anchored end to end on anvil (Anchor §6 to §10, §13): each record's envelope with its nonRepudiation.anchor, the epochs its anchors name (the anchor checkpoint, P, the consistency proofs between published sizes and between a source log's anchored checkpoints), and each epoch's evm-calldata/1 publication with its heavy material. A verifier must: parse every checkpoint body; place each record's canonicalDigest at leafIndex = sequenceNumber - 1 in its logCheckpoint (logPath) and SHA-256(logCheckpoint) at anchorLeafIndex in its anchorCheckpoint (anchorPath); check P = SHA-256(anchorCheckpoint); verify each consistency proof with both sizes and roots taken from the bodies; check keccak256(blockHeader) = blockHash and the header's number; walk txProof from the header's transactionsRoot at key rlp(txIndex) to rawTransaction; recover the sender from rawTransaction and find it in the manifest for the anchor origin, on the chain it signed; check its calldata is exactly 0x || P; and give every record the verdicts in expect: bundleOnly with the manifest and the publication's material, withHeaderSource with those and a header source that reports canonicalBlock and a finalized height of headerSource.finalizedBlockNumber.",
+  "source": "Generated from one run of Tzun's reference implementation, anchoring a store under the namespace test.vectors.tzun on anvil (ghcr.io/foundry-rs/foundry:v1.5.1, chain id 31337, --slots-in-an-epoch 1, so its finalized tag is the head minus 2). The publisher is anvil's development account 5. The values are that run's; the expected verdicts are stated from Anchor §10.",
+  "format": {
+    "records": "envelope is the stored record; its nonRepudiation.anchor is Anchor §8.1. epoch indexes epochs.",
+    "epochs": "anchorCheckpoint is the anchor log at its published size; p = SHA-256(anchorCheckpoint), 64 lowercase hex, and the publication's calldata. previousAnchorSize is the previous published size (null for the first) and anchorConsistencyProof is PROOF(previousAnchorSize, size) (empty for the first). members are the source-log checkpoints this epoch appended, in anchor-leaf order: previousLogCheckpoint is that log's previous anchored checkpoint (null for its first) and consistencyProof is PROOF between the two (empty for the first). Hashes are bare lowercase hex, except the EVM values, which are 0x-prefixed.",
+    "publication": "The evm-calldata/1 entry as a record carries it (Anchor §8.2: kind, chain, transactionId, blockNumber, blockHash, publisher) joined with the export bundle's heavy material (rawTransaction, blockHeader: the header RLP, txIndex, txProof: the transactions-trie nodes from the root, each RLP).",
+    "canonicalBlock": "What anvil reported for the publication's block number when the file was made: its hash and its timestamp (unix seconds).",
+    "headerSource": "The header source a withHeaderSource verdict uses: chainId, the finalized height, and for each epoch's block the canonicalBlock; it looks no transaction up."
+  },
+  "chain": "eip155:31337",
+  "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+  "manifest": {
+    "publishers": {
+      "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors": [
+        {
+          "address": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
+          "chain": "eip155:31337",
+          "namespace": "test"
+        }
+      ]
+    }
+  },
+  "headerSource": {
+    "chainId": 31337,
+    "finalizedBlockNumber": 6,
+    "finality": "finalized"
+  },
+  "epochs": [
+    {
+      "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+      "p": "ce160e900de68182541b9ef62cd84523717d9c83796243536d842ca87c8b5f7d",
+      "previousAnchorSize": null,
+      "anchorConsistencyProof": [],
+      "members": [
+        {
+          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+          "anchorLeafIndex": 0,
+          "previousLogCheckpoint": null,
+          "consistencyProof": []
+        },
+        {
+          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461\n2\n3D7DfkOWAscKUCe+mKnET4jiovrakpn7G/VTtfVPOQI=\n",
+          "anchorLeafIndex": 1,
+          "previousLogCheckpoint": null,
+          "consistencyProof": []
+        }
+      ],
+      "publication": {
+        "kind": "evm-calldata/1",
+        "chain": "eip155:31337",
+        "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+        "blockNumber": 1,
+        "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+        "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
+        "rawTransaction": "0x02f88c827a6980843b9aca0084b2d05e00827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a0ce160e900de68182541b9ef62cd84523717d9c83796243536d842ca87c8b5f7dc001a071a3adee7b979cf83f7d262e35794c62d53e0916a84dcaf91621647dc1a056d7a00a11de0dc0fd9f7711fdfa5abd28c847dc4f3a2d1ff876caefec8bc60daa4d9e",
+        "blockHeader": "0xf90262a07cccdf46287d147165e644b9d6793a3a2022cb2424de4791e6d1cfc88d51a76fa01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a09a69c6ccf870a09d537b04614f1916745a56f297f6b08d26a14c2b836f4ab39aa019eff517c5be882a4911230f8791ac96f8f869ff5c5b0c55015a2ea85d4a66c9a04f5e6e0c9cfdec5244e2691c68730f0b2d97c486028285be7c6dbfd08f3ac4dfb901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080018401c9c3808306bfa8846ab8014880a0b93ce6dba9e0d9e0e63f6555b8b9721c03df73e457cda50cfc9fe9eaad893624880000000000000000843b9aca00a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "txIndex": 11,
+        "txProof": [
+          "0xf871a0476cca8122ae79af40b67080cec775d57625690368991d40fb3f14417daed098a076a427e03cab35c5ef5836b1385ed9848bda2cd29df13865543ea12d1125d891808080808080a09f923f0bd25b4ca61ce65816372ab3d12d7b183f4612c1719632a0f1352c67598080808080808080",
+          "0xf901f180a0e778d90906784e07071636195ab3c60544b5f8f3aea769cba6312bb86f2cb615a007bb459a50928b14355fd1bb8dac25c97a6eda2145bc18a9feabff05713f32c5a0a87b2261360f32b6b37abb86e28db385e756d81e6420c346efda27dbe6cf687ea01f08bf84d755c7929892b0283e670eb63b3d977d322a8db4e6bc53cfc235a9b3a05893eb66de6be0915a29fcdfe9480a86d99e202c2015b1c065d094f99db906c4a035f9db515228a972dc959e6f222b21dd3e6f26cc2f5ede6f6b5ba6121a58738ba0d6d9142138e08c966c76d9df1d7e36e215d7c32ba25ff7d91ea61e24b56ca51ba0900d8f50b4f445fa42964f17b7db411cdddb1aba5740a9fcc5f888461ba85a74a0b4ecc44b789855090e38705416127d89ea6e7968bd5f33d682dded350c278feda07900e67be1b19e0d460b79930078de87ba98b1323a8c9ef92b4b8f48f882738ba056e3800db19bb0970b0020e42c63cc9667286d6eb8b68c654bd72d1bfa65a7ada01a9d431e297f93a60f72b2ca176b9a2a6460b3ba01c6d83e21d1fda8a3a329eaa0101deca855e7dd3577402b428571ce8d2b531ea4434a6603b56eca8e34423535a0524ad29e24af07913ce9b4ed1d54008664ef37c0a091c452af61c254e8c54118a07f4305aa9dab9088bad07d26865ef31f7cacc53403f627499e3f59e2972d1bf780",
+          "0xf89220b88f02f88c827a6980843b9aca0084b2d05e00827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a0ce160e900de68182541b9ef62cd84523717d9c83796243536d842ca87c8b5f7dc001a071a3adee7b979cf83f7d262e35794c62d53e0916a84dcaf91621647dc1a056d7a00a11de0dc0fd9f7711fdfa5abd28c847dc4f3a2d1ff876caefec8bc60daa4d9e"
+        ]
+      },
+      "canonicalBlock": {
+        "number": 1,
+        "hash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+        "timestamp": 1790443848
+      }
+    },
+    {
+      "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
+      "p": "3f7e698dfb8531a729cf806f2b933803c3cd5cb41f4bc91d42cc1a1d7d209f09",
+      "previousAnchorSize": 2,
+      "anchorConsistencyProof": [
+        "f0609cbb45c809da9ea4b502057ffa3373adba19d5531a614fde095e0459c62a"
+      ],
+      "members": [
+        {
+          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n5\nhWgskm9ri7GHk4MMje13BD0YtsNJzqJrYhh9PINjBc0=\n",
+          "anchorLeafIndex": 2,
+          "previousLogCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+          "consistencyProof": [
+            "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47",
+            "1ea5ca049f7e6a337ed32c9874550f175ff1475e15e4c84268456b35e9a22ee2",
+            "f8abea7a9a650969ecd8a7969df830ecc1f18d6809b35f613d3eed2201ce36c8",
+            "68a824cdaa76ae0fcfdcf31d0d6f45f8fc6095bffd506a2ad9659c6645851eaa"
+          ]
+        },
+        {
+          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/67616d6d61\n1\nmi5GO0+jbN+h5739DvlYMlh34Vi5VOIV93P8vXUZRyQ=\n",
+          "anchorLeafIndex": 3,
+          "previousLogCheckpoint": null,
+          "consistencyProof": []
+        }
+      ],
+      "publication": {
+        "kind": "evm-calldata/1",
+        "chain": "eip155:31337",
+        "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+        "blockNumber": 5,
+        "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+        "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
+        "rawTransaction": "0x02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a03f7e698dfb8531a729cf806f2b933803c3cd5cb41f4bc91d42cc1a1d7d209f09c080a0206405501b59d2555ffe4d7debac171542fc5c0b976d04fd1af657a35858d006a0606759f94b4391ae4607c2a39fb47f5136a98001d8d88c4af2bbacd7372f0c88",
+        "blockHeader": "0xf90262a0daa188a0dd91f71a56105d6077065b68073461625966cc12b8be3eedd091ae34a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a07cb671f485ed2cdab6770d532a37ffd08c1ffc502b26d76c9f8fd725605c5d63a00f95627bf73482e95db66bc3ffe21b64cd252e97840a452ef1e556b08ba396dca05be60f9fdbb5d82e12151e054c240b05ac06ea414f9465ffcb55c6eb86edc190b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080058401c9c38083014d20846ab8014880a05ecfb8380cbb480a31281b0dad624cf0585ca22fb0c66f89e049796defb62cad88000000000000000084231618ffa056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "txIndex": 2,
+        "txProof": [
+          "0xf851a01a365020cb3648ced2fdad1a4c31bc4483e17d18f38d5aafd16e2889647db18580808080808080a0d49f9481c280239e1ee0279e25b6d96c39496e43f0fadccf916696619aad46d18080808080808080",
+          "0xf87180a0fd08b33f18c2b9724304985053723b062cdfe5fe922911704830e0e7303c8dbba0d0b50e586d0c76c63a600064abdaa3430960a038b42c8893aa5aa4ec5382ee10a0fc40860d6b5be083e48bdb0bd7af96d02db0dad925bf9b1e702b68ca10979ab380808080808080808080808080",
+          "0xf89220b88f02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a03f7e698dfb8531a729cf806f2b933803c3cd5cb41f4bc91d42cc1a1d7d209f09c080a0206405501b59d2555ffe4d7debac171542fc5c0b976d04fd1af657a35858d006a0606759f94b4391ae4607c2a39fb47f5136a98001d8d88c4af2bbacd7372f0c88"
+        ]
+      },
+      "canonicalBlock": {
+        "number": 5,
+        "hash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+        "timestamp": 1790443848
+      }
+    }
+  ],
+  "records": [
+    {
+      "case": "alpha #1, epoch 1",
+      "chainId": "alpha",
+      "epoch": 0,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "1f7fd3f0-c49a-44db-b2bb-7faff6a0163a",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "alpha",
+            "i": 1
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: alpha #1",
+          "capturedAt": "2026-09-26T17:30:47.749Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "76c5927fa0904173f1de5921faf58c8fe7c38218d96d3ed4be99094ff8fd519d",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 0,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+            "logPath": [
+              "dd582e915890ec8fe6583c4d088116c7b559891be7874ab150edb812dc8e7ee9",
+              "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47"
+            ],
+            "anchorLeafIndex": 0,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorPath": [
+              "91003f805070445bd82714a493fca983abc3295b4c2d324a186afcc02c269e42"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "blockNumber": 1,
+                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:47.749Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "leafIndex": 0,
+            "treeSize": 3,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 0,
+            "anchorSize": 2,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    },
+    {
+      "case": "alpha #2, epoch 1",
+      "chainId": "alpha",
+      "epoch": 0,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "230a96ca-e300-469d-9799-914164c7a0d0",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "alpha",
+            "i": 2
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: alpha #2",
+          "capturedAt": "2026-09-26T17:30:47.754Z",
+          "sequenceNumber": 2,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "ae98c5c2c20888b3ff9c19c8964f64ad6c7de36ee1e6a796521d1bc9286129ae",
+          "chainLink": "8f00830dc4974364f7b76a0e43dc5cd821bd293869b8afa2190e932f69af8098"
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 1,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+            "logPath": [
+              "da3f254b4dfbdcb2448409b928e8fa1d5be225f668beba75a643dbe01c88ba5d",
+              "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47"
+            ],
+            "anchorLeafIndex": 0,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorPath": [
+              "91003f805070445bd82714a493fca983abc3295b4c2d324a186afcc02c269e42"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "blockNumber": 1,
+                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:47.754Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "leafIndex": 1,
+            "treeSize": 3,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 0,
+            "anchorSize": 2,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    },
+    {
+      "case": "alpha #3, epoch 1",
+      "chainId": "alpha",
+      "epoch": 0,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "456f683d-076b-4ff5-808d-1c963cf24e19",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "alpha",
+            "i": 3
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: alpha #3",
+          "capturedAt": "2026-09-26T17:30:47.756Z",
+          "sequenceNumber": 3,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "ab9f3facaf6814b296b42f4b6251ddb464654163e54114ac2fd9bb2cf5c4bb28",
+          "chainLink": "08b6d7e2bbf1a26bc1fb04519208aff0e15c62958d8b5ede89d4be7c8ab0dbbd"
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 2,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+            "logPath": [
+              "f8abea7a9a650969ecd8a7969df830ecc1f18d6809b35f613d3eed2201ce36c8"
+            ],
+            "anchorLeafIndex": 0,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorPath": [
+              "91003f805070445bd82714a493fca983abc3295b4c2d324a186afcc02c269e42"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "blockNumber": 1,
+                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:47.756Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "leafIndex": 2,
+            "treeSize": 3,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 0,
+            "anchorSize": 2,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    },
+    {
+      "case": "beta #1, epoch 1",
+      "chainId": "beta",
+      "epoch": 0,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "0a99835d-50ae-4e81-ad29-e64e31bafedc",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "beta",
+            "i": 4
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: beta #4",
+          "capturedAt": "2026-09-26T17:30:47.758Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "eb556bc7d8fbb8677add915ac2fd9b14136eecc64c08f025aacf2ca95af44ee9",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 0,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461\n2\n3D7DfkOWAscKUCe+mKnET4jiovrakpn7G/VTtfVPOQI=\n",
+            "logPath": [
+              "48597da3b8e65b6ba82da13a4328b2ba1e32fea15380678554b6fcc641b2237e"
+            ],
+            "anchorLeafIndex": 1,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorPath": [
+              "2b56c836eb1b870f90b819003f2ccfde66dab5dfbe2766e004dbe51d647f2d31"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "blockNumber": 1,
+                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:47.758Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461",
+            "leafIndex": 0,
+            "treeSize": 2,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 1,
+            "anchorSize": 2,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    },
+    {
+      "case": "beta #2, epoch 1",
+      "chainId": "beta",
+      "epoch": 0,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "d488bc46-3d2f-48fc-a3c8-79e5053cdb2b",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "beta",
+            "i": 5
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: beta #5",
+          "capturedAt": "2026-09-26T17:30:47.760Z",
+          "sequenceNumber": 2,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "f0388642203c615b607c713104c0b109bfb95b2c13cf3c9c768f5bd3d7fa67a6",
+          "chainLink": "c334bdff0d2aa5b73955b71e02e413ebb9ed3f6cffa766d1fe878f007ed24b77"
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 1,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461\n2\n3D7DfkOWAscKUCe+mKnET4jiovrakpn7G/VTtfVPOQI=\n",
+            "logPath": [
+              "452760081bb67fab81f68bca4353d9988c1d9458719573bb6a46ca97865fbd09"
+            ],
+            "anchorLeafIndex": 1,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorPath": [
+              "2b56c836eb1b870f90b819003f2ccfde66dab5dfbe2766e004dbe51d647f2d31"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "blockNumber": 1,
+                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:47.760Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461",
+            "leafIndex": 1,
+            "treeSize": 2,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 1,
+            "anchorSize": 2,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    },
+    {
+      "case": "alpha #4, epoch 2",
+      "chainId": "alpha",
+      "epoch": 1,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "8607bb87-b9c8-4e62-bc01-6210392e3fba",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "alpha",
+            "i": 6
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: alpha #6",
+          "capturedAt": "2026-09-26T17:30:48.451Z",
+          "sequenceNumber": 4,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "ee2723b79013fcd4b2b77f70968b154c91509ef3eb7a039c2ca8be0f6007ead3",
+          "chainLink": "caa065fd7b97eb98602ce52bd6186ea29e5502e07ac7712506fb4c496ee461bc"
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 3,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n5\nhWgskm9ri7GHk4MMje13BD0YtsNJzqJrYhh9PINjBc0=\n",
+            "logPath": [
+              "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47",
+              "f8abea7a9a650969ecd8a7969df830ecc1f18d6809b35f613d3eed2201ce36c8",
+              "68a824cdaa76ae0fcfdcf31d0d6f45f8fc6095bffd506a2ad9659c6645851eaa"
+            ],
+            "anchorLeafIndex": 2,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
+            "anchorPath": [
+              "8689c05a5262bbbc241bff8a90aede6f623a52f30001d6bb67cc6379c43cc7b5",
+              "2792aca9274185bd2f428100a6f3aa2db3ee9cdc7cd377ff0bf4e0176fb95809"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+                "blockNumber": 5,
+                "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:48.451Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "leafIndex": 3,
+            "treeSize": 5,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 2,
+            "anchorSize": 4,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    },
+    {
+      "case": "alpha #5, epoch 2",
+      "chainId": "alpha",
+      "epoch": 1,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "c008cb7d-d5ba-472f-878f-26675f375ff4",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "alpha",
+            "i": 7
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: alpha #7",
+          "capturedAt": "2026-09-26T17:30:48.453Z",
+          "sequenceNumber": 5,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "73bc542daa4c5413174e9cc917ce7dfe1c3608699555a7b9c192c0d0b9b7da6e",
+          "chainLink": "d4d31f3de398622e419e8ba4798a93b3ea5b5a160e176b9eab3fb708d618eb13"
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 4,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n5\nhWgskm9ri7GHk4MMje13BD0YtsNJzqJrYhh9PINjBc0=\n",
+            "logPath": [
+              "b481dbd34867439aa9dc81fb6133e1c3a9c6c1f089651572e8341fa7f49812bd"
+            ],
+            "anchorLeafIndex": 2,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
+            "anchorPath": [
+              "8689c05a5262bbbc241bff8a90aede6f623a52f30001d6bb67cc6379c43cc7b5",
+              "2792aca9274185bd2f428100a6f3aa2db3ee9cdc7cd377ff0bf4e0176fb95809"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+                "blockNumber": 5,
+                "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:48.453Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "leafIndex": 4,
+            "treeSize": 5,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 2,
+            "anchorSize": 4,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    },
+    {
+      "case": "gamma #1, epoch 2",
+      "chainId": "gamma",
+      "epoch": 1,
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "e15482d3-9373-4f07-a9fa-eed17355beec",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "anchor-e2e-vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "chain": "gamma",
+            "i": 8
+          },
+          "humanAction": "approved",
+          "humanReason": "anchor e2e vector: gamma #8",
+          "capturedAt": "2026-09-26T17:30:48.455Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "a7d71598ccf07843c99c579983dba97731adc1e8acf532a133cca2876814e42a",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "anchor": {
+            "anchorSpec": "tzun-anchor/1",
+            "merkleSpec": "rfc6962",
+            "leafIndex": 0,
+            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/67616d6d61\n1\nmi5GO0+jbN+h5739DvlYMlh34Vi5VOIV93P8vXUZRyQ=\n",
+            "logPath": [],
+            "anchorLeafIndex": 3,
+            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
+            "anchorPath": [
+              "270977e8da24a262388daf46be548a50c95f87d2bc7ca1f70f98126745b5ce07",
+              "2792aca9274185bd2f428100a6f3aa2db3ee9cdc7cd377ff0bf4e0176fb95809"
+            ],
+            "publications": [
+              {
+                "kind": "evm-calldata/1",
+                "chain": "eip155:31337",
+                "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+                "blockNumber": 5,
+                "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+                "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
+              }
+            ]
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T17:30:48.455Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "anchor-e2e-vectors"
+          }
+        ],
+        "attestationStatus": "partial"
+      },
+      "expect": {
+        "bundleOnly": {
+          "anchorValid": null,
+          "anchorReason": "publication_not_checked",
+          "merkleProofValid": true,
+          "evmTx": "checked-correct",
+          "evmCanonical": "input_not_supplied:evm_header_source"
+        },
+        "withHeaderSource": {
+          "anchorValid": true,
+          "merkleProofValid": true,
+          "anchorPublication": "evm-calldata",
+          "anchorOriginAuthenticated": true,
+          "anchorNamespace": "test",
+          "anchorNetwork": null,
+          "anchorFinality": "finalized",
+          "existedBy": {
+            "at": "2026-09-26T17:30:48.000Z",
+            "source": "evm-calldata"
+          },
+          "inclusion": "tx_proof",
+          "anchorPosition": {
+            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/67616d6d61",
+            "leafIndex": 0,
+            "treeSize": 1,
+            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorLeafIndex": 3,
+            "anchorSize": 4,
+            "leafIndexChecked": true,
+            "chainChecked": true,
+            "authenticated": true
+          }
+        }
+      }
+    }
+  ]
+}

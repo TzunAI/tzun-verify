@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "v1.0",
+  "description": "Integrity-block vectors: digest form + chainLink (Record §4.2, §5)",
+  "notes": [
+    "A vector carrying a `canonical` string is a LITERAL vector: it pins the digest FORM (SHA-256 over canonical bytes, lowercase bare hex) but does NOT exercise either canonicalizer, because the bytes reach it already canonicalized.",
+    "A vector carrying an `input` object is an OBJECT-INPUT vector: an implementation canonicalizes `input` under `hashedFields` with its own serializer and must reproduce `expectedCanonical` before hashing. Only this kind can catch a canonicalizer that departs from the rules."
+  ],
+  "vectors": [
+    {
+      "id": "I01",
+      "kind": "digest",
+      "note": "Literal vector — digest form only; never reaches a canonicalizer. See I04.",
+      "canonical": "{\"a\":1}",
+      "expectedDigest": "015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862"
+    },
+    {
+      "id": "I02",
+      "kind": "chain-link",
+      "previousDigest": null,
+      "currentDigest": "abc",
+      "expectedChainLink": null
+    },
+    {
+      "id": "I03",
+      "kind": "chain-link",
+      "previousDigest": "prev",
+      "currentDigest": "cur",
+      "expectedChainLink": "ad8987a678cfb625a842b244500d1fc2d723e8ba49286301e74235e31f5cdbe3"
+    },
+    {
+      "id": "I04",
+      "kind": "digest",
+      "note": "Object-input vector. Every implementation runs its OWN canonicalizer over `input` under `hashedFields` and must reproduce `expectedCanonical` byte-for-byte before hashing, so a canonicalizer divergence fails HERE and not only in the canonical corpus. It deliberately loads every rule the integrity digest depends on: hashed-field selection and re-sort (`hashedFields` is supplied unsorted and names `missing_from_input`, absent from `input`, which must serialize as null); an explicit null that must survive as null; string escaping for quote, newline, tab and a U+0001 control char; non-ASCII passthrough (U+00E9) with no \\u escaping; UTF-16 key ordering across a BMP fullwidth key (U+FF01) and an astral key (U+1F600); exponent-form numbers at both ends (1e-7, 1e+21); and MAX_SAFE_INTEGER rendered without an exponent.",
+      "input": {
+        "zeta": 1e-07,
+        "alpha": "café \"quoted\"\n\t\u0001 end",
+        "middle": {
+          "b": [
+            1,
+            null,
+            true,
+            1e+21
+          ],
+          "a": 9007199254740991
+        },
+        "！": 1,
+        "😀": 2,
+        "explicit_null": null
+      },
+      "hashedFields": [
+        "explicit_null",
+        "alpha",
+        "middle",
+        "missing_from_input",
+        "zeta",
+        "！",
+        "😀"
+      ],
+      "expectedCanonical": "{\"alpha\":\"café \\\"quoted\\\"\\n\\t\\u0001 end\",\"explicit_null\":null,\"middle\":{\"a\":9007199254740991,\"b\":[1,null,true,1e+21]},\"missing_from_input\":null,\"zeta\":1e-7,\"😀\":2,\"！\":1}",
+      "expectedDigest": "64c65547f68844b0e84a52c2edc6bbc5ccaf2cb35098acde0d0106e6abae86cf"
+    },
+    {
+      "id": "I05",
+      "kind": "digest",
+      "note": "Object-input vector over a whole v1.0 payload whose signoffExpectation is the session form (Record §6.1). `hashedFields` is the v1.0 hashed field set: `schemaVersion` is in `input` and not hashed, and signoffExpectation's members are supplied out of order and must be sorted.",
+      "input": {
+        "schemaVersion": "v1.0",
+        "sequenceNumber": 3,
+        "signoffExpectation": {
+          "sessionSeq": 7,
+          "statementDigest": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+        },
+        "humanReason": "Session review",
+        "humanAction": "approved",
+        "evidenceId": "5f0c1f0e-1111-4a1a-9a1a-000000000003",
+        "capturedAt": "2026-09-26T10:00:00.000Z",
+        "aiSystemId": "loan-model",
+        "aiOutput": {
+          "recommendation": "approve",
+          "confidence": 0.91
+        },
+        "aiBom": null
+      },
+      "hashedFields": [
+        "aiBom",
+        "aiOutput",
+        "aiSystemId",
+        "capturedAt",
+        "evidenceId",
+        "humanAction",
+        "humanReason",
+        "sequenceNumber",
+        "signoffExpectation"
+      ],
+      "expectedCanonical": "{\"aiBom\":null,\"aiOutput\":{\"confidence\":0.91,\"recommendation\":\"approve\"},\"aiSystemId\":\"loan-model\",\"capturedAt\":\"2026-09-26T10:00:00.000Z\",\"evidenceId\":\"5f0c1f0e-1111-4a1a-9a1a-000000000003\",\"humanAction\":\"approved\",\"humanReason\":\"Session review\",\"sequenceNumber\":3,\"signoffExpectation\":{\"sessionSeq\":7,\"statementDigest\":\"5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8\"}}",
+      "expectedDigest": "43be3c36dad80fa523f12c20692e9c924a5e8362642164f40fb58a7c7540ae72"
+    },
+    {
+      "id": "I06",
+      "kind": "digest",
+      "note": "Object-input vector over a v1.0 payload with no signoffExpectation key. Under the v1.0 hashed field set the absent key serializes as null (Record §4.2), so this digest is NOT the one a record carries whose digest was computed without the field: such a record reads digest_mismatch.",
+      "input": {
+        "evidenceId": "5f0c1f0e-1111-4a1a-9a1a-000000000004",
+        "schemaVersion": "v1.0",
+        "aiSystemId": "loan-model",
+        "aiOutput": {
+          "recommendation": "decline"
+        },
+        "humanAction": "declined",
+        "humanReason": "Missing income proof",
+        "capturedAt": "2026-09-26T10:05:00.000Z",
+        "sequenceNumber": 4,
+        "aiBom": null
+      },
+      "hashedFields": [
+        "aiBom",
+        "aiOutput",
+        "aiSystemId",
+        "capturedAt",
+        "evidenceId",
+        "humanAction",
+        "humanReason",
+        "sequenceNumber",
+        "signoffExpectation"
+      ],
+      "expectedCanonical": "{\"aiBom\":null,\"aiOutput\":{\"recommendation\":\"decline\"},\"aiSystemId\":\"loan-model\",\"capturedAt\":\"2026-09-26T10:05:00.000Z\",\"evidenceId\":\"5f0c1f0e-1111-4a1a-9a1a-000000000004\",\"humanAction\":\"declined\",\"humanReason\":\"Missing income proof\",\"sequenceNumber\":4,\"signoffExpectation\":null}",
+      "expectedDigest": "a0222d97a840041c89844e51488a46a6365dadae7232b426810d0be8e9019f5e"
+    }
+  ]
+}
