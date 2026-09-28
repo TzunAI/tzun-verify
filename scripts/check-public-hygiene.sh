@@ -1,0 +1,222 @@
+#!/usr/bin/env bash
+# Public hygiene: this repository, its history and its pull requests say
+# nothing a reader outside Tzun cannot follow. Every reference is to this
+# repository or to a public place, the specification at spec.tzun.ai among them.
+#
+#   scripts/check-public-hygiene.sh tree              every file git tracks or would add (untracked
+#                                                     and not ignored), as in the working tree
+#   scripts/check-public-hygiene.sh commits <range>   the message of every commit in <range>
+#                                                     (anything `git rev-list` takes: a..b, a single commit, --all)
+#   scripts/check-public-hygiene.sh text [<label>]    the text on standard input (a pull
+#                                                     request's title and body, a commit message)
+#
+# Each finding prints as "<where>:<line>: <rule>: <text found>". Exit status:
+# 0 when nothing is found, 1 when something is, 2 on a usage error.
+#
+# Text is read after Unicode NFKC normalization, so a look-alike character
+# does not hide a match. Each line is checked on its own, and each paragraph
+# once more with its line breaks folded into spaces, so a phrase wrapped
+# across lines is found too.
+#
+# The rules, each a pattern and the exceptions it allows:
+#   org-repo       a repository of the TzunAI organisation other than
+#                  tzun-verify, as owner/name, a GitHub URL or an npm scope. The
+#                  branch named by a GitHub merge commit's first line ("Merge
+#                  pull request #N from <owner>/<branch>") is not a repository.
+#   prefixed-name  a lower-case tzun-<word> or tzun_<word>, or TZUN_<WORD>,
+#                  whose first word is not one of the protocol and file names in
+#                  PUBLIC_WORDS below.
+#   cross-ref      <name>#<number>, an issue or pull request of another
+#                  repository; tzun-verify#<number> is allowed.
+#   session        a link to a conversation with an assistant.
+#   local-path     an absolute path under a home, temporary, mount or root
+#                  directory, on any operating system.
+#   email          an email address, except a noreply address or one at a
+#                  domain reserved for examples.
+#   host           a subdomain of tzun.ai other than the ones in PUBLIC_HOSTS
+#                  below.
+#   requirement    a requirement id (REQ-...). The specification states none.
+#   private-status wording that calls this or another repository private.
+#
+# Binary files (any NUL byte) are skipped. A file that must hold one of these
+# strings on purpose has no exemption here: the fix is to reword it.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+usage() {
+  sed -n '6,12p' "$0" | sed 's/^# \{0,1\}//' >&2
+  exit 2
+}
+
+mode="${1:-}"
+case "$mode" in
+  tree) [[ $# -eq 1 ]] || usage ;;
+  commits) [[ $# -eq 2 ]] || usage ;;
+  text) [[ $# -le 2 ]] || usage ;;
+  *) usage ;;
+esac
+
+# The program reads its own input on standard input in text mode, so it is
+# passed with -c rather than as a here-document.
+IFS= read -r -d '' program <<'PY' || true
+import os
+import re
+import subprocess
+import sys
+import unicodedata
+
+# First words of tzun-<word> names that the public protocol and this
+# repository use: tzun-anchor/1, the tzun-verify-report/1 report, the
+# tzun-signoff-v1 and tzun-decision-v1 challenge domains, the
+# tzun-merkle-vector- leaf label of the tree vectors, the tzun-spec
+# repository that builds spec.tzun.ai,
+# scripts/check-no-tzun-imports.sh, and a CI variable of the workflows.
+PUBLIC_WORDS = {"anchor", "verify", "spec", "signoff", "decision", "merkle", "imports", "runner"}
+
+# Domains reserved for examples and tests (RFC 2606, RFC 6761): an address
+# there belongs to no one.
+EXAMPLE_DOMAINS = ("example.com", "example.net", "example.org")
+EXAMPLE_TLDS = (".example", ".test", ".invalid", ".localhost")
+
+# Subdomains of tzun.ai that are public or appear in the data model and its
+# test vectors, by the label just left of tzun.ai: spec is where the
+# specification is published.
+PUBLIC_HOSTS = {"www", "demo", "spec", "log", "test", "xlog"}
+
+SELF_REPO = "tzun-verify"
+SPEC_REPO = "tzun-spec"
+
+
+MERGE_LINE = re.compile(r"^Merge pull request #[0-9]+ from ")
+
+
+def allow_org_repo(m, line):
+    name = m.group(1).lower()
+    if name in (SELF_REPO, SELF_REPO + ".git", SPEC_REPO, SPEC_REPO + ".git"):
+        return True
+    # The branch a GitHub merge commit names, not a repository.
+    lead = MERGE_LINE.match(line)
+    return bool(lead) and m.start() == lead.end()
+
+
+def allow_prefixed_name(m, line):
+    return m.group(1).lower() in PUBLIC_WORDS
+
+
+def allow_cross_ref(m, line):
+    return m.group(1).lower() == SELF_REPO
+
+
+def allow_email(m, line):
+    local, _, domain = m.group(0).lower().partition("@")
+    if local in ("noreply", "no-reply") or domain.endswith("users.noreply.github.com"):
+        return True
+    if domain in EXAMPLE_DOMAINS or domain.endswith(tuple("." + d for d in EXAMPLE_DOMAINS)) or domain.endswith(EXAMPLE_TLDS):
+        return True
+    return m.group(0).lower() == "git@github.com"
+
+
+def allow_host(m, line):
+    return m.group("label").lower() in PUBLIC_HOSTS
+
+
+RULES = [
+    ("org-repo", re.compile(r"(?i)(?:github\.com[/:]|@)?tzunai/([a-z0-9._-]+)"), allow_org_repo),
+    ("prefixed-name", re.compile(r"(?<![A-Za-z0-9])(?:tzun|TZUN)[-_]([A-Za-z0-9]+)"), allow_prefixed_name),
+    ("cross-ref", re.compile(r"(?<![A-Za-z0-9_./#-])([A-Za-z][A-Za-z0-9._-]*)#[0-9]+(?![0-9])"), allow_cross_ref),
+    ("session", re.compile(r"(?i)claude\.ai/(?:code|chat|share|project)"), None),
+    ("local-path", re.compile(
+        r"(?<![A-Za-z0-9_.~-])/(?:tmp|home|mnt|root|Users|private/var|var/folders)/"
+        r"|~/rep[o]s/|(?<![A-Za-z0-9])[A-Za-z]:\\+Users\\"), None),
+    ("email", re.compile(r"(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}(?![A-Za-z0-9-])"), allow_email),
+    ("host", re.compile(r"(?i)(?<![A-Za-z0-9.-])(?:[a-z0-9-]+\.)*(?P<label>[a-z0-9-]+)\.tzun\.ai(?![A-Za-z0-9-])"), allow_host),
+    ("requirement", re.compile(r"(?<![A-Za-z0-9-])REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*"), None),
+    ("private-status", re.compile(r"(?i)\b(?:this|the) repo(?:sitory)? is (?:still )?private\b|\bprivate repo(?:sitory|sitories|s)?\b"), None),
+]
+
+# A comment or quotation marker at the start of a line, left out when the
+# lines of a paragraph are folded together.
+LEAD = re.compile(r"^\s*(?:#+|//+|/\*+|\*+|>+)?\s*")
+
+
+def found(where, n, rule, text, out):
+    out.append(f"{where}:{n}: {rule}: {text}")
+
+
+def scan(where, text, out):
+    lines = unicodedata.normalize("NFKC", text).splitlines()
+    for n, line in enumerate(lines, 1):
+        for rule, rx, allow in RULES:
+            for m in rx.finditer(line):
+                if allow is None or not allow(m, line):
+                    found(where, n, rule, m.group(0), out)
+    # Each paragraph again, its lines folded into one; a match is reported
+    # here only when it spans a line break, since the pass above found the
+    # others.
+    i = 0
+    while i < len(lines):
+        if not lines[i].strip():
+            i += 1
+            continue
+        j = i
+        while j < len(lines) and lines[j].strip():
+            j += 1
+        if j - i > 1:
+            pieces = [LEAD.sub("", lines[k]).rstrip() for k in range(i, j)]
+            starts, pos = [], 0
+            for p in pieces:
+                starts.append(pos)
+                pos += len(p) + 1
+            joined = " ".join(pieces)
+            for rule, rx, allow in RULES:
+                for m in rx.finditer(joined):
+                    first = max(k for k, s in enumerate(starts) if s <= m.start())
+                    if m.end() <= starts[first] + len(pieces[first]):
+                        continue
+                    if allow is None or not allow(m, joined):
+                        found(where, i + first + 1, rule, m.group(0), out)
+        i = j
+
+
+def git(*args):
+    return subprocess.run(["git", *args], check=True, capture_output=True).stdout
+
+
+def main():
+    mode = sys.argv[1]
+    out = []
+    if mode == "tree":
+        for path in git("ls-files", "-z", "--cached", "--others", "--exclude-standard").decode().split("\0"):
+            if not path or not os.path.isfile(path):
+                continue
+            with open(path, "rb") as f:
+                raw = f.read()
+            if b"\0" in raw:
+                continue
+            scan(path, raw.decode("utf-8", errors="replace"), out)
+        what = "the files git tracks or would add"
+    elif mode == "commits":
+        shas = git("rev-list", sys.argv[2], "--").decode().split()
+        for sha in shas:
+            msg = git("show", "-s", "--format=%B", sha).decode("utf-8", errors="replace")
+            scan(f"commit {sha[:12]}", msg, out)
+        what = f"{len(shas)} commit message(s)"
+    else:
+        label = sys.argv[2] if len(sys.argv) > 2 else "stdin"
+        scan(label, sys.stdin.buffer.read().decode("utf-8", errors="replace"), out)
+        what = label
+    for f in out:
+        print(f)
+    if out:
+        print(f"public hygiene: {len(out)} finding(s) in {what}", file=sys.stderr)
+        sys.exit(1)
+    print(f"public hygiene: nothing found in {what}", file=sys.stderr)
+
+
+try:
+    main()
+except subprocess.CalledProcessError as e:
+    sys.stderr.write(e.stderr.decode(errors="replace"))
+    sys.exit(2)
+PY
+exec python3 -c "$program" "$@"

@@ -1,0 +1,92 @@
+{
+  "bundleVersion": "b1",
+  "profile": "record",
+  "subject": {
+    "evidenceId": "c9cff985-0ee0-487f-93f3-17f52b98068e",
+    "canonicalDigest": "1dd075ec1dc0675d0fc25fdc421c6e2178737cee83e76d1866355d463abffce3"
+  },
+  "envelope": {
+    "envelopeVersion": "e1",
+    "payload": {
+      "evidenceId": "c9cff985-0ee0-487f-93f3-17f52b98068e",
+      "schemaVersion": "v1.0",
+      "aiSystemId": "bundle-b1-corpus",
+      "aiOutput": {
+        "recommendation": "approve",
+        "chain": "alpha",
+        "i": 8
+      },
+      "humanAction": "approved",
+      "humanReason": "bundle corpus: alpha #8",
+      "capturedAt": "2026-09-27T14:09:41.784Z",
+      "sequenceNumber": 4,
+      "aiBom": null,
+      "signoffExpectation": null
+    },
+    "integrity": {
+      "canonicalDigest": "1dd075ec1dc0675d0fc25fdc421c6e2178737cee83e76d1866355d463abffce3",
+      "chainLink": "acf1556e75673b2c85833ec33fda9fcf3cec0f87f38709282ec18996f951e777"
+    },
+    "nonRepudiation": {
+      "rfc3161Token": "MIIDazADAgEAMIIDYgYJKoZIhvcNAQcCoIIDUzCCA08CAQMxDzANBglghkgBZQMEAgEFADB4BgsqhkiG9w0BCRABBKBpBGcwZQIBAQYKKwYBBAGGjR8BATAxMA0GCWCGSAFlAwQCAQUABCAd0HXsHcBnXQ/CX9xCHG4heHN87oPnbRhmNV1GOr/84wIBaxgTMjAyNjA5MjcxNDA5NDEuNzg3WgIJAJuEaJdmZCeBoIIBbTCCAWkwggEPoAMCAQICAQMwCgYIKoZIzj0EAwIwIzEhMB8GA1UEAxMYVHp1biBDb3JwdXMgVGVzdCBSb290IENBMB4XDTIwMDEwMTAwMDAwMFoXDTQwMDEwMTAwMDAwMFowLTErMCkGA1UEAxMiVHp1biBDb3JwdXMgVGltZXN0YW1waW5nIEF1dGhvcml0eTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABGbnvmjE/7es/wjtakgUfY9yxauBIQoTQGcEIIAtxHZL74KAEDr4aPZIEEAOFZkO+BIZ2nb8XjXuMoaUMCN3XbSjKjAoMA4GA1UdDwEB/wQEAwIHgDAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDAKBggqhkjOPQQDAgNIADBFAiBtKpVCaBUnROFOFg57Q5LUoM21wzq6afdV6vwC54F10gIhAMCCFn72J/MtkD1d3WkcYDo9GBDbXzQlugFeVVqAU2Q5MYIBTDCCAUgCAQEwKDAjMSEwHwYDVQQDExhUenVuIENvcnB1cyBUZXN0IFJvb3QgQ0ECAQMwDQYJYIZIAWUDBAIBBQCggbQwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMC8GCSqGSIb3DQEJBDEiBCANXdj3tlNpi/SazXN4IJkpff5uipGYjhDWjGebZafn1DBlBgsqhkiG9w0BCRACLzFWMFQwUjBQBCDD1ZPeYkclq7lWxxBR//5FnPxWR65uKU9yQ8iqK8WPjzAsMCekJTAjMSEwHwYDVQQDExhUenVuIENvcnB1cyBUZXN0IFJvb3QgQ0ECAQMwCgYIKoZIzj0EAwIERzBFAiEArTh7p7sewQXQYO+I8h1CLiJmqsau62yudpA+yo/H1/UCIGIOi98Ermp7mgByjKs7CSdrHM23OzTbTOLbelYDCq6y",
+      "rfc3161Metadata": {
+        "genTime": "2026-09-27T14:09:41.787Z",
+        "tsaName": "Tzun Corpus Timestamping Authority",
+        "policyOid": "1.3.6.1.4.1.99999.1.1",
+        "status": "granted"
+      }
+    },
+    "custodyChain": [
+      {
+        "timestamp": "2026-09-27T14:09:41.784Z",
+        "actor": "unknown",
+        "action": "decision_captured",
+        "systemId": "bundle-b1-corpus"
+      }
+    ],
+    "attestationStatus": "pending"
+  },
+  "chain": {
+    "chainId": "alpha",
+    "predecessor": {
+      "evidenceId": "0a352141-f5e0-489b-b86f-14db20b90628",
+      "sequenceNumber": 3,
+      "canonicalDigest": "f218b5009b7b71ce75f43a581719fb199f3f554bb7b6e1b376fe8ab5de229669"
+    }
+  },
+  "custody": {
+    "entries": []
+  },
+  "credentials": null,
+  "relatedRecords": null,
+  "anchoring": {},
+  "anchorPending": {
+    "origin": "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861",
+    "leafIndex": 3,
+    "since": "2026-09-27T14:09:41.808Z"
+  },
+  "policy": null,
+  "extensions": {
+    "witness/1": null
+  },
+  "exporter": {
+    "exportedAt": "2026-09-27T14:09:41.810Z",
+    "exportedBy": "Tzun reference implementation",
+    "verdict": {
+      "status": "valid",
+      "digest": {
+        "status": "valid",
+        "stored": "1dd075ec1dc0675d0fc25fdc421c6e2178737cee83e76d1866355d463abffce3",
+        "recomputed": "1dd075ec1dc0675d0fc25fdc421c6e2178737cee83e76d1866355d463abffce3"
+      },
+      "chainLink": {
+        "status": "valid",
+        "predecessorDigest": "f218b5009b7b71ce75f43a581719fb199f3f554bb7b6e1b376fe8ab5de229669"
+      },
+      "signoffExpectation": {
+        "valid": true
+      },
+      "checkedAt": "2026-09-27T14:09:41.811Z"
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "reportVersion": "tzun-verify-report/1",
+  "bundleVersion": "b1",
+  "subject": {
+    "evidenceId": "c9cff985-0ee0-487f-93f3-17f52b98068e",
+    "canonicalDigest": "1dd075ec1dc0675d0fc25fdc421c6e2178737cee83e76d1866355d463abffce3"
+  },
+  "inputs": {
+    "trustAnchors": [
+      "ff7a3693418d56cd8bcb35756c75dc0d380e7fc9f37390297142a7bdcdfc5860"
+    ],
+    "evmHeaderSources": [
+      {
+        "chain": "eip155:31337",
+        "finality": "finalized"
+      }
+    ],
+    "publisherManifest": "f9a030928f1426a2b8a36ed313d32f2109157a285176b4bdd603bee5a9d316e2",
+    "frameOrigins": null,
+    "vkeys": null,
+    "mdsRoots": null
+  },
+  "checks": [
+    {
+      "id": "bundle",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "subject",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "record.digest",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "record.chainLink",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "custody.ledger",
+      "outcome": "not-checked",
+      "reason": "not_applicable"
+    },
+    {
+      "id": "ts.record.token",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "ts.record.trust",
+      "outcome": "checked-correct",
+      "facts": {
+        "genTime": "2026-09-27T14:09:41.787Z",
+        "authority": "Tzun Corpus Timestamping Authority"
+      }
+    },
+    {
+      "id": "signoff.expectation",
+      "outcome": "checked-correct"
+    },
+    {
+      "id": "signoff.key",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor.spec",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor.checkpoint",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor.origin",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor.leafIndex",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor.inclusion",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "anchor.anchorInclusion",
+      "outcome": "not-checked",
+      "reason": "absent"
+    }
+  ],
+  "summary": {
+    "mode": null,
+    "coverage": null,
+    "manifestEnforced": null,
+    "rungs": [],
+    "keyKind": null,
+    "keyAssurance": null,
+    "uv": null,
+    "actorBound": null,
+    "existedBy": {
+      "at": "2026-09-27T14:09:41.787Z",
+      "source": "record-timestamp",
+      "check": "ts.record.trust"
+    },
+    "anchorNetwork": null,
+    "anchorNamespace": null,
+    "anchorOriginAuthenticated": false,
+    "outcomes": {
+      "checked-correct": 7,
+      "checked-wrong": 0,
+      "not-checked": 9,
+      "abstain": 0
+    }
+  }
+}

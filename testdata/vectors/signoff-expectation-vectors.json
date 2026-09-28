@@ -1,0 +1,4009 @@
+{
+  "description": "payload.signoffExpectation (Record \u00a76, Verification \u00a75): its shape rule, the sign-off statement digest and challenge, the comparison a verifier makes between the expectation and the sign-off material a record carries, and what a verifier reports for a whole record, whose expectation it reads only when the digest recomputes.",
+  "source": "Computed by a script that states every expected answer from the rules. WebAuthn signatures here are placeholders: the check reads which challenge an assertion presents, and a batch's inclusion proof, never whether a signature verifies.",
+  "shapes": [
+    {
+      "case": "null: none expected",
+      "value": null,
+      "violation": null
+    },
+    {
+      "case": "the policy form",
+      "value": {
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+      },
+      "violation": null
+    },
+    {
+      "case": "the session form",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": 1
+      },
+      "violation": null
+    },
+    {
+      "case": "the session form at slot 2^53 - 1",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": 9007199254740991
+      },
+      "violation": null
+    },
+    {
+      "case": "a string",
+      "value": "required",
+      "violation": "not_an_object"
+    },
+    {
+      "case": "an array",
+      "value": [
+        "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+      ],
+      "violation": "not_an_object"
+    },
+    {
+      "case": "a number",
+      "value": 1,
+      "violation": "not_an_object"
+    },
+    {
+      "case": "false",
+      "value": false,
+      "violation": "not_an_object"
+    },
+    {
+      "case": "an empty object",
+      "value": {},
+      "violation": "unknown_members"
+    },
+    {
+      "case": "an unknown member beside policyDigest",
+      "value": {
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "note": "x"
+      },
+      "violation": "unknown_members"
+    },
+    {
+      "case": "both forms at once",
+      "value": {
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": 1
+      },
+      "violation": "unknown_members"
+    },
+    {
+      "case": "statementDigest without sessionSeq",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d"
+      },
+      "violation": "unknown_members"
+    },
+    {
+      "case": "sessionSeq without statementDigest",
+      "value": {
+        "sessionSeq": 1
+      },
+      "violation": "unknown_members"
+    },
+    {
+      "case": "a misspelt member",
+      "value": {
+        "policydigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+      },
+      "violation": "unknown_members"
+    },
+    {
+      "case": "an uppercase policy digest",
+      "value": {
+        "policyDigest": "DA3E51B9BE97D4E107F74BDB181C50484A68F20C23E7425C7C4B1A3083CE40B8"
+      },
+      "violation": "invalid_policy_digest"
+    },
+    {
+      "case": "a 63-character policy digest",
+      "value": {
+        "policyDigest": "a3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+      },
+      "violation": "invalid_policy_digest"
+    },
+    {
+      "case": "a 65-character policy digest",
+      "value": {
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b80"
+      },
+      "violation": "invalid_policy_digest"
+    },
+    {
+      "case": "a policy digest with a trailing newline",
+      "value": {
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8\n"
+      },
+      "violation": "invalid_policy_digest"
+    },
+    {
+      "case": "a 0x-prefixed policy digest",
+      "value": {
+        "policyDigest": "0xda3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+      },
+      "violation": "invalid_policy_digest"
+    },
+    {
+      "case": "a null policy digest",
+      "value": {
+        "policyDigest": null
+      },
+      "violation": "invalid_policy_digest"
+    },
+    {
+      "case": "a sha256:-prefixed statement digest",
+      "value": {
+        "statementDigest": "sha256:5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": 1
+      },
+      "violation": "invalid_statement_digest"
+    },
+    {
+      "case": "a numeric statement digest",
+      "value": {
+        "statementDigest": 7,
+        "sessionSeq": 1
+      },
+      "violation": "invalid_statement_digest"
+    },
+    {
+      "case": "slot 0",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": 0
+      },
+      "violation": "invalid_session_seq"
+    },
+    {
+      "case": "a negative slot",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": -3
+      },
+      "violation": "invalid_session_seq"
+    },
+    {
+      "case": "a fractional slot",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": 2.5
+      },
+      "violation": "invalid_session_seq"
+    },
+    {
+      "case": "a string slot",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": "2"
+      },
+      "violation": "invalid_session_seq"
+    },
+    {
+      "case": "a boolean slot",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": true
+      },
+      "violation": "invalid_session_seq"
+    },
+    {
+      "case": "slot 2^53, past the safe integers",
+      "value": {
+        "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+        "sessionSeq": 9007199254740992
+      },
+      "violation": "invalid_session_seq"
+    }
+  ],
+  "statementDigests": [
+    {
+      "case": "a session statement",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 50
+      },
+      "digest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+      "challenge": "AtczJb-7ULvmnVPKUoTzkH0IIMhw0PE_6x2XEZPS7us"
+    },
+    {
+      "case": "a batch statement, members supplied unsorted",
+      "statement": {
+        "treeSize": 2,
+        "root": "a0cc8349c039912a27a1b605e61e76c9299a82e0960f059be0c9a5af438cf173",
+        "mode": "batch",
+        "v": "tzun-signoff/1",
+        "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "merkleSpec": "rfc6962"
+      },
+      "digest": "105006c97658f45d74e50cc705a834995c91dc0643ecd53b519e1fd45854b93c",
+      "challenge": "iUiXVKR8HIJF3fZMN7klWbCTXEXOyhunRlbHkwv0tW0"
+    },
+    {
+      "case": "an integer at 2^53 - 1, the largest safe one",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 9007199254740991
+      },
+      "digest": "263fb81d9ad20a3744fdf3b5ae359a65a88867a01c3810f7f2ccda6246484521",
+      "challenge": "hRbX7LLETp-pmErmwUDQzP09-AYsPWkSJ-UmhRFpAs8"
+    },
+    {
+      "case": "an integer past 2^53 - 1",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 9007199254740992
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a negative integer",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": -1
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a fraction",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1.5,
+        "maxRecords": 50
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a boolean",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": true
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a null member",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": null,
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 50
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a nested object",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": {
+          "id": "user-17"
+        },
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 50
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "an array member",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": [
+          "user-17"
+        ],
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 50
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a string outside printable ASCII",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "Jos\u00e9",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 50
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a control character in a string",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17\n",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 50
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a key outside printable ASCII",
+      "statement": {
+        "v": "tzun-signoff/1",
+        "mode": "session",
+        "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+        "signer": "user-17",
+        "signerName": "Sm9zw6kgw4FsdmFyZXo",
+        "meaning": "approval",
+        "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+        "notBefore": "none",
+        "openedAt": "2026-09-26T09:00:00.000Z",
+        "maxAgeMs": 1800000,
+        "maxRecords": 50,
+        "sign\u00e9r": "user-17"
+      },
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "a string, not an object",
+      "statement": "tzun-signoff/1",
+      "digest": null,
+      "challenge": null
+    },
+    {
+      "case": "an array, not an object",
+      "statement": [
+        {
+          "v": "tzun-signoff/1",
+          "mode": "session",
+          "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+          "signer": "user-17",
+          "signerName": "Sm9zw6kgw4FsdmFyZXo",
+          "meaning": "approval",
+          "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+          "notBefore": "none",
+          "openedAt": "2026-09-26T09:00:00.000Z",
+          "maxAgeMs": 1800000,
+          "maxRecords": 50
+        }
+      ],
+      "digest": null,
+      "challenge": null
+    }
+  ],
+  "checks": [
+    {
+      "case": "null, nothing carried",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000001",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:01.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "4df776575c0d8e2ba4d755f8862c9d9f32a58fa1476f7b379aa390c184ed3a5a",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:01.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "case": "null, a per-record signature nobody required",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000002",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:02.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "e91f5f81ac484710e294ba63e852ec32c60c74cd3d6331247ebf2c4f9ce25283",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiVU1aRnh0MmxLOHhRUDE2SnBZenBwVHIwMjVKUExlRUVmYnBlRmtaTi1UMCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:02.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "case": "null, a batch sign-off nobody required",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000003",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:03.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "a9238cbc923fc49aba2d599287dcd07ad5673e13c6671658acc3f3a61cfc4fd1",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiR0pSUEtrTl9qSnhrT3Q5bEh6b3hWU1ZDazJmbnM4akN6ZUhrRkpCdVdmZyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "1c07d5464bc8e32e7493f9c460ae5edb193605b42567fdc7ac4b09314d61e26f",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:03.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "case": "null, a session sign-off transplanted onto it",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000004",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:04.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "6465ef832fec210958ae4e6294fc1a7864ba44911983c525fd11e775e1721b33",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:04.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "null, a signoff block carrying sessionSeq beside a batch statement",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000005",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:05.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "adb23496285f7af6262207868b35bf43f7b4e15afcd79dd4744c94ad505b6d31",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoieCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "a0cc8349c039912a27a1b605e61e76c9299a82e0960f059be0c9a5af438cf173",
+              "treeSize": 2
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:05.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "null, a session sign-off relabelled as a batch one (mode batch, sessionSeq dropped)",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000006",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:06.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "7b31d2da75ec8d6ed173a26977ad7c8c23e7aaa48d1663658f33bf6c55dc22de",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:06.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "null, a batch sign-off lifted from a batch that does not hold this record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000007",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:07.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "6e92634c0f6f6e4d6a2872878ad1f2322217471f2005fbdf97079785ee7d78b8",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoid3lqQ2JUSi1yeTNaMFVLX2hUOEswZUZIZlZCR1Fmd21BczQ5dWE0VTZTNCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "99d73f680b3bcc0d88ac25b960989c109a76b22376d3d0af414da7560d3656da",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:07.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "null, an empty signoff block and an assertion",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000008",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:08.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "0bdccf645ccbe26d17bd9cfcd21452126cdfd5f0d61ec7e6b6dd05dbbd6a327c",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQUFBQSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {}
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:08.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "null, a signoff that is not an object beside an assertion",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000009",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:09.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "cc5db212a2b7d9bee495b5f0896f05e9b906d9eb2ede3fcfde3aea74b589370f",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiam0wbVBBWUJ3cTNScjhYdWtTR3hrZ0lwV1pSWERWQ2l1dUUwNTVwb2dTSSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": "batch"
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:09.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "null, a batch signoff block without an assertion (no sign-off is carried)",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000010",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:10.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "7a4eb9e9b2595b909f86a8c30aa96c1ec6d516864212020aa19a97b52d6dad6e",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "eb6ff42fceee9479f8745d477b201eb37d444cdecd8c0745856b26e12016967a",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:10.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "case": "policy, nothing carried (awaiting sign-off, or stripped)",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000011",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:11.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "fcc19f3de4cb9ec3cbfafbe5fbe9590de59082400e17851d167b2cf0d93d3b6d",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:11.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": null,
+        "reason": "signature_missing"
+      }
+    },
+    {
+      "case": "policy, a per-record signature over this record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000012",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:12.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "c58b042685785ddfa144398677aa7a01fd7dd58654d44de215d370f1f2d4f9fe",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiSXg4Z1J6QWxhX0FObzFyRXk2Rkdmdmg3RldfZG43NzhyVEhFN183NDBoVSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:12.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "case": "policy, an assertion about another record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000013",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:13.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "681bebb515b405284acf7054ef01426933103fb59cb0b68008eaac36bc6b1c90",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUmNmcV9aY08xSmRzaEg3SUdEMU9XOWZVZnk4U19ib0pqTi1rQ29QM0htTSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:13.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": null,
+        "reason": "signature_missing"
+      }
+    },
+    {
+      "case": "policy, an assertion with no clientDataJSON",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000014",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:14.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "75c6fd7b2dfb311a0bf6e9cbd46f042e8cd21ac2bdd88fefaa78354193d575e6",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2ln",
+            "credentialKeyId": "c",
+            "algorithm": "ES256"
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:14.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": null,
+        "reason": "signature_missing"
+      }
+    },
+    {
+      "case": "policy, a batch sign-off that covers this record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000015",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:15.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "4d852d7e9f41ee40170f0bbe98079fab4974ec963dbd76ae30a95fbe92c8e995",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUldKR21jS0JrWm9CSjQ3Z3lYb090SE5IYlh6akw2aFRkNWt4OWU3TG5JYyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "32a1dfb311aa2cca56d566b6f638478a6c8d9483245597609f01c5173d3697c8",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:15.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "case": "policy, a batch sign-off whose assertion presented another challenge",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000016",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:16.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "feba41cf84ae0e97f185cc0f229e5cc530c1035938cb40442d597ead9117b006",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiYmF0Y2giLCJvcmlnaW4iOiJodHRwczovL2V4YW1wbGUudGVzdCJ9"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "75e7e855277ad05b046b6b2b7ce95249cf50167fbb716691cb33198d097ab378",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:16.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a batch signoff block beside a per-record signature over this record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000017",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:17.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "19a02e07dba2c70b46d314ce06794c378eb7e8561ec4b7600e599680464525c3",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiTHhKT01qUXp3SFhuOU9FVXZsak9STzI4aTZlcGxBX2U5bkZ6S0o1WXNEOCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "a7268b318ec810cd4ea15b1ab8e4c8858d19b474ab7f2084d69c840247b8b3ee",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:17.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a batch sign-off whose tree does not hold this record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000018",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:18.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "fc530e8209356aaf602a0a7f75605c1b45a86f8dd6b9c2ff629c65e2f4904a7b",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoid3lqQ2JUSi1yeTNaMFVLX2hUOEswZUZIZlZCR1Fmd21BczQ5dWE0VTZTNCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "99d73f680b3bcc0d88ac25b960989c109a76b22376d3d0af414da7560d3656da",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:18.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a batch sign-off whose proof names another leaf",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000019",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:19.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "dc3e95e26f8b42d1094ddf01db0156e1f5f4ed443787027bdda51344eed51fc8",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiWXVaTTBXUmptQzhIaGpzbDBBaG94S3ljbmxhTDJndHVxSzh0WlBwaUVfWSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "ba75a3290bf0afd42116fcdf866b04c08685c822652ac69b4bd4d08bfed43536",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 1,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:19.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a batch sign-off with no inclusion proof",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000020",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:20.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "a6f11604f8b4ab495ef8f4576a8dc726ff522c2e356356403c2dca266b896b62",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiYi14dTBfelZ6cms3NWs3R2tXeWEwOExteVFLNC15NlBoZUZZbHVoTlBoOCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "63a0fc57e06e037a7a1d8dbb5dc3b657c2380a63936d9f09f7f74bbe608b9506",
+              "treeSize": 2
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:20.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a batch statement whose treeSize is past 2^53 - 1",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000021",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:21.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "33c2e8bdd6e0485e5767ed5fd485d40d657446ea653dba10860d184391b5d85c",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiNkVxSk9pOWJaa3dMUllSSU51RFNGU09NaDJXRjNyQ1RXd3BjSXJCdTFnQSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "c43c706cd837b9e57de34d4f125097422b1a3b825fc7d1fa38aaa4fd8a3a7212",
+              "treeSize": 9007199254740992
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:21.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, junk in place of a stripped signature: an empty signoff block and an assertion",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000022",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:22.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "0d32d943a170e3d6826d7bbad1e786f4a1d99df608741705012fb242294e67cf",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQUFBQSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {}
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:22.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, junk in place of a stripped signature: a statement of mode batch alone and an assertion whose clientDataJSON is {}",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000023",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:23.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "9f06f4fbf13826d1276df44db36ce7f00e0f8f21aa32529dbcc649a6d76fe169",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "AA",
+            "credentialKeyId": "x",
+            "algorithm": "ES256",
+            "clientDataJSON": "e30"
+          },
+          "signoff": {
+            "statement": {
+              "mode": "batch"
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:23.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a batch signoff block whose assertion was stripped",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000024",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:24.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "de0e5867e325a700473720f026f93bc8c8a412a85618177591a7a96c28115951",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "bfeda62f656896c9969eb1c8c542d3407267865e4abaa4b03059fcc83362d76c",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:24.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": null,
+        "reason": "signature_missing"
+      }
+    },
+    {
+      "case": "policy, a session sign-off relabelled as a batch one (mode batch, sessionSeq dropped)",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000025",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:25.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "5921899186913b89a2bab3f80ebd5d66a564eb60154cb17c514a3ca542bb92d7",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:25.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a batch sign-off relabelled as a record one",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000026",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:26.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "a783e0d0866115b341ebd0dfa3bb87d22a00e466af2326bf56be735cc1eba978",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQkhTY0I1dXZJVmVQN3RpT19DOHFtUzRNSm44WVRJdnFjelF4VlZkTjdGMCIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "record",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "d064da60b11c08870c03370e92bababf1810f85ca6b2405b626e57042fb4520d",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:26.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a signoff that is not an object beside a per-record signature over this record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000027",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:27.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "2124094b8512d741d8506ebbc7bed9b7412855f3a3e4f0326e417c4e9898270a",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiUjNSZHc4Skd6S3dEckwxX01TN1RBaGtRaDlxREFobjVZQ25EcW9KTEVEYyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": "batch"
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:27.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "policy, a session sign-off",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000028",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:28.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "5ac7cd5ef5058725411250ac8e02b2f10eab162e79be20e09c0f69294df3c953",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 1
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:28.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "session, its own sign-off",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000029",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:29.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "6b4496b849ea55c7b0f2747bc8bd7fa5cdec51ec51bb6ec139e5cbcc6589e2cd",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:29.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": true
+      }
+    },
+    {
+      "case": "session, the sign-off stripped",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000030",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:30.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "31e1d3124a695d31fc3f23eaae12c3224102364de303dcdc0b911c66e073dab4",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:30.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_stripped"
+      }
+    },
+    {
+      "case": "session, its sign-off without the assertion",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000031",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:31.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "dd99fc995fd0b80662d5193647323581d9f0fe8057e9c49ea8604b0a47ecb619",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:31.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_stripped"
+      }
+    },
+    {
+      "case": "session, its sign-off beside an assertion from another ceremony",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000032",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:32.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "d1c69c6ffe34620498d734afe72f25831babe12cc54b311e66ef9df5cf5e8934",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQUFBQSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:32.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "session, its sign-off beside an assertion with no clientDataJSON",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000033",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:33.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "e79af46f47c4c025d77a243148b5f5356f3f1979ad3f6b00f8c689f63e06ce0c",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2ln",
+            "credentialKeyId": "c",
+            "algorithm": "ES256"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:33.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "session, its sign-off beside the per-record assertion over this record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000034",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:34.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "d67e391118e962d4e89f03519bf3a2254925b21552e8100fee1b403d037fe1e5",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiWF9zcTJ4RzBEeVNZNE9ENldoVmdGV2QySnNwWXRXRUdpcVlNbTZqR21ucyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:34.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "signoff_unbound"
+      }
+    },
+    {
+      "case": "session, another session's statement",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000035",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:35.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "48192c2a1d2b14e8626e47991e2bc437e539db6e0e9cdbf670ce9c624da02889",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "4c9f1d3f-6e2b-4d7f-8a3c-8b2e5f6d7c9b",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:35.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "statement_digest_mismatch"
+      }
+    },
+    {
+      "case": "session, a statement holding an integer past 2^53 - 1 (it has no digest)",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000036",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:36.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "63dea799ed56a3b50f51191849496b3ff05f8b2416115be64b2e96ec7ca7cc9a",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "fd67fe482ef1f5e7b30ae43e8208ab49ce09af3b75340f3db2fe2ad0c9c7eb06",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiYklWSF9kQVNtOV9OemZsdXJscnBrMEY1RmwwYWh3ckpNRENZVGlralhPVSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 9007199254740992
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:36.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "statement_digest_mismatch"
+      }
+    },
+    {
+      "case": "session, a batch sign-off in its place",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000037",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:37.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "1db4fe493ce019015b5b6822f89902e932b3f17373761cd43af12b3e00f0b292",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoicDRoMEM0M0JHR2xEODJuXzZLOENoaXd5bGxUYW5kdGh6WFl6RldkcmVOUSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "7310c418931a5147b99cc7f9ef85ece973446dd21e7432c0ee8fb494a39d0e76",
+              "treeSize": 2
+            },
+            "inclusion": {
+              "leafIndex": 0,
+              "path": [
+                "6c102a48bd8c0b95a4e0467b5482d599525b94201da714b14cfe0572021fc7ef"
+              ]
+            }
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:37.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "statement_digest_mismatch"
+      }
+    },
+    {
+      "case": "session, a signoff block with no statement",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000038",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:38.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "63ce2afc607941072a547ccc0344ee5ca081ae39214b253597fe7a81cb258e6b",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:38.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "statement_digest_mismatch"
+      }
+    },
+    {
+      "case": "session, a signoff that is not an object",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000039",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:39.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "5fc1615ca727780bd28cc70eb2c1f2097cd5aea404bef458659655ba85aa8204",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": "session"
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:39.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "statement_digest_mismatch"
+      }
+    },
+    {
+      "case": "session, another slot",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000040",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:40.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "29db37c670e9001e7693b46eebbda382a140f8ca36a35b6ff54bb7be326c7012",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 5
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:40.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_seq_mismatch"
+      }
+    },
+    {
+      "case": "session, its slot written as the string \"4\"",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000041",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:41.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "be7b5a8d56ac7ac80c94a159254f395ae030ae956c80b35d35cafe820cdb6f86",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": "4"
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:41.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_seq_mismatch"
+      }
+    },
+    {
+      "case": "session, its slot written as the string \" 4\"",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000042",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:42.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 4
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "49a0bf1023822a6b5094f9ad65d2c60ff6b7c1b65ef9d29d29bda2d54f550295",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": " 4"
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:42.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_seq_mismatch"
+      }
+    },
+    {
+      "case": "session, slot 1 written as true",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000043",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:43.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "statementDigest": "5b5adce69b45c27941e0d8c3c0a015ea5d852151feff2897bc2d8adae6bf4b3d",
+            "sessionSeq": 1
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "c4f74ed02f32c8d8b8434a5b264a419800c1742e1646e29af88930cf42dc5cdb",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": true
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:43.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_seq_mismatch"
+      }
+    },
+    {
+      "case": "an expectation of neither form",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000044",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:44.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+            "by": "x"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "97a00acc84a13fd66c108becca9a404ad938e16dbe99384ac34ac0c16f63896c",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:44.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "malformed_signoff_expectation"
+      }
+    },
+    {
+      "case": "an expectation that is a string",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000045",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:45.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": "required"
+        },
+        "integrity": {
+          "canonicalDigest": "ecf50579b83eaeebe5ff77eaa29185d5dc217b33669f1985ef85686ac47599eb",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:45.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "malformed_signoff_expectation"
+      }
+    },
+    {
+      "case": "null, a session block (mode session), its assertion removed",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000058",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:58.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "be32a126ce65c093312b413f70906e1d536ea61216fff6ed865b2123e751a831",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:58.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "null, a session block (mode session), its assertion null",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000059",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:59.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "d0d7aaebc5cf3a00ca260473a5b7c46a3874b4e3dcba37684f58a3d29e87f82b",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": null,
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:59.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "null, a session block (mode session), its assertion a string",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000060",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:01:00.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "44f4f9818f7b57d8c57110be2e8259c8f9584cf2a47adca8cb92b52424aab266",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": "assertion",
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:01:00.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "null, a block carrying sessionSeq beside a batch statement, its assertion removed",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000061",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:01:01.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "077d768db5e8588923a859e6055c4c50f22aaeae5100753a815b5f9288bc8b3a",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "a0cc8349c039912a27a1b605e61e76c9299a82e0960f059be0c9a5af438cf173",
+              "treeSize": 2
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:01:01.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "null, a block carrying sessionSeq beside a batch statement, its assertion null",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000062",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:01:02.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "beed06edc5896c0d1d254543d8131a987e195d9dcb5eb1e2bd7049ee53881183",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": null,
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "a0cc8349c039912a27a1b605e61e76c9299a82e0960f059be0c9a5af438cf173",
+              "treeSize": 2
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:01:02.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "null, a block carrying sessionSeq beside a batch statement, its assertion a string",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000063",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:01:03.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "4445bbe003bf22711b92dbdbc52541235cf93719d6781bc1a0a3a3c7e4e694b7",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": "assertion",
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "batch",
+              "batchId": "9d2c7e41-0b6a-4f3d-8e5c-2a1b3c4d5e6f",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "merkleSpec": "rfc6962",
+              "root": "a0cc8349c039912a27a1b605e61e76c9299a82e0960f059be0c9a5af438cf173",
+              "treeSize": 2
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:01:03.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "policy, a session block (mode session), its assertion removed",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000064",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:01:04.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "1971b6626b8a0eba01400c2dadef6898ec71685cda799c926ab592a981eac328",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 1
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:01:04.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "policy, a session block (mode session), its assertion null",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000065",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:01:05.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "3d29637f6496c08148d828280f46cc24e65c8843561fe7515bff4842cac982e6",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": null,
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 1
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:01:05.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    },
+    {
+      "case": "policy, a session block (mode session), its assertion a string",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000066",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:01:06.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "0aac93d2b7c57f1039ffa8cfcd9e4b6c1f27c38106ff8c5885c400490cdd7ed2",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": "assertion",
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 1
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:01:06.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "valid": false,
+        "reason": "session_signoff_not_expected"
+      }
+    }
+  ],
+  "verifications": [
+    {
+      "case": "intact, nothing owed",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000050",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:50.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "1b803fc43a23f6ab5fe30f2511c631a4af4adb30862792e4cd39e9793dc52374",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:50.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": true,
+        "signoffExpectation": {
+          "valid": true
+        }
+      }
+    },
+    {
+      "case": "intact, { policyDigest } and no signature",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000051",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:51.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "869d071ec2877e1d1e18e9b43073c164c2551f8396fc7a07b9bfe1c9c1f9ce0d",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:51.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": true,
+        "signoffExpectation": {
+          "valid": null,
+          "reason": "signature_missing"
+        }
+      }
+    },
+    {
+      "case": "intact, a session sign-off moved to a record whose expectation is null",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000052",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:52.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "304d931980bf02b41c71cebccbcbb646f9fa2f0489b1ac8a144141c2ab56c37e",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:52.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": true,
+        "signoffExpectation": {
+          "valid": false,
+          "reason": "session_signoff_not_expected"
+        }
+      }
+    },
+    {
+      "case": "the expectation-downgrade tamper: { policyDigest } rewritten to null, no signature carried",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000053",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:53.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "c5977139c665a0b56eb1bd62891f66c1ce3a97cf529dd06b8a0ac05e954cee80",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:53.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": false,
+        "signoffExpectation": {
+          "valid": null,
+          "reason": "digest_invalid"
+        }
+      }
+    },
+    {
+      "case": "{ policyDigest } rewritten to null, the per-record signature still carried",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000054",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:54.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "5c774c249c7e6097cc591589e6a85cc7ad780dbadc4c1cc4e06e8e00720e1e53",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiX0xURHZUZ04tc1hIUGNTOV9wYzVCYnFfZG1LNV9PNDNDVThOZG0tRTAzRSIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:54.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": false,
+        "signoffExpectation": {
+          "valid": null,
+          "reason": "digest_invalid"
+        }
+      }
+    },
+    {
+      "case": "a session record whose expectation was rewritten to null, its sign-off still carried",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000055",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:55.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": null
+        },
+        "integrity": {
+          "canonicalDigest": "c8d8b3d27d50d1f68b442dedc9dd80b1fe72d92bdaf32c2aef2b8c27d771b795",
+          "chainLink": null
+        },
+        "nonRepudiation": {
+          "webauthnAssertion": {
+            "signature": "c2lnbmF0dXJl",
+            "credentialKeyId": "credential-1",
+            "algorithm": "ES256",
+            "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQXRjekpiLTdVTHZtblZQS1VvVHprSDBJSU1odzBQRV82eDJYRVpQUzd1cyIsIm9yaWdpbiI6Imh0dHBzOi8vZXhhbXBsZS50ZXN0In0"
+          },
+          "signoff": {
+            "statement": {
+              "v": "tzun-signoff/1",
+              "mode": "session",
+              "sessionId": "3b8f0c2e-5d1a-4c6e-9f2b-7a1d4e5c6b8a",
+              "signer": "user-17",
+              "signerName": "Sm9zw6kgw4FsdmFyZXo",
+              "meaning": "approval",
+              "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8",
+              "notBefore": "none",
+              "openedAt": "2026-09-26T09:00:00.000Z",
+              "maxAgeMs": 1800000,
+              "maxRecords": 50
+            },
+            "sessionSeq": 4
+          }
+        },
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:55.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": false,
+        "signoffExpectation": {
+          "valid": null,
+          "reason": "digest_invalid"
+        }
+      }
+    },
+    {
+      "case": "another payload member edited under the digest of a { policyDigest } record",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000056",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "rewritten",
+          "capturedAt": "2026-09-26T10:00:56.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null,
+          "signoffExpectation": {
+            "policyDigest": "da3e51b9be97d4e107f74bdb181c50484a68f20c23e7425c7c4b1a3083ce40b8"
+          }
+        },
+        "integrity": {
+          "canonicalDigest": "90909860da8eb43744c05f5a1693ae15d802fa9196fe3bb7f84d36ae867b1948",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:56.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": false,
+        "signoffExpectation": {
+          "valid": null,
+          "reason": "digest_invalid"
+        }
+      }
+    },
+    {
+      "case": "a record whose digest was computed without signoffExpectation",
+      "envelope": {
+        "envelopeVersion": "e1",
+        "payload": {
+          "evidenceId": "00000000-0000-4000-8000-000000000057",
+          "schemaVersion": "v1.0",
+          "aiSystemId": "vectors",
+          "aiOutput": {
+            "recommendation": "approve",
+            "score": 0.82
+          },
+          "humanAction": "approved",
+          "humanReason": "Reviewed",
+          "capturedAt": "2026-09-26T10:00:57.000Z",
+          "sequenceNumber": 1,
+          "aiBom": null
+        },
+        "integrity": {
+          "canonicalDigest": "8c6ebba89c2d41f2ad436d08dcb4554b000b444d678c665b58110b12dc0cc6c4",
+          "chainLink": null
+        },
+        "nonRepudiation": {},
+        "custodyChain": [
+          {
+            "timestamp": "2026-09-26T10:00:57.000Z",
+            "actor": "unknown",
+            "action": "decision_captured",
+            "systemId": "vectors"
+          }
+        ],
+        "attestationStatus": "none"
+      },
+      "expect": {
+        "verified": false,
+        "signoffExpectation": {
+          "valid": null,
+          "reason": "digest_invalid"
+        }
+      }
+    }
+  ]
+}
