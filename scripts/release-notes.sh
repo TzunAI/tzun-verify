@@ -36,7 +36,7 @@ $table
 
 For linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64: the binary \`tzun-verify_${version}_<os>_<arch>\` (\`.exe\` on Windows) and an archive holding it with README.md (\`.tar.gz\`; \`.zip\` on Windows). \`SHA256SUMS\` gives the SHA-256 of every file, and every file has a build provenance attestation.
 
-Every file was built on two machines from two clean checkouts of this tag, each machine building it twice, and every build agreed byte for byte. Anyone can rebuild them with \`scripts/release-artifacts.sh\` and compare (RELEASING.md).
+Every binary was built twice on each of two machines, from two clean checkouts of this tag, and every file (binaries and archives) was identical byte for byte across the two machines. Anyone can rebuild them with \`scripts/release-artifacts.sh\` and compare (RELEASING.md).
 
 ## Checking a download
 
@@ -47,7 +47,7 @@ gh attestation verify tzun-verify_${version}_linux_amd64.tar.gz --repo TzunAI/tz
   --source-ref refs/tags/v${version} --deny-self-hosted-runners
 \`\`\`
 
-README.md, "Install from a release", says more.
+README.md, "Install", says more, npm, pip and Homebrew included.
 
 ## SHA256SUMS
 

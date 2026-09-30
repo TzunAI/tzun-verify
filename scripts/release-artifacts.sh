@@ -12,7 +12,8 @@
 # <out-dir> must be empty or not exist. The version is the Version constant
 # of internal/cli: a release sets its version in source, so a rebuild of the
 # tagged tree reproduces the binary. With <tag>, nothing is built unless the
-# tag is v<version>.
+# tag is v<version>, the version is not a -dev one, HEAD is the tag's commit
+# (when the tag is here) and no tracked file has uncommitted changes.
 #
 # The files, for each target <os>/<arch> (RELEASING.md, which the npm, PyPI
 # and Homebrew packaging read):
@@ -54,9 +55,29 @@ if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
   echo "release-artifacts: internal/cli/cli.go sets no version of the form <major>.<minor>.<patch>[-<pre>] (read: '$version')" >&2
   exit 1
 fi
-if [[ -n "$tag" && "$tag" != "v$version" ]]; then
-  echo "release-artifacts: the tag is $tag, but internal/cli/cli.go sets Version $version (tag v$version)" >&2
-  exit 1
+if [[ -n "$tag" ]]; then
+  if [[ "$tag" != "v$version" ]]; then
+    echo "release-artifacts: the tag is $tag, but internal/cli/cli.go sets Version $version (tag v$version)" >&2
+    exit 1
+  fi
+  # A -dev version is main between two releases (RELEASING.md), never a
+  # release: every channel would publish it, and PyPI keeps a version forever.
+  if [[ "$version" == *-dev* ]]; then
+    echo "release-artifacts: $version is a development version, which is never released; tag a release version" >&2
+    exit 1
+  fi
+  # The files are made from the tree as it is on disk and dated by HEAD's
+  # commit, so a rebuild to compare with a release must be of the tag's
+  # commit, unchanged; otherwise SHA256SUMS would differ for that alone.
+  if git rev-parse -q --verify "refs/tags/$tag" >/dev/null &&
+    [[ "$(git rev-parse HEAD)" != "$(git rev-parse "refs/tags/$tag^{commit}")" ]]; then
+    echo "release-artifacts: HEAD is not the commit of the tag $tag" >&2
+    exit 1
+  fi
+  if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+    echo "release-artifacts: the tree has uncommitted changes; a release is built from its tag's commit as committed" >&2
+    exit 1
+  fi
 fi
 
 if ! tar --version 2>/dev/null | grep -q 'GNU tar'; then
