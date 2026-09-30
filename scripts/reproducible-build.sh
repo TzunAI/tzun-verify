@@ -16,7 +16,25 @@
 # Anyone can rebuild a release this way, on any machine with the pinned
 # toolchain, and compare the SHA-256 this prints with the published one (and
 # with CI's, which this script prints in the job log).
+#
+#   scripts/reproducible-build.sh [--out <dir>] [<goos>/<goarch> ...]
+#
+# With no target it builds linux/amd64. With --out, each target's binary,
+# once its two builds agree, is kept as <dir>/<goos>_<goarch>/tzun-verify
+# (tzun-verify.exe for windows); scripts/release-artifacts.sh makes a
+# release's files from them.
 set -euo pipefail
+
+out=""
+if [[ "${1:-}" == --out ]]; then
+  if [[ $# -lt 2 || -z "$2" ]]; then
+    echo "usage: scripts/reproducible-build.sh [--out <dir>] [<goos>/<goarch> ...]" >&2
+    exit 2
+  fi
+  mkdir -p "$2"
+  out="$(cd "$2" && pwd)"
+  shift 2
+fi
 cd "$(dirname "$0")/.."
 
 targets=("${@:-linux/amd64}")
@@ -47,6 +65,12 @@ for t in "${targets[@]}"; do
   two="$(sha256sum "$work/two-$goos-$goarch" | cut -d' ' -f1)"
   if [[ "$one" == "$two" ]]; then
     echo "OK   $t  $one  ($(go env GOVERSION))"
+    if [[ -n "$out" ]]; then
+      exe=tzun-verify
+      [[ "$goos" == windows ]] && exe=tzun-verify.exe
+      mkdir -p "$out/${goos}_$goarch"
+      cp "$work/one-$goos-$goarch" "$out/${goos}_$goarch/$exe"
+    fi
   else
     echo "FAIL $t  $one != $two"
     status=1
