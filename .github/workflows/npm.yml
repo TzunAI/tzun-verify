@@ -9,17 +9,20 @@ name: npm
 # (npm/stage.js), and each package is installed and run against the release
 # binary on the platform it is for (npm/test.js). Nothing is published.
 #
-# On a v* tag only, the publish job then stages the tested tarballs on npm
-# with trusted publishing: no token, and npm attaches the provenance of this
-# workflow run. It first requires the tag's GitHub release to be published,
-# its SHA256SUMS to equal the one built here, and every packaged binary to
-# carry the release workflow's attestation; while the release is still a
-# draft it stops there, and is re-run once the release is published. A
-# staged package becomes public only when a maintainer approves it on npm
-# with two-factor authentication (npm/README.md, "Publishing").
+# On a v* tag of a public repository only, the publish job then stages the
+# tested tarballs on npm with trusted publishing: no token, and npm attaches
+# the provenance of this workflow run. It waits for a reviewer in the npm
+# environment, then requires the tag's GitHub release to be published (an
+# anonymous download of its SHA256SUMS, which a draft never serves), that
+# SHA256SUMS to equal the one built here, and every packaged binary to carry
+# the release workflow's attestation; while the release is still a draft it
+# stops there, and is re-run once the release is published. A staged package
+# becomes public only when a maintainer approves it on npm with two-factor
+# authentication (npm/README.md, "Publishing").
 on:
   pull_request:
-    branches: [main]
+    # A pull request into main, or into a release branch it is stacked on.
+    branches: [main, 'release/**']
     paths:
       - 'npm/**'
       - '.github/workflows/npm.yml'
@@ -103,7 +106,8 @@ jobs:
             ${{ runner.temp }}/packages/*.tgz
             ${{ runner.temp }}/packages/publish-order.txt
           if-no-files-found: error
-          retention-days: 7
+          # As long as a publish job may be re-run after the tag's run.
+          retention-days: 30
 
       - name: Keep the binaries and SHA256SUMS
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -115,7 +119,8 @@ jobs:
             !${{ runner.temp }}/dist/*.tar.gz
             !${{ runner.temp }}/dist/*.zip
           if-no-files-found: error
-          retention-days: 7
+          # As long as a publish job may be re-run after the tag's run.
+          retention-days: 30
 
   test:
     name: install and run (${{ matrix.runner }})
@@ -162,7 +167,9 @@ jobs:
   publish:
     name: stage on npm
     needs: [pack, test]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # A public repository only: the release workflow attests, and the
+    # release download below is anonymous, only there.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && !github.event.repository.private
     # Trusted publishing works from GitHub-hosted runners only.
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -202,13 +209,17 @@ jobs:
           path: ${{ runner.temp }}/dist
 
       - name: The release is published, with the SHA256SUMS built here
-        # A draft release has no download: while the release is a draft this
-        # step fails, and nothing is staged.
-        env:
-          GH_TOKEN: ${{ github.token }}
+        # The download is anonymous, from the release's public URL, which
+        # serves nothing while the release is a draft, whatever this job's
+        # token may read: until a person publishes the release this step
+        # fails, and nothing is staged.
         run: |
-          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --pattern SHA256SUMS --dir "$RUNNER_TEMP/release"
+          mkdir -p "$RUNNER_TEMP/release"
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/SHA256SUMS"
+          if ! curl -fsSL --retry 3 -o "$RUNNER_TEMP/release/SHA256SUMS" "$url"; then
+            echo "no SHA256SUMS at $url: the release $GITHUB_REF_NAME is not published" >&2
+            exit 1
+          fi
           diff -u "$RUNNER_TEMP/release/SHA256SUMS" "$RUNNER_TEMP/dist/SHA256SUMS"
 
       - name: Each packaged binary is a release file, attested

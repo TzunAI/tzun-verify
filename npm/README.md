@@ -85,11 +85,13 @@ while it is not.
 
 On a `v<version>` tag, `npm.yml` builds the release files again (the build
 is reproducible), makes and tests the packages on every platform, and then
-its `publish` job:
+its `publish` job, which runs only while the repository is public, waits for
+a reviewer in the `npm` environment and:
 
-1. requires the tag's GitHub release to be **published**: while it is a
-   draft it has nothing to download, and the job stops before staging
-   anything;
+1. requires the tag's GitHub release to be **published**: it downloads the
+   release's `SHA256SUMS` anonymously from the release's public URL, where a
+   draft serves nothing whatever token the job holds, so while the release
+   is a draft the job stops before staging anything;
 2. requires the release's `SHA256SUMS` to be the one built here, line for
    line, and each packaged binary to be listed in it and to pass
    `gh attestation verify` against the release workflow's attestation for
@@ -107,10 +109,11 @@ package is not there yet.
 So a release, after RELEASING.md's steps, is:
 
 1. Publish the GitHub release (RELEASING.md, step 5).
-2. On the tag's run of the `npm` workflow, **Re-run all jobs**; its first run
-   stopped at the draft. (With required reviewers on the `npm` environment,
-   the `publish` job waits for a reviewer instead: approve it once the
-   release is published.)
+2. On the tag's run of the `npm` workflow, approve the `publish` job waiting
+   for the `npm` environment. Approved before the release was published, it
+   stops at its first check: re-run it once the release is published. The
+   run's tarballs and binaries are kept for 30 days; after that, **Re-run all
+   jobs** builds them again.
 3. Approve the six staged packages on npm, `tzun-verify` last.
 
 If staging stops part way, reject what was staged (`npm stage reject`)
@@ -127,8 +130,11 @@ before running it again.
   environment `npm`, and allowed to stage only, not to publish. Then, under
   the package's publishing access, require two-factor authentication and
   disallow tokens.
-- **The `npm` environment** in the repository's settings: deployments from
-  tags matching `v*` only. Required reviewers are optional (step 2 above).
+- **The `npm` environment** in the repository's settings, created **before
+  the first tag is pushed**: required reviewers (the people who publish
+  releases) and deployments from tags matching `v*` only. GitHub creates an
+  environment a job names when it does not exist, with no protection rules,
+  and the `publish` job would then stage without waiting for anyone.
 
 npm attaches provenance only for packages published from a public
 repository, and GitHub attests the release files only for a public

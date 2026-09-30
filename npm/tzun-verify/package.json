@@ -2,7 +2,7 @@
   "name": "tzun-verify",
   "version": "0.0.0",
   "private": true,
-  "description": "The standalone verifier for Tzun DEO proof bundles: checks a record's b1 proof bundle offline, without Tzun code and without asking Tzun.",
+  "description": "Standalone verifier for Tzun DEO proof bundles",
   "keywords": [
     "tzun",
     "verifier",
