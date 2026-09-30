@@ -1,0 +1,70 @@
+# Written by packaging/homebrew/render-formula.sh in the tzun-verify
+# repository, from the release's SHA256SUMS: a change belongs there.
+class TzunVerify < Formula
+  desc "Offline verifier for Tzun b1 proof bundles"
+  homepage "https://github.com/TzunAI/tzun-verify"
+  version "@VERSION@"
+
+  livecheck do
+    url :stable
+    strategy :github_latest
+  end
+
+  on_macos do
+    on_arm do
+      url "@URL_BASE@/tzun-verify_@VERSION@_darwin_arm64.tar.gz"
+      sha256 "@SHA256_DARWIN_ARM64@"
+    end
+    on_intel do
+      url "@URL_BASE@/tzun-verify_@VERSION@_darwin_amd64.tar.gz"
+      sha256 "@SHA256_DARWIN_AMD64@"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "@URL_BASE@/tzun-verify_@VERSION@_linux_arm64.tar.gz"
+      sha256 "@SHA256_LINUX_ARM64@"
+    end
+    on_intel do
+      url "@URL_BASE@/tzun-verify_@VERSION@_linux_amd64.tar.gz"
+      sha256 "@SHA256_LINUX_AMD64@"
+    end
+  end
+
+  def install
+    bin.install "tzun-verify"
+  end
+
+  test do
+    assert_equal "tzun-verify #{version}", shell_output("#{bin}/tzun-verify --version").lines.first.chomp
+
+    # A bundle of the b1 conformance corpus, unanchored-pending-stripped: a
+    # record with its RFC 3161 timestamp and no anchor, and the root of the
+    # corpus's test timestamping authority.
+    (testpath/"bundle.json").write <<~EOS
+      @TEST_BUNDLE@
+    EOS
+    (testpath/"root.pem").write <<~EOS
+      @TEST_ROOT@
+    EOS
+
+    # With that root, every check the record holds is correct: exit 0.
+    report = JSON.parse(shell_output("#{bin}/tzun-verify --json --tsa-roots root.pem bundle.json"))
+    assert_equal "tzun-verify-report/1", report["reportVersion"]
+    assert_equal 0, report["summary"]["outcomes"]["checked-wrong"]
+    assert_equal "ts.record.trust", report["summary"]["existedBy"]["check"]
+
+    # Without it, the timestamp's trust is not checked: exit 4.
+    assert_match "ts.record.trust", shell_output("#{bin}/tzun-verify bundle.json", 4)
+
+    # A regime that requires an anchor is not met: exit 3.
+    shell_output("#{bin}/tzun-verify --tsa-roots root.pem --require anchor bundle.json", 3)
+
+    # The record's payload changed after capture: exit 1.
+    tampered = (testpath/"bundle.json").read.sub('"humanAction": "approved"', '"humanAction": "rejected"')
+    refute_equal (testpath/"bundle.json").read, tampered
+    (testpath/"tampered.json").write tampered
+    assert_match "digest_mismatch", shell_output("#{bin}/tzun-verify --tsa-roots root.pem tampered.json", 1)
+  end
+end

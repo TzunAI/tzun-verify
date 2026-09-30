@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/octo-sts/app/refs/heads/main/pkg/octosts/octosts.TrustPolicy.json
+#
+# The trust policy of the tap repository, for octo-sts: it goes in the tap at
+# .github/chainguard/tzun-verify-release.sts.yaml (packaging/homebrew/README.md,
+# "Publishing to the tap"). It lets exactly one job mint a token for the tap:
+# the publish job of tzun-verify's .github/workflows/homebrew.yml, run for a
+# final release tag by a push, on a GitHub-hosted runner, in the homebrew-tap
+# environment whose reviewers approved it. The token may push a branch and open
+# a pull request, and lives until the job ends.
+#
+# Every pattern is matched against the whole claim. The ids are those of the
+# repository and of its owner, so a repository recreated under the same name
+# matches nothing.
+issuer: https://token.actions.githubusercontent.com
+subject: repo:TzunAI/tzun-verify:environment:homebrew-tap
+claim_pattern:
+  repository_id: "1391574237"
+  repository_owner_id: "288229698"
+  job_workflow_ref: TzunAI/tzun-verify/\.github/workflows/homebrew\.yml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+
+  ref: refs/tags/v[0-9]+\.[0-9]+\.[0-9]+
+  event_name: push
+  runner_environment: github-hosted
+permissions:
+  contents: write
+  pull_requests: write

@@ -1,0 +1,157 @@
+name: Homebrew
+
+# The Homebrew formula (packaging/homebrew/README.md).
+#
+# formula: on a pull request that changes the formula or what it is made
+# from, and on a release tag, the release files are built as the release
+# workflow builds them, and the formula, rendered for them with file:// URLs,
+# is installed and tested in Homebrew's own container. It publishes nothing.
+#
+# publish: on the tag of a final release only, once the tap is set up (the
+# repository variable BREW_TAP_REPO names it) and the homebrew-tap
+# environment's reviewers have approved the job, which they do after
+# publishing the draft release. It checks the published files against
+# SHA256SUMS, their attested provenance and this run's own build, renders the
+# formula for them, installs and tests it, and opens a pull request of it in
+# the tap with a token minted from the job's OIDC token. No job holds a
+# long-lived secret.
+on:
+  pull_request:
+    # A pull request into any branch, so one stacked on another runs too.
+    paths:
+      - 'packaging/homebrew/**'
+      - '.github/workflows/homebrew.yml'
+      - 'scripts/release-artifacts.sh'
+      - 'scripts/reproducible-build.sh'
+      - 'testdata/vectors/bundle-b1/unanchored-pending-stripped/**'
+    # The formula job skips while the pull request is a draft, as ci.yml's
+    # check job does; ready_for_review starts it.
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A new push supersedes a pull request's run; a release tag's runs to the end.
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  # The toolchain go.mod pins, never a download of another.
+  GOTOOLCHAIN: local
+
+jobs:
+  formula:
+    name: build, install and test the formula
+    if: ${{ !github.event.pull_request.draft }}
+    # GitHub-hosted: the test runs Homebrew's image under docker, and the
+    # release files need GNU tar and zip.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.1'
+          # As in the release workflow: no cache another run wrote.
+          cache: false
+
+      - name: Toolchain is the pinned one
+        run: |
+          want="go$(sed -n 's/^toolchain go//p' go.mod)"
+          got="$(go env GOVERSION)"
+          echo "go.mod pins $want; runner has $got"
+          test "$got" = "$want"
+
+      - name: Build the release files
+        # On a tag, scripts/release-artifacts.sh refuses one other than
+        # v<Version>, as in the release workflow.
+        run: |
+          tag=()
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then tag=("$GITHUB_REF_NAME"); fi
+          scripts/release-artifacts.sh "$RUNNER_TEMP/release" "${tag[@]}"
+
+      - name: Install and test the formula
+        run: packaging/homebrew/test-formula.sh --local "$RUNNER_TEMP/release"
+
+      - name: Keep this build's SHA256SUMS for the publish job
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: homebrew-sha256sums
+          path: ${{ runner.temp }}/release/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: propose the formula to the tap
+    needs: formula
+    # A push of a final release's tag (a version with a "-" is a pre-release,
+    # which the tap does not carry), once the tap is set up.
+    if: >-
+      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+      && !contains(github.ref_name, '-') && vars.BREW_TAP_REPO != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Its reviewers approve the job once the release is published. The tap's
+    # trust policy (packaging/homebrew/tzun-verify-release.sts.yaml) grants a
+    # token to this job only in this environment.
+    environment: homebrew-tap
+    permissions:
+      contents: read
+      # Reading the attestations of the release files.
+      attestations: read
+      # The OIDC token octo-sts exchanges for the tap's token.
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch this run's SHA256SUMS
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: homebrew-sha256sums
+          path: ${{ runner.temp }}/built
+
+      - name: The published files, checked against SHA256SUMS and their provenance
+        # Fails until the draft release is published and the repository is
+        # public: the download is anonymous, as brew's is.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: packaging/homebrew/fetch-release.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/release"
+
+      - name: The published SHA256SUMS is this run's own build's
+        run: diff -u "$RUNNER_TEMP/built/SHA256SUMS" "$RUNNER_TEMP/release/SHA256SUMS"
+
+      - name: Render the formula
+        run: |
+          packaging/homebrew/render-formula.sh "${GITHUB_REF_NAME#v}" "$RUNNER_TEMP/release/SHA256SUMS" \
+            >"$RUNNER_TEMP/tzun-verify.rb"
+          cat "$RUNNER_TEMP/tzun-verify.rb"
+
+      - name: Install and test it from the published release
+        run: packaging/homebrew/test-formula.sh --online "$RUNNER_TEMP/tzun-verify.rb"
+
+      - name: A token for the tap, from this job's OIDC token
+        id: tap-token
+        uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05 # v1.1.1
+        with:
+          scope: ${{ github.repository_owner }}/${{ vars.BREW_TAP_REPO }}
+          identity: tzun-verify-release
+
+      - name: Open the pull request in the tap
+        env:
+          GH_TOKEN: ${{ steps.tap-token.outputs.token }}
+          TAP: ${{ github.repository_owner }}/${{ vars.BREW_TAP_REPO }}
+        run: packaging/homebrew/propose-to-tap.sh "$TAP" "${GITHUB_REF_NAME#v}" "$RUNNER_TEMP/tzun-verify.rb"
