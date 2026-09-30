@@ -1,0 +1,243 @@
+name: npm
+
+# The npm packages (npm/README.md): tzun-verify, a launcher, and one package
+# per release target that holds the target's release binary.
+#
+# On a pull request that changes them or the release build, and on a v* tag:
+# the release files are built as a release builds them
+# (scripts/release-artifacts.sh), the packages are made from them and packed
+# (npm/stage.js), and each package is installed and run against the release
+# binary on the platform it is for (npm/test.js). Nothing is published.
+#
+# On a v* tag only, the publish job then stages the tested tarballs on npm
+# with trusted publishing: no token, and npm attaches the provenance of this
+# workflow run. It first requires the tag's GitHub release to be published,
+# its SHA256SUMS to equal the one built here, and every packaged binary to
+# carry the release workflow's attestation; while the release is still a
+# draft it stops there, and is re-run once the release is published. A
+# staged package becomes public only when a maintainer approves it on npm
+# with two-factor authentication (npm/README.md, "Publishing").
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'npm/**'
+      - '.github/workflows/npm.yml'
+      - 'scripts/release-artifacts.sh'
+      - 'scripts/reproducible-build.sh'
+    # As in ci.yml: nothing runs while the pull request is a draft.
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    tags: ['v*']
+
+# Each job asks for what it needs and nothing else.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A new push supersedes a pull request's run; a tag's run is never cancelled.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # The toolchain go.mod pins, never a download of another.
+  GOTOOLCHAIN: local
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  pack:
+    name: build the binaries and pack the npm packages
+    if: ${{ !github.event.pull_request.draft }}
+    # The same runner choice as ci.yml's check job.
+    runs-on: ${{ github.event.repository.private && fromJSON(vars.TZUN_RUNNER_LABELS || '"ubuntu-latest"') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.1'
+          # As in release.yml: what may be published reads no cache another
+          # run wrote.
+          cache: false
+
+      - name: Toolchain is the pinned one
+        run: |
+          want="go$(sed -n 's/^toolchain go//p' go.mod)"
+          got="$(go env GOVERSION)"
+          echo "go.mod pins $want; runner has $got"
+          test "$got" = "$want"
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Build the release files
+        # On a tag, release-artifacts.sh refuses a tag other than v<Version>.
+        env:
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: scripts/release-artifacts.sh "$RUNNER_TEMP/dist" ${TAG:+"$TAG"}
+
+      - name: Make and pack the npm packages
+        # Every binary checked against SHA256SUMS; on a tag, the version must
+        # be the tag's.
+        env:
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: node npm/stage.js "$RUNNER_TEMP/dist" "$RUNNER_TEMP/packages" ${TAG:+"${TAG#v}"}
+
+      - name: Keep the tarballs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-packages
+          path: |
+            ${{ runner.temp }}/packages/*.tgz
+            ${{ runner.temp }}/packages/publish-order.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Keep the binaries and SHA256SUMS
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-binaries
+          path: |
+            ${{ runner.temp }}/dist/SHA256SUMS
+            ${{ runner.temp }}/dist/tzun-verify_*
+            !${{ runner.temp }}/dist/*.tar.gz
+            !${{ runner.temp }}/dist/*.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  test:
+    name: install and run (${{ matrix.runner }})
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        # While the repository is not public, one run on the runner ci.yml's
+        # check job uses; once it is public, one GitHub-hosted runner for
+        # each platform package: linux-x64, linux-arm64, darwin-x64,
+        # darwin-arm64, win32-x64.
+        runner: ${{ fromJSON(github.event.repository.private && '["private"]' || '["ubuntu-latest", "ubuntu-24.04-arm", "macos-15-intel", "macos-latest", "windows-latest"]') }}
+    runs-on: ${{ matrix.runner == 'private' && fromJSON(vars.TZUN_RUNNER_LABELS || '"ubuntu-latest"') || matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Fetch the tarballs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-packages
+          path: ${{ runner.temp }}/packages
+
+      - name: Fetch the binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-binaries
+          path: ${{ runner.temp }}/dist
+
+      - name: Install the packages and compare them with the release binary
+        run: node npm/test.js "$RUNNER_TEMP/packages" "$RUNNER_TEMP/dist"
+
+  publish:
+    name: stage on npm
+    needs: [pack, test]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # Trusted publishing works from GitHub-hosted runners only.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # npm trusts this workflow in this environment only (npm/README.md).
+    environment: npm
+    permissions:
+      contents: read
+      attestations: read
+      # The OIDC token npm exchanges for a publish, and signs provenance with.
+      id-token: write
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: npm can stage packages
+        # npm stage publish needs npm 11.15.0 or later.
+        run: |
+          npm --version
+          node -e '
+            const [a, b, c] = process.argv[1].split(".").map(Number);
+            if (a * 1e6 + b * 1e3 + c < 11015000) { console.error("npm " + process.argv[1] + " is older than 11.15.0"); process.exit(1); }
+          ' "$(npm --version)"
+
+      - name: Fetch the tarballs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-packages
+          path: ${{ runner.temp }}/packages
+
+      - name: Fetch the binaries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-binaries
+          path: ${{ runner.temp }}/dist
+
+      - name: The release is published, with the SHA256SUMS built here
+        # A draft release has no download: while the release is a draft this
+        # step fails, and nothing is staged.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --pattern SHA256SUMS --dir "$RUNNER_TEMP/release"
+          diff -u "$RUNNER_TEMP/release/SHA256SUMS" "$RUNNER_TEMP/dist/SHA256SUMS"
+
+      - name: Each packaged binary is a release file, attested
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          while read -r tarball; do
+            [ "$tarball" = "tzun-verify-$version.tgz" ] && continue
+            dir="$RUNNER_TEMP/check/${tarball%.tgz}"
+            mkdir -p "$dir"
+            tar -xzf "$RUNNER_TEMP/packages/$tarball" -C "$dir"
+            bin="$(find "$dir/package/bin" -type f)"
+            sum="$(sha256sum "$bin" | cut -d' ' -f1)"
+            line="$(grep "^$sum  tzun-verify_${version}_" "$RUNNER_TEMP/release/SHA256SUMS")"
+            echo "$tarball: $line"
+            gh attestation verify "$bin" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
+              --source-ref "$GITHUB_REF" --deny-self-hosted-runners
+          done <"$RUNNER_TEMP/packages/publish-order.txt"
+
+      - name: Stage the packages on npm
+        # The platform packages first and tzun-verify last
+        # (publish-order.txt), with provenance. Each waits for a maintainer's
+        # approval on npm.
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          tag=latest
+          if [[ "$version" == *-* ]]; then tag=next; fi
+          while read -r tarball; do
+            npm stage publish "$RUNNER_TEMP/packages/$tarball" --tag "$tag" --access public --provenance
+          done <"$RUNNER_TEMP/packages/publish-order.txt"

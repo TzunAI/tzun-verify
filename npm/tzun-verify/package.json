@@ -1,0 +1,31 @@
+{
+  "name": "tzun-verify",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The standalone verifier for Tzun DEO proof bundles: checks a record's b1 proof bundle offline, without Tzun code and without asking Tzun.",
+  "keywords": [
+    "tzun",
+    "verifier",
+    "proof bundle",
+    "transparency log",
+    "merkle",
+    "rfc3161"
+  ],
+  "homepage": "https://github.com/TzunAI/tzun-verify#readme",
+  "bugs": "https://github.com/TzunAI/tzun-verify/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TzunAI/tzun-verify.git",
+    "directory": "npm/tzun-verify"
+  },
+  "bin": {
+    "tzun-verify": "bin/tzun-verify.js"
+  },
+  "files": [
+    "bin/tzun-verify.js"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {}
+}
