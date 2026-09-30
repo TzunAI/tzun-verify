@@ -163,9 +163,55 @@ anchor (`--require anchor.newer` when the record's envelope does not hold
 its artifact yet), and `--require ts.record.trust` when it needs the
 record's own timestamp trusted.
 
+## Install from a release
+
+Each release is a `v<version>` tag, and its GitHub release holds, for
+linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64:
+
+- the binary, `tzun-verify_<version>_<os>_<arch>` (`.exe` on Windows);
+- an archive holding it, named `tzun-verify`, with this README:
+  `tzun-verify_<version>_<os>_<arch>.tar.gz` (`.zip` on Windows);
+
+one `SHA256SUMS` over every file, and a build provenance attestation (GitHub
+artifact attestations) for every file. RELEASING.md lists the names. A
+release's notes list the specification versions it implements.
+
+Download the archive for your platform and `SHA256SUMS`, check the archive
+against `SHA256SUMS` and against its attestation, then unpack it:
+
+```
+v=0.1.0 p=linux_amd64      # or linux_arm64, darwin_amd64, darwin_arm64
+base=https://github.com/TzunAI/tzun-verify/releases/download/v$v
+curl -fsSLO "$base/tzun-verify_${v}_$p.tar.gz"
+curl -fsSLO "$base/SHA256SUMS"
+grep " tzun-verify_${v}_$p.tar.gz\$" SHA256SUMS | sha256sum --check   # macOS: shasum -a 256 --check
+gh attestation verify "tzun-verify_${v}_$p.tar.gz" --repo TzunAI/tzun-verify \
+  --signer-workflow TzunAI/tzun-verify/.github/workflows/release.yml \
+  --source-ref "refs/tags/v$v" --deny-self-hosted-runners
+tar -xzf "tzun-verify_${v}_$p.tar.gz" tzun-verify
+./tzun-verify --version
+```
+
+- `sha256sum --check` prints `OK` when the file is the one `SHA256SUMS`
+  names. On Windows, compare `(Get-FileHash tzun-verify_<version>_windows_amd64.zip).Hash`
+  in PowerShell with its line in `SHA256SUMS`, ignoring case.
+- `gh attestation verify` (the GitHub CLI, logged in) checks that GitHub
+  signed a provenance attestation for exactly these bytes, made by this
+  repository's release workflow from the tag `v<version>` on a
+  GitHub-hosted runner. It reads the attestation from GitHub; `SHA256SUMS`
+  alone only shows the download matches the release page.
+- The bare binaries check the same way; they need `chmod +x` before they
+  run.
+
+Every file can also be rebuilt: on a clean checkout of the tag, with the
+pinned toolchain, GNU tar, gzip and zip, `scripts/release-artifacts.sh
+"$(mktemp -d)/dist" v<version>` writes the release's files and a
+`SHA256SUMS` that must equal the release's, line for line.
+
 ## How to run it
 
-Build it with the pinned toolchain (go.mod: Go 1.27.1) and the release flags:
+To build it yourself instead, use the pinned toolchain (go.mod: Go 1.27.1) and
+the release flags:
 
 ```
 CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags purego -o tzun-verify ./cmd/tzun-verify
@@ -358,7 +404,13 @@ Its correctness does not rest on reading the Go:
    spec.tzun.ai among them (`.github/workflows/public-hygiene.yml`; `scripts/test-public-hygiene.sh`
    tests the check itself). `git config core.hooksPath .githooks` runs it on
    each commit message before the commit is made.
-9. **Planned:** signed release provenance and an external security review.
+9. **Release provenance.** `.github/workflows/release.yml` builds every
+   release file on two machines from two clean checkouts of the tag, each
+   build itself made twice by `scripts/reproducible-build.sh`, and stops the
+   release on any byte difference. Every file is listed in `SHA256SUMS` and
+   has a GitHub build provenance attestation (Install from a release;
+   RELEASING.md).
+10. **Planned:** an external security review.
 
 ## Choices this build makes
 
@@ -394,7 +446,7 @@ internal/report     outcomes, the report, the text output and exit codes
 internal/corpus     the conformance vector runner and spec-derived cases (tests only)
 internal/testpki    a throwaway RFC 3161 PKI and token builder (tests only)
 publishers          the pinned publisher manifest
-scripts             CI, release-gate and public-hygiene scripts
+scripts             CI, release-gate, release and public-hygiene scripts
 .githooks           the commit-message hook of the public-hygiene check
 testdata/vectors    the pinned copy of the conformance vectors 1.0 (Specs §5)
 ```
