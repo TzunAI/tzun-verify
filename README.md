@@ -202,6 +202,22 @@ passes `--allow-unchecked=${ALLOW:-false}` stops instead of failing open.
 **The manifest pinned in this build is empty.** Every EVM publication reads
 NOT CHECKED, `no_expectation:publisher`, unless you pass `--publishers`.
 
+### In a browser
+
+`web/` is a static page that runs this verifier, compiled to WebAssembly
+(`cmd/tzun-verify-wasm`), in the browser: the auditor drops a bundle and
+gets the report, and the bundle never leaves the machine. The page turns the
+auditor's choices into the flags above and hands them, with the bytes of
+every file they name, to the command itself (`cli.RunBytes`), so the rows,
+the report and the exit code are the command's. It shows the equivalent
+command line, every row with its outcome, reason and the sections it cites,
+and the exit code's meaning. The one request it makes after loading is to the
+Ethereum endpoint the auditor names, which it states before any is sent;
+offline, it checks everything but the on-chain lookup. It has no third-party
+script, no analytics and a strict Content-Security-Policy. `web/build.sh`
+builds it and `web/serve.sh` serves it on 127.0.0.1; `web/README.md` has the
+details. Where it will be hosted is not decided yet.
+
 ## What it prints
 
 This build, offline, on a record anchored on a local test chain in the
@@ -352,13 +368,20 @@ Its correctness does not rest on reading the Go:
 7. **The release gate.** `scripts/release-gate.sh` runs on every `v*` tag,
    and anyone can run it on a clone: the reproducible build for every target
    a release publishes, and every mutation killed.
-8. **Public hygiene.** `scripts/check-public-hygiene.sh` checks that the
+8. **The WebAssembly build.** CI runs the whole suite, the corpus runner
+   included, compiled to WebAssembly in Node.js, and
+   `internal/corpus/bytes_test.go` requires the browser page's entry point
+   (`cli.RunBytes`) to print the command's report and text byte for byte on
+   every b1 case (checkedAt aside). The page's own Playwright test
+   (`web/test`) drives it on corpus cases offline and against a JSON-RPC
+   node answered from a case's header source.
+9. **Public hygiene.** `scripts/check-public-hygiene.sh` checks that the
    tree, every commit message and every pull request's title and body refer
    only to this repository and to public places, the specification at
    spec.tzun.ai among them (`.github/workflows/public-hygiene.yml`; `scripts/test-public-hygiene.sh`
    tests the check itself). `git config core.hooksPath .githooks` runs it on
    each commit message before the commit is made.
-9. **Planned:** signed release provenance and an external security review.
+10. **Planned:** signed release provenance and an external security review.
 
 ## Choices this build makes
 
@@ -380,7 +403,8 @@ choice to the verifier, this build makes these:
 
 ```
 cmd/tzun-verify      the command's entry point
-internal/cli        the flags, the inputs they build and the text report
+cmd/tzun-verify-wasm the command compiled to WebAssembly, for the browser page
+internal/cli        the flags, the inputs they build and the text report; RunBytes, the command on bytes
 internal/jsonv      strict JSON reading
 internal/canonical  the DEO v1.0 canonical serializer, record digest, chain link
 internal/merkle     RFC 6962 proofs through transparency-dev/merkle
@@ -396,5 +420,6 @@ internal/testpki    a throwaway RFC 3161 PKI and token builder (tests only)
 publishers          the pinned publisher manifest
 scripts             CI, release-gate and public-hygiene scripts
 .githooks           the commit-message hook of the public-hygiene check
+web                 the browser page, its local build, server and Playwright test
 testdata/vectors    the pinned copy of the conformance vectors 1.0 (Specs §5)
 ```

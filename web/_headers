@@ -1,0 +1,12 @@
+# The page's response headers, in the _headers format static hosts read.
+# The Content-Security-Policy is the one index.html states in its meta tag,
+# with frame-ancestors, which a meta tag cannot carry. connect-src allows
+# https: and a local node because the auditor names the Ethereum endpoint;
+# nothing else on the page makes a request. web/serve.mjs sends these too.
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'; frame-ancestors 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
