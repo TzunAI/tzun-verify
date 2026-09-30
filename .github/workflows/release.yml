@@ -1,10 +1,11 @@
 name: Release
 
-# On a v* tag only: every target built on two machines from two clean
-# checkouts, each build itself made twice (scripts/release-artifacts.sh, over
-# scripts/reproducible-build.sh); the job before the release refuses any
-# byte difference, then attests each file's build provenance, and the last
-# job puts the files, SHA256SUMS and the notes in a draft release. Nothing is
+# On a v* tag only: the release files made on two machines from two clean
+# checkouts (scripts/release-artifacts.sh), each machine building every
+# binary twice (scripts/reproducible-build.sh); the job before the release
+# refuses any byte difference between the two machines' files, binaries and
+# archives, then attests each file's build provenance, and the last job puts
+# the files, SHA256SUMS and the notes in a draft release. Nothing is
 # published until a person publishes the draft (RELEASING.md). ci.yml runs
 # the checks and the release gate on the same tag.
 on:
