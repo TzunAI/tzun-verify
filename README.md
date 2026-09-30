@@ -170,7 +170,47 @@ anchor (`--require anchor.newer` when the record's envelope does not hold
 its artifact yet), and `--require ts.record.trust` when it needs the
 record's own timestamp trusted.
 
-## Install from a release
+## Install
+
+Every way of installing tzun-verify installs the same file: a release's
+binary for the platform, byte for byte. None of them builds anything.
+
+| Way | Command | Platforms |
+|---|---|---|
+| A GitHub release | download, check and unpack the archive (below) | Linux x86_64 and arm64, macOS 13 or later on Intel and Apple silicon, Windows x86_64 |
+| npm (Node.js 18 or later) | `npx tzun-verify record-42.json`, or `npm install -g tzun-verify` | the same |
+| pip (Python 3.10 or later) | `pip install tzun-verify` (or `pipx install tzun-verify`, `uv tool install tzun-verify`) | the same |
+| Homebrew | `brew install` from the TzunAI organisation's tap | macOS 13 or later and Linux, x86_64 and arm64 |
+
+- **npm**: the `tzun-verify` package is a small launcher. npm installs, with
+  it, the one package that holds the binary for the machine
+  (`tzun-verify-linux-x64`, `tzun-verify-linux-arm64`,
+  `tzun-verify-darwin-x64`, `tzun-verify-darwin-arm64`,
+  `tzun-verify-win32-x64`), and the launcher runs that binary with the same
+  arguments, streams and exit code. No package has an install script, and
+  nothing is downloaded at run time.
+- **pip**: each wheel carries the binary for its platform and installs it as
+  the `tzun-verify` command. `import tzun_verify` gives
+  `tzun_verify.verify(path, **options)`, which runs it with `--json` and
+  returns the report and the exit code; nothing is verified in Python.
+- **Homebrew**: the formula installs the release's archive for the platform,
+  with the SHA-256 its `SHA256SUMS` gives, and its `brew test` runs one case
+  of the conformance corpus. The tap is not set up yet; once it is, this
+  section gives its `brew install` line.
+
+Each package's version is the release's (PyPI spells a pre-release its own
+way: `0.2.0-rc.1` is `0.2.0rc1`). Before any of them is published, the
+workflow that publishes it downloads the published release's `SHA256SUMS`,
+requires every file it ships to be one listed there, and checks that file's
+build provenance attestation (below) with `gh attestation verify`.
+RELEASING.md says which of them carries which release.
+
+The macOS binaries are not notarized. A file downloaded with a web browser
+is quarantined by Gatekeeper and will not open until the quarantine is
+removed (`xattr -d com.apple.quarantine tzun-verify`); curl, npm, pip and
+brew do not quarantine what they download.
+
+### From a GitHub release
 
 Each release is a `v<version>` tag, and its GitHub release holds, for
 linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64:
@@ -449,12 +489,13 @@ Its correctness does not rest on reading the Go:
    `scripts/third-party-licenses.sh --check` fails it if
    `third_party/LICENSE-THIRD-PARTY` no longer holds the licences of the
    modules a release links (License, below).
-10. **Release provenance.** `.github/workflows/release.yml` builds every
-   release file on two machines from two clean checkouts of the tag, each
-   build itself made twice by `scripts/reproducible-build.sh`, and stops the
-   release on any byte difference. Every file is listed in `SHA256SUMS` and
-   has a GitHub build provenance attestation (Install from a release;
-   RELEASING.md).
+10. **Release provenance.** `.github/workflows/release.yml` makes every
+   release file on two machines, from two clean checkouts of the tag, and
+   stops the release unless every file, binaries and archives, is identical
+   byte for byte across the two. On each machine
+   `scripts/reproducible-build.sh` builds every binary twice and requires
+   the two builds to agree. Every file is listed in `SHA256SUMS` and has a
+   GitHub build provenance attestation ("Install"; RELEASING.md).
 11. **Planned:** an external security review.
 
 ## Choices this build makes
