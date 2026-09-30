@@ -67,7 +67,7 @@ catches prefixed-name "the $t-widgets repository"
 catches prefixed-name "import $t""_widgets"
 catches prefixed-name "export $T""_WIDGETS=1"
 # Full-width letters read as ASCII once normalized.
-catches prefixed-name "the "$'\uff54\uff5a\uff55\uff4e'"-widgets repository"
+catches prefixed-name "the "$'\xef\xbd\x94\xef\xbd\x9a\xef\xbd\x95\xef\xbd\x8e'"-widgets repository"
 catches cross-ref "fixed in ${w}#12"
 catches cross-ref "(see gad${w:3}#3 and more)"
 catches session "https://$ai/code/abc"
