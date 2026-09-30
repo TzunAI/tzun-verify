@@ -144,7 +144,9 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 
 .file-input { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0; font-size: 14px; }
 .file-input > span { color: var(--text-2); min-width: 7.5em; }
-input[type="file"] { max-width: 100%; color: var(--text-2); font: inherit; font-size: 14px; }
+/* A percentage width lets a file input shrink below its natural width, so
+   that it never widens the form on a narrow screen. */
+input[type="file"] { width: 100%; max-width: 22em; color: var(--text-2); font: inherit; font-size: 14px; }
 input[type="file"]::file-selector-button {
   margin-right: 10px; padding: 7px 12px;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -164,6 +166,8 @@ input[type="text"]:focus { border-color: var(--gold); outline: none; box-shadow:
 input::placeholder { color: #6f6890; }
 
 .file-list { list-style: none; margin: 10px 0 0; padding: 0; font-size: 14px; display: grid; gap: 4px; }
+/* A long certificate file name wraps instead of widening the form. */
+.file-list li { min-width: 0; overflow-wrap: anywhere; }
 .file-list code { color: var(--text-2); }
 
 .notice { margin: 12px 0 0; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 14px; border: 1px solid var(--border); background: rgba(10, 10, 15, 0.45); }
@@ -191,7 +195,7 @@ button.primary { justify-self: start; min-width: 220px; background: var(--gold);
 button.primary:hover:not(:disabled) { background: var(--gold-light); }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 .button:hover { border-color: var(--gold); color: var(--text); }
-.why { margin: 0; min-height: 1.4em; color: var(--text-2); font-size: 14px; }
+.why { margin: 0; min-height: 1.4em; color: var(--text-2); font-size: 14px; overflow-wrap: anywhere; }
 .command { padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgba(10, 10, 15, 0.6); }
 .command .k { display: block; margin: 0 0 4px; }
 .command code { color: var(--gold-light); }
@@ -213,8 +217,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 .exit-0 { border-color: rgba(0, 212, 170, 0.5); }
 .exit-0 .exit-code { color: var(--ok); background: rgba(0, 212, 170, 0.08); }
-.exit-1, .exit-2, .exit-64, .exit--1 { border-color: rgba(255, 82, 82, 0.5); }
-.exit-1 .exit-code, .exit-2 .exit-code, .exit-64 .exit-code, .exit--1 .exit-code { color: var(--fail); background: rgba(255, 82, 82, 0.08); }
+.exit-1, .exit-2, .exit-64, .exit-none { border-color: rgba(255, 82, 82, 0.5); }
+.exit-1 .exit-code, .exit-2 .exit-code, .exit-64 .exit-code, .exit-none .exit-code { color: var(--fail); background: rgba(255, 82, 82, 0.08); }
 .exit-3, .exit-4 { border-color: rgba(222, 185, 106, 0.55); }
 .exit-3 .exit-code, .exit-4 .exit-code { color: var(--gold); background: var(--gold-dim); }
 
@@ -266,6 +270,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .stderr { white-space: pre-wrap; color: #ffb4b4; margin-top: 16px; }
 .ran { margin: 16px 0 0; font-size: 13px; }
 .ran code { color: var(--text-2); }
+.ran .small { font-size: inherit; margin: 0; }
 
 /* ---- Footer ---- */
 

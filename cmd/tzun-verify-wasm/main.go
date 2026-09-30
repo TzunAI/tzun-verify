@@ -11,7 +11,9 @@
 // name, the bundle included. Nothing is read from or written to anywhere
 // else. A header source given with --evm-rpc is asked through the browser's
 // fetch, since that is what Go's HTTP client uses in a browser; the page
-// states the endpoint before any request is made.
+// states the endpoint before any request is made. A redirect is refused,
+// not followed, so that the endpoint the page states is the only host
+// asked; the command follows redirects.
 //
 // It defines one global, tzunVerify:
 //
@@ -29,6 +31,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"syscall/js"
 
 	"github.com/TzunAI/tzun-verify/internal/cli"
@@ -104,7 +107,20 @@ func run(_ js.Value, in []js.Value) any {
 	return promise.New(executor)
 }
 
+// noRedirects is the HTTP transport of this build. It asks the browser's
+// fetch to fail on a redirect (Go's js/wasm transport reads the
+// "js.fetch:redirect" header as fetch's redirect option and does not send
+// it), so that a request goes to the endpoint named and to no other host.
+type noRedirects struct{ next http.RoundTripper }
+
+func (t noRedirects) RoundTrip(req *http.Request) (*http.Response, error) {
+	r := req.Clone(req.Context())
+	r.Header.Set("js.fetch:redirect", "error")
+	return t.next.RoundTrip(r)
+}
+
 func main() {
+	http.DefaultTransport = noRedirects{http.DefaultTransport}
 	api := js.Global().Get("Object").New()
 	api.Set("version", cli.Version)
 	api.Set("pinnedManifest", toJS(publishers.Pinned))
