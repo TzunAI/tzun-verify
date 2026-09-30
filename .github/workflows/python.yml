@@ -1,0 +1,242 @@
+name: Python package
+
+# The PyPI package (python/): one wheel per release target, each carrying
+# that target's release binary (python/build_wheels.py).
+#
+# On a pull request: the release files, made as a release makes them
+# (scripts/release-artifacts.sh); the wheels, written from them; and the
+# linux/amd64 wheel installed and tested under every supported Python
+# (python/test_wheels.py). Nothing is uploaded or published.
+#
+# On a v* tag, once the repository is public: the same, then every other
+# wheel tested on its own platform, then the publish job. That job waits for
+# the pypi environment's reviewers, refuses to go on until a person has
+# published the tag's GitHub release, checks that each wheel carries that
+# release's binary byte for byte and that GitHub attested the binary's build
+# provenance, and publishes the wheels by PyPI trusted publishing: a
+# short-lived OIDC token, no stored secret (python/RELEASING.md).
+on:
+  pull_request:
+    branches: [main, 'release/**']
+    # The package, this file, and what goes into or checks the binary it
+    # carries: the command's flags and exit codes, the release scripts, the
+    # toolchain and the corpus the tests replay.
+    paths:
+      - 'python/**'
+      - '.github/workflows/python.yml'
+      - 'cmd/**'
+      - 'internal/cli/**'
+      - 'go.mod'
+      - 'scripts/release-artifacts.sh'
+      - 'scripts/reproducible-build.sh'
+      - 'testdata/vectors/bundle-b1/**'
+    # ready_for_review starts the build when a draft is marked ready; the
+    # build job skips while the pull request is a draft.
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    tags: ['v*']
+
+# Each job asks for what it needs and nothing else.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A new push to a pull request supersedes its last run; a tag's run is
+  # never cancelled.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: build the wheels, test on linux/amd64
+    if: ${{ !github.event.pull_request.draft }}
+    # The same runner choice as ci.yml's check job: while the repository is
+    # not public, the organisation's runner variable when it is set;
+    # GitHub-hosted otherwise.
+    runs-on: ${{ github.event.repository.private && fromJSON(vars.TZUN_RUNNER_LABELS || '"ubuntu-latest"') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      # The toolchain go.mod pins, never a download of another.
+      GOTOOLCHAIN: local
+      TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.1'
+          # The wheels are built from the release files; nothing a previous
+          # run wrote goes into them.
+          cache: false
+
+      - name: Set up every supported Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: |
+            3.10
+            3.11
+            3.12
+            3.13
+            3.14
+
+      - name: Toolchain is the pinned one
+        run: |
+          want="go$(sed -n 's/^toolchain go//p' go.mod)"
+          got="$(go env GOVERSION)"
+          echo "go.mod pins $want; runner has $got"
+          test "$got" = "$want"
+
+      - name: zip, for the release archives
+        run: |
+          if ! command -v zip >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq zip
+          fi
+
+      - name: The release files
+        # On a tag, refused unless the tag is v<the Version internal/cli sets>.
+        run: |
+          if [ -n "$TAG" ]; then set -- "$TAG"; fi
+          scripts/release-artifacts.sh "$RUNNER_TEMP/dist" "$@"
+
+      - name: The wheel builder's own tests
+        env:
+          TZUN_VERIFY_DIST: ${{ runner.temp }}/dist
+        run: python3.14 -m unittest discover -s python/tests -p test_build_wheels.py -v
+
+      - name: The wheels
+        run: |
+          if [ -n "$TAG" ]; then set -- --tag "$TAG"; fi
+          python3.14 python/build_wheels.py "$@" "$RUNNER_TEMP/dist" "$RUNNER_TEMP/wheels"
+          python3.14 python/build_wheels.py --check "$RUNNER_TEMP/dist/SHA256SUMS" "$RUNNER_TEMP"/wheels/*.whl
+
+      - name: Install and test the linux/amd64 wheel under every supported Python
+        run: |
+          python3.14 python/test_wheels.py --wheels "$RUNNER_TEMP/wheels" --dist "$RUNNER_TEMP/dist" \
+            --corpus testdata/vectors/bundle-b1 \
+            --python python3.10 --python python3.11 --python python3.12 --python python3.13 --python python3.14
+
+      - name: Keep the wheels for the tag's next jobs
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: wheels
+          path: ${{ runner.temp }}/wheels/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Keep the release files the tests compare with
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-files
+          path: ${{ runner.temp }}/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  test:
+    name: test the ${{ matrix.target }} wheel (Python ${{ matrix.python }})
+    needs: build
+    # A tag only, and only on a public repository, where GitHub-hosted
+    # runners of every platform are free and where the release workflow can
+    # attest (RELEASING.md).
+    if: startsWith(github.ref, 'refs/tags/v') && !github.event.repository.private
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [linux_arm64, darwin_amd64, darwin_arm64, windows_amd64]
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        include:
+          - target: linux_arm64
+            os: ubuntu-24.04-arm
+          - target: darwin_amd64
+            os: macos-15-intel
+          - target: darwin_arm64
+            os: macos-15
+          - target: windows_amd64
+            os: windows-2025
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Fetch the wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: wheels
+          path: ${{ runner.temp }}/wheels
+
+      - name: Fetch the release files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-files
+          path: ${{ runner.temp }}/dist
+
+      - name: Install and test this platform's wheel
+        shell: bash
+        run: |
+          python python/test_wheels.py --wheels "$RUNNER_TEMP/wheels" --dist "$RUNNER_TEMP/dist" \
+            --corpus testdata/vectors/bundle-b1
+
+  publish:
+    name: publish to PyPI
+    needs: [build, test]
+    if: startsWith(github.ref, 'refs/tags/v') && !github.event.repository.private
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The trusted publisher on PyPI names this workflow and this environment;
+    # the environment's required reviewers approve each release.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/tzun-verify/
+    permissions:
+      contents: read
+      attestations: read
+      # PyPI trusted publishing, and the upload's own attestations.
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: wheels
+          path: ${{ runner.temp }}/wheels
+
+      - name: Each wheel carries the published release's binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A draft release has no tag yet, so this fails until a person has
+          # published the release; re-run this job then.
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --pattern SHA256SUMS --dir "$RUNNER_TEMP/release"
+          python3 python/build_wheels.py --tag "$GITHUB_REF_NAME" --check "$RUNNER_TEMP/release/SHA256SUMS" \
+            --extract "$RUNNER_TEMP/binaries" "$RUNNER_TEMP"/wheels/*.whl
+          for f in "$RUNNER_TEMP"/binaries/*; do
+            gh attestation verify "$f" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/release.yml" \
+              --source-ref "$GITHUB_REF" --deny-self-hosted-runners
+          done
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: ${{ runner.temp }}/wheels/
