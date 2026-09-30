@@ -44,7 +44,7 @@ README = HERE / "README.md"
 
 NAME = "tzun-verify"
 DIST = "tzun_verify"
-SUMMARY = "tzun-verify, the standalone verifier for Tzun b1 proof bundles, and a Python API that runs it"
+SUMMARY = "Standalone verifier for Tzun DEO proof bundles"
 REQUIRES_PYTHON = ">=3.10"
 PROJECT_URLS = [
     ("Source", "https://github.com/TzunAI/tzun-verify"),

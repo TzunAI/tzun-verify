@@ -44,7 +44,10 @@ Every wheel is `py3-none`: the Python code runs on any Python 3.10 or later.
   before `verify()` runs it.
 - The package version is the PEP 440 spelling of the release's: `0.1.0`,
   `0.2.0-rc.1` → `0.2.0rc1`, `0.2.0-beta.2` → `0.2.0b2`, `0.1.0-dev` →
-  `0.1.0.dev0`. Any other pre-release part stops the build.
+  `0.1.0.dev0`. Any other pre-release part stops the build. A `-dev`
+  version is only ever built from `main`, never released:
+  `scripts/release-artifacts.sh` refuses its tag (RELEASING.md, "Where a
+  release goes").
 - The wheels have no sdist: without a binary there is nothing to install.
 
 ## How the workflow checks a release
@@ -53,9 +56,9 @@ Every wheel is `py3-none`: the Python code runs on any Python 3.10 or later.
 
 | Job | Machine | What it does |
 |---|---|---|
-| build | GitHub-hosted, linux/amd64 | Makes the release files with `scripts/release-artifacts.sh` (refusing a tag other than `v<Version>`), writes the wheels, runs the builder's tests, and installs and tests the linux/amd64 wheel under Python 3.10 to 3.14. |
+| build | GitHub-hosted, linux/amd64 | Makes the release files with `scripts/release-artifacts.sh` (refusing a tag other than `v<Version>`, a `-dev` version's tag, and a checkout other than the tag's commit as committed), writes the wheels, runs the builder's tests, and installs and tests the linux/amd64 wheel under Python 3.10 to 3.14. |
 | test | one per other target and Python version: `ubuntu-24.04-arm`, `macos-15-intel`, `macos-15`, `windows-2025` | Installs the wheel for its platform (pip chooses it by its tags) and runs the installed tests. |
-| publish | GitHub-hosted, in the `pypi` environment | Waits for the environment's reviewers. Downloads `SHA256SUMS` from the tag's GitHub release, which fails while the release is a draft, and checks each wheel's binary against it (`build_wheels.py --check`) and against its build provenance attestation (`gh attestation verify`). Then uploads the wheels with PyPI trusted publishing. |
+| publish | GitHub-hosted, in the `pypi` environment | Waits for the environment's reviewers. Downloads `SHA256SUMS` anonymously from the tag's GitHub release, at its public URL, where a draft serves nothing whatever token the job holds, so this fails while the release is a draft. Checks each wheel's binary against it (`build_wheels.py --check`) and against its build provenance attestation (`gh attestation verify`). Then uploads the wheels with PyPI trusted publishing. |
 
 The test and publish jobs run only while the repository is public: the
 release workflow's attestations need that too. On a pull request, only the
@@ -66,9 +69,13 @@ build job runs, with no upload.
 1. On PyPI, add a trusted publisher for the project `tzun-verify` (before
    the first upload, a "pending publisher"): owner `TzunAI`, repository
    `tzun-verify`, workflow `python.yml`, environment `pypi`.
-2. In the repository's settings, create the environment `pypi`: required
-   reviewers, the people who publish releases; deployment branches and tags,
-   the tag rule `v*` only.
+2. In the repository's settings, create the environment `pypi`, **before
+   the first tag is pushed**: required reviewers, the people who publish
+   releases; deployment branches and tags, the tag rule `v*` only. GitHub
+   creates an environment a job names when it does not exist, with no
+   protection rules, and the publish job would then upload without waiting
+   for anyone: its reviewers are the only people between a published
+   release and a permanent upload.
 
 No token is stored anywhere: the publish job gets a short-lived OIDC token
 from GitHub, which PyPI exchanges for an upload token for this project
@@ -81,7 +88,8 @@ alone. The upload also carries PyPI's own attestations of the files.
 2. In the tag's "Python package" run, check that the build and test jobs
    passed, then approve the `pypi` environment. If the publish job ran and
    failed at "Each wheel carries the published release's binary" because
-   the release was still a draft, re-run that job.
+   the release was still a draft (its `SHA256SUMS` is not downloadable
+   until the release is published), re-run that job.
 3. Check the result: `pip install tzun-verify==<version>`, then
    `tzun-verify --version` names the release.
 

@@ -11,9 +11,10 @@ name: Python package
 # On a v* tag, once the repository is public: the same, then every other
 # wheel tested on its own platform, then the publish job. That job waits for
 # the pypi environment's reviewers, refuses to go on until a person has
-# published the tag's GitHub release, checks that each wheel carries that
-# release's binary byte for byte and that GitHub attested the binary's build
-# provenance, and publishes the wheels by PyPI trusted publishing: a
+# published the tag's GitHub release (an anonymous download of its
+# SHA256SUMS, which a draft never serves), checks that each wheel carries
+# that release's binary byte for byte and that GitHub attested the binary's
+# build provenance, and publishes the wheels by PyPI trusted publishing: a
 # short-lived OIDC token, no stored secret (python/RELEASING.md).
 on:
   pull_request:
@@ -224,10 +225,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # A draft release has no tag yet, so this fails until a person has
-          # published the release; re-run this job then.
-          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-            --pattern SHA256SUMS --dir "$RUNNER_TEMP/release"
+          # The download is anonymous, from the release's public URL, which
+          # serves nothing while the release is a draft, whatever this job's
+          # token may read: this fails until a person has published the
+          # release, and nothing is uploaded. Re-run this job then.
+          mkdir -p "$RUNNER_TEMP/release"
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/SHA256SUMS"
+          if ! curl -fsSL --retry 3 -o "$RUNNER_TEMP/release/SHA256SUMS" "$url"; then
+            echo "no SHA256SUMS at $url: the release $GITHUB_REF_NAME is not published" >&2
+            exit 1
+          fi
           python3 python/build_wheels.py --tag "$GITHUB_REF_NAME" --check "$RUNNER_TEMP/release/SHA256SUMS" \
             --extract "$RUNNER_TEMP/binaries" "$RUNNER_TEMP"/wheels/*.whl
           for f in "$RUNNER_TEMP"/binaries/*; do
