@@ -1,7 +1,7 @@
 # Written by packaging/homebrew/render-formula.sh in the tzun-verify
 # repository, from the release's SHA256SUMS: a change belongs there.
 class TzunVerify < Formula
-  desc "Offline verifier for Tzun b1 proof bundles"
+  desc "Standalone verifier for Tzun DEO proof bundles"
   homepage "https://github.com/TzunAI/tzun-verify"
   version "@VERSION@"
 

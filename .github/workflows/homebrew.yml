@@ -3,9 +3,10 @@ name: Homebrew
 # The Homebrew formula (packaging/homebrew/README.md).
 #
 # formula: on a pull request that changes the formula or what it is made
-# from, and on a release tag, the release files are built as the release
-# workflow builds them, and the formula, rendered for them with file:// URLs,
-# is installed and tested in Homebrew's own container. It publishes nothing.
+# from (while the repository is public), on a release tag, and when run by
+# hand, the release files are built as the release workflow builds them, and
+# the formula, rendered for them with file:// URLs, is installed and tested
+# in Homebrew's own container. It publishes nothing.
 #
 # publish: on the tag of a final release only, once the tap is set up (the
 # repository variable BREW_TAP_REPO names it) and the homebrew-tap
@@ -45,7 +46,11 @@ env:
 jobs:
   formula:
     name: build, install and test the formula
-    if: ${{ !github.event.pull_request.draft }}
+    # Not on a draft pull request, as ci.yml's check job; and not on any
+    # pull request while the repository is not public, where each run would
+    # spend several minutes of the plan's GitHub-hosted time. Then it runs on
+    # a tag, or by hand (workflow_dispatch) on the pull request's branch.
+    if: ${{ !github.event.pull_request.draft && (github.event_name != 'pull_request' || !github.event.repository.private) }}
     # GitHub-hosted: the test runs Homebrew's image under docker, and the
     # release files need GNU tar and zip.
     runs-on: ubuntu-latest
@@ -90,7 +95,9 @@ jobs:
           name: homebrew-sha256sums
           path: ${{ runner.temp }}/release/SHA256SUMS
           if-no-files-found: error
-          retention-days: 7
+          # As long as the publish job may wait for its approval, or be
+          # re-run, after the tag's run.
+          retention-days: 30
 
   publish:
     name: propose the formula to the tap

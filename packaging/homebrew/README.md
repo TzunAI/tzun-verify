@@ -103,9 +103,12 @@ audit's online checks.
 
 - **formula**, on a pull request (out of draft) that changes this directory,
   the workflow, `scripts/release-artifacts.sh`, `scripts/reproducible-build.sh`
-  or the corpus case the test uses, and on every `v*` tag: builds the release
+  or the corpus case the test uses, on every `v*` tag, and when run by hand
+  (**Run workflow** on the Actions page, for any branch): builds the release
   files with `scripts/release-artifacts.sh`, exactly as the release workflow
   does, and runs `test-formula.sh --local` on them. It publishes nothing.
+  While the repository is not public it skips pull requests, to spare the
+  plan's GitHub-hosted minutes; run it by hand on the branch instead.
 - **publish**, on the push of a final release's `v*` tag (none with a `-`),
   and only once the repository variable `BREW_TAP_REPO` names the tap. It
   waits for approval in the `homebrew-tap` environment, then:
@@ -169,7 +172,8 @@ with the organisation, `tap` and `tzun-verify` as the formula's name.
 1. Publish the draft release as RELEASING.md says.
 2. Approve the waiting publish job of the Homebrew workflow's run for the
    tag. Approved before the release is published, it fails at its first
-   check and can be re-run.
+   check and can be re-run. The formula job's `SHA256SUMS` it compares with
+   is kept for 30 days after the tag's run; after that, re-run all jobs.
 3. Merge the pull request it opens in the tap once the tap's checks pass.
    From then on `brew upgrade` finds the new version.
 
