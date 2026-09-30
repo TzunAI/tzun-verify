@@ -40,7 +40,33 @@ verifier asks that endpoint, and no other host, through the browser's
 `fetch` (Go's HTTP client uses `fetch` in a browser): `eth_chainId`,
 `eth_getBlockByNumber` and, unless turned off, `eth_getTransactionByHash`.
 The report names the endpoint by its chain and finality only, never by its
-URL.
+URL, and the page's report view writes it without its path and query, which
+can carry a key.
+
+What the page can ask differs from the command in four ways, all of them the
+browser's:
+
+- **A redirect is refused.** `cmd/tzun-verify-wasm` has `fetch` fail on a
+  redirect instead of following it, so that no host but the one named is
+  asked; the endpoint then reads as unavailable. The command follows
+  redirects.
+- **No user name or password in the URL.** `fetch` refuses to send them, so
+  the page refuses such an endpoint before anything is sent. The command
+  sends them as HTTP Basic authentication.
+- **Plain http only to this machine.** The Content-Security-Policy allows
+  `https:` and http to `localhost` and `127.0.0.1` (a policy cannot name
+  `[::1]`), and the page refuses any other http endpoint before anything is
+  sent.
+- **The node must allow the page's origin (CORS).** The browser does not
+  let the page read a node that does not, and it reads as unavailable. A local geth needs
+  `--http.corsdomain` naming the page's origin, such as
+  `http://127.0.0.1:8787` for `web/serve.sh`.
+
+The verifier runs in the browser's WebAssembly memory, at most 4 GB. A
+bundle that needs more stops it: the page says so, shows what the Go runtime
+said (`fatal error: out of memory`), and verifies nothing more until it is
+reloaded. The page flags a bundle over 32 MB when it is chosen. The command
+has no such limit.
 
 The page has no third-party script, no analytics and no web font. Its
 Content-Security-Policy, in `_headers` and in a meta tag, allows scripts and
@@ -73,7 +99,13 @@ test answers from a case's header source, and inputs the verifier refuses.
 It checks the report against the case's expected report, every row of the
 table, that nothing is requested offline and that only the named endpoint is
 asked online, that there is no sideways scrolling at 375 px, and that the
-console stays clean. It writes screenshots at 1280 px and 375 px to
+console stays clean. It also holds the page to what the section above
+states: a redirect refused, the endpoints it cannot use refused before
+anything is sent, the report view without the endpoint's path and query,
+the verifier's stopping reported, and it checks that Tab reaches Verify with
+Offline chosen, that the file chosen last is the one verified, that long
+file names wrap at 320 px, and that `serve.mjs` answers a malformed address
+with 400. It writes screenshots at 1280 px and 375 px to
 `SCREENSHOT_DIR` (default `web/test-results/screenshots`).
 
 ```

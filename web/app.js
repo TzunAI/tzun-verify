@@ -56,6 +56,13 @@ function quote(s) {
   return /^[A-Za-z0-9@%+=:,./_-]+$/.test(s) ? s : `'${s.replaceAll("'", "'\\''")}'`;
 }
 
+// fileWord writes a file name as a word of the command: a name that starts
+// with "-" is written ./-name, so that the command reads it as a file, not
+// as a flag.
+function fileWord(name) {
+  return quote(name.startsWith('-') ? `./${name}` : name);
+}
+
 async function readFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   return { name: file.name, bytes, sha: await sha256(bytes) };
@@ -64,6 +71,10 @@ async function readFile(file) {
 // The auditor's choices.
 const state = {
   api: null,
+  // The Go runtime, and a promise that settles once it has exited.
+  go: null,
+  exited: null,
+  stopped: false,
   bundle: null,
   manifest: null,
   roots: [],
@@ -72,6 +83,30 @@ const state = {
   // The object URLs of the last report's downloads, released on the next.
   urls: [],
 };
+
+// Each input's reads are numbered, and only the latest is taken: a large
+// file still being read never replaces one chosen after it. Verify waits
+// while any is being read.
+const reads = { bundle: 0, manifest: 0, roots: 0, inters: 0 };
+const reading = new Map();
+const readErrors = {};
+
+// A bundle this large may need more memory than WebAssembly gives the
+// verifier; the page says so when one is chosen.
+const LARGE_BUNDLE = 32 * 1024 * 1024;
+
+// The Go runtime writes what it says on dying (fatal error: out of memory,
+// an unrecovered panic) to standard error, which wasm_exec.js hands to
+// console.log, followed by its goroutines. The page keeps the start of it,
+// to show if the verifier stops; the console has the rest.
+let runtimeStderr = '';
+if (globalThis.fs && typeof globalThis.fs.writeSync === 'function') {
+  const writeSync = globalThis.fs.writeSync.bind(globalThis.fs);
+  globalThis.fs.writeSync = (fd, buf) => {
+    if (fd === 2 && runtimeStderr.length < 4096) runtimeStderr += new TextDecoder().decode(buf);
+    return writeSync(fd, buf);
+  };
+}
 
 // ---- The verifier ----
 
@@ -84,11 +119,15 @@ async function loadVerifier() {
     const bytes = await res.arrayBuffer();
     const go = new Go();
     const { instance } = await WebAssembly.instantiate(bytes, go.importObject);
-    go.run(instance);
+    state.go = go;
+    // run settles when the Go program exits, which it only does when it
+    // dies: out of memory, most likely.
+    state.exited = go.run(instance).then(verifierStopped, verifierStopped);
     const api = globalThis.tzunVerify;
-    if (!api || typeof api.run !== 'function') throw new Error('the verifier did not start');
+    if (!api || typeof api.run !== 'function' || go.exited) throw new Error('the verifier did not start');
     state.api = api;
     const wasmSha = await sha256(bytes);
+    if (state.stopped) return;
     status.textContent = `Verifier ready · ${api.version}`;
     status.classList.add('ready');
     $('build-version').textContent = `tzun-verify ${api.version}`;
@@ -108,8 +147,29 @@ async function loadVerifier() {
   update();
 }
 
+// verifierStopped is called once the Go program has exited. Nothing can
+// run in it again: the page says so, and verifies nothing more until it
+// is reloaded.
+function verifierStopped() {
+  state.api = null;
+  state.stopped = true;
+  const status = $('verifier-status');
+  status.textContent = 'The verifier stopped · reload the page';
+  status.classList.remove('ready');
+  status.classList.add('failed');
+  update();
+}
+
 // ---- Inputs ----
 
+// The hosts an http (not https) endpoint may name: the ones the page's
+// Content-Security-Policy lets it reach, a node on this machine.
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
+
+// endpoint reads an --evm-rpc value as the page can use it: an https URL,
+// or http to a node on this machine, with no user name or password, which
+// the browser's fetch refuses to send. shown is the URL as the report view
+// writes it: without its path and query, which can carry a key.
 function endpoint(spec) {
   let chain = null;
   let url = spec;
@@ -122,7 +182,17 @@ function endpoint(spec) {
     return { error: 'That is not a URL.' };
   }
   if (u.protocol !== 'https:' && u.protocol !== 'http:') return { error: 'The endpoint must be an http or https URL.' };
-  return { chain, url, host: u.host };
+  if (u.username || u.password) {
+    return { error: 'This page cannot use a URL with a user name or password in it: the browser refuses to send them. Use an endpoint that takes its key in the path, or the command.' };
+  }
+  if (u.protocol === 'http:' && u.hostname === '[::1]') {
+    return { error: 'Over plain http this page reaches a node on this machine at localhost or 127.0.0.1, not [::1], which a Content-Security-Policy cannot name.' };
+  }
+  if (u.protocol === 'http:' && !LOCAL_HOSTS.has(u.hostname)) {
+    return { error: `Over plain http this page reaches only a node on this machine, at localhost or 127.0.0.1. Use https for ${u.host}.` };
+  }
+  const bare = u.pathname === '/' && !u.search && !u.hash;
+  return { chain, url, host: u.host, origin: u.origin, shown: bare ? url : `${u.origin}/…` };
 }
 
 // plan is the verification the choices describe: the flags, the files
@@ -130,23 +200,34 @@ function endpoint(spec) {
 function plan() {
   const form = $('form');
   const args = [];
+  // shown is the command as the auditor would type it; ran is the same
+  // command as the report view writes it, the endpoint without its path
+  // and query.
   const shown = ['tzun-verify'];
+  const ran = ['tzun-verify'];
   const files = {};
+  // names maps the name each file is handed to the verifier by back to the
+  // file's own name, for the messages the page shows.
+  const names = [];
   let missing = null;
   const flag = (name) => {
     args.push(name);
     shown.push(name);
+    ran.push(name);
   };
-  const value = (name, v) => {
+  const value = (name, v, display = v) => {
     args.push(name, v);
     shown.push(name, quote(v));
+    ran.push(name, quote(display));
   };
   // file names a file by its role, so that two files of one name never meet.
   const file = (name, role, f, i = 0) => {
     const key = `${role}/${i}/${f.name}`;
     files[key] = f.bytes;
+    names.push([key, f.name]);
     args.push(name, key);
-    shown.push(name, quote(f.name));
+    shown.push(name, fileWord(f.name));
+    ran.push(name, fileWord(f.name));
   };
 
   switch (form.elements.manifest.value) {
@@ -169,7 +250,7 @@ function plan() {
     } else {
       rpc = endpoint(spec);
       if (rpc.error) missing ??= rpc.error;
-      value('--evm-rpc', spec);
+      value('--evm-rpc', spec, rpc.error ? spec : `${rpc.chain ? `${rpc.chain}=` : ''}${rpc.shown}`);
     }
     const conf = $('confirmations').value.trim();
     if (conf) value('--confirmations', conf);
@@ -187,13 +268,20 @@ function plan() {
   if (state.bundle) {
     const key = `bundle/0/${state.bundle.name}`;
     files[key] = state.bundle.bytes;
+    names.push([key, state.bundle.name]);
     args.push(key);
-    shown.push(quote(state.bundle.name));
+    shown.push(fileWord(state.bundle.name));
+    ran.push(fileWord(state.bundle.name));
   } else {
     shown.push('<bundle.json>');
+    ran.push('<bundle.json>');
     missing = 'Choose a bundle first.';
   }
-  return { args, files, command: shown.join(' '), rpc, missing };
+  const failed = Object.values(readErrors).find(Boolean);
+  if (failed) missing = failed;
+  if (reading.size) missing = `Reading ${[...reading.values()].join(', ')}…`;
+  names.sort((a, b) => b[0].length - a[0].length);
+  return { args, files, names, command: shown.join(' '), ranCommand: ran.join(' '), rpc, missing };
 }
 
 function networkNotice(p) {
@@ -222,6 +310,8 @@ function networkNotice(p) {
     el('p', {}, 'and to no other host: ', el('code', {}, 'eth_chainId'), ', ', el('code', {}, 'eth_getBlockByNumber'),
       ' for the finalized block and for each block a publication names', ...lookups,
       `. The node sees those block numbers${noLookup ? '' : ' and transaction ids'}, and your IP address; it never sees the bundle. It is trusted for canonicality and finality, and for nothing else. The report names it by its chain and finality, never by its URL.`),
+    el('p', { class: 'small' }, 'A redirect to another address is refused, not followed. The node must accept requests from this page (CORS): a node that does not reads as unavailable. A local geth node needs ',
+      el('code', {}, '--http.corsdomain'), ' naming this page\'s origin.'),
   );
 }
 
@@ -235,7 +325,8 @@ function update() {
   if (state.running) button.textContent = 'Verifying…';
   else if (p.rpc && !p.rpc.error) button.textContent = `Verify and ask ${p.rpc.host}`;
   else button.textContent = 'Verify offline';
-  $('why').textContent = !state.api ? 'Waiting for the verifier to load.' : p.missing || '';
+  if (state.stopped) $('why').textContent = 'The verifier stopped. Reload the page to verify again.';
+  else $('why').textContent = !state.api ? 'Waiting for the verifier to load.' : p.missing || '';
 }
 
 function facts(dl, f) {
@@ -247,29 +338,63 @@ function facts(dl, f) {
   );
 }
 
+// readLatest reads files for an input. It returns their contents, or null
+// when a later choice on the same input has replaced them or one could not
+// be read.
+async function readLatest(which, files) {
+  const seq = ++reads[which];
+  if (files.length) reading.set(which, files.map((f) => f.name).join(', '));
+  else reading.delete(which);
+  readErrors[which] = null;
+  update();
+  let got = null;
+  let error = null;
+  try {
+    got = await Promise.all(files.map(readFile));
+  } catch (err) {
+    error = `${files.map((f) => f.name).join(', ')} could not be read: ${err.message}`;
+  }
+  if (seq !== reads[which]) return null;
+  reading.delete(which);
+  readErrors[which] = error;
+  return got;
+}
+
 async function takeBundle(file) {
   if (!file) return;
-  state.bundle = await readFile(file);
-  $('drop-title').textContent = file.name;
-  $('drop-note').textContent = 'Drop another bundle, or choose one, to replace it. Read in this browser; never uploaded.';
-  $('drop').classList.add('chosen');
-  facts($('bundle-facts'), state.bundle);
+  const got = await readLatest('bundle', [file]);
+  if (got) {
+    [state.bundle] = got;
+    $('drop-title').textContent = file.name;
+    $('drop-note').textContent = 'Drop another bundle, or choose one, to replace it. Read in this browser; never uploaded.';
+    $('drop').classList.add('chosen');
+    facts($('bundle-facts'), state.bundle);
+    $('bundle-large').hidden = state.bundle.bytes.byteLength <= LARGE_BUNDLE;
+  }
   update();
 }
 
 async function takeManifest(file) {
-  state.manifest = file ? await readFile(file) : null;
-  if (state.manifest) {
-    $('form').elements.manifest.value = 'file';
-    facts($('manifest-facts'), state.manifest);
-  } else {
-    $('manifest-facts').hidden = true;
+  const got = await readLatest('manifest', file ? [file] : []);
+  if (got) {
+    state.manifest = got[0] ?? null;
+    if (state.manifest) {
+      $('form').elements.manifest.value = 'file';
+      facts($('manifest-facts'), state.manifest);
+    } else {
+      $('manifest-facts').hidden = true;
+    }
   }
   update();
 }
 
 async function takeCerts(input, which) {
-  state[which] = await Promise.all(Array.from(input.files, readFile));
+  const got = await readLatest(which, Array.from(input.files));
+  if (!got) {
+    update();
+    return;
+  }
+  state[which] = got;
   const list = $('tsa-list');
   const items = [];
   for (const [label, fs] of [['Root', state.roots], ['Intermediate', state.inters]]) {
@@ -355,17 +480,33 @@ function renderRows(checks, offline) {
   );
 }
 
+// ranLine is the command the run was, as the report view writes it.
+function ranLine(run, attrs = {}) {
+  return el('p', { class: 'ran' }, el('span', { class: 'k' }, 'Ran '), el('code', attrs, run.command),
+    run.redacted ? el('span', { class: 'small' }, ' (the endpoint without its path and query, which can carry a key)') : null);
+}
+
+// renderError shows a run that made no report: the command refused its
+// inputs (exit 64), or the verifier stopped and gave no exit code at all.
 function renderError(out, run) {
-  const meaning = EXITS[out.exit] || ['The verifier stopped', ''];
+  const known = Object.hasOwn(EXITS, out.exit);
+  let meaning = EXITS[out.exit];
+  if (!known && out.stopped) {
+    meaning = ['The verifier stopped', 'It stopped before it finished, and gave no exit code. WebAssembly gives it at most 4 GB of memory, and a browser may give it less; a bundle that needs more stops it. The command-line tzun-verify has no such limit. Reload the page to verify again.'];
+  } else if (!known) {
+    meaning = ['The verifier failed', 'It gave no exit code and no report.'];
+  }
+  let stderr = decoder.decode(out.stderr);
+  for (const [key, name] of run.names) stderr = stderr.replaceAll(key, name);
   return [
-    el('div', { class: `verdict exit-${out.exit}` },
-      el('p', { class: 'exit-code', id: 'exit-code' }, `exit ${out.exit}`),
+    el('div', { class: `verdict ${known ? `exit-${out.exit}` : 'exit-none'}` },
+      el('p', { class: 'exit-code', id: 'exit-code' }, known ? `exit ${out.exit}` : 'no exit code'),
       el('div', {},
         el('h2', { id: 'result-title' }, meaning[0]),
         el('p', { id: 'exit-meaning' }, meaning[1]),
-        el('p', { class: 'cites' }, citeLinks([PAGE_CITES.exit])))),
-    el('pre', { class: 'stderr' }, decoder.decode(out.stderr) || 'No report was made.'),
-    el('p', { class: 'ran' }, el('span', { class: 'k' }, 'Ran '), el('code', {}, run.command)),
+        known ? el('p', { class: 'cites' }, citeLinks([PAGE_CITES.exit])) : null)),
+    el('pre', { class: 'stderr' }, stderr || 'No report was made.'),
+    ranLine(run),
   ];
 }
 
@@ -381,7 +522,11 @@ function renderReport(out, report, run) {
   if (run.offline) {
     notes.push(el('p', { class: 'note' }, el('strong', {}, 'Offline. '), 'The on-chain lookup was skipped and no network request was made. Rows that need your node read NOT CHECKED; everything else was checked.'));
   } else {
-    notes.push(el('p', { class: 'note' }, el('strong', {}, 'Header source. '), 'This verification asked ', el('code', {}, run.rpc.url), ' and no other host.'));
+    notes.push(el('p', { class: 'note' }, el('strong', {}, 'Header source. '), 'This verification asked the node at ', el('code', {}, run.rpc.origin), ' and no other host.'));
+    if (report.checks.some((c) => c.reason === 'evm_header_source_unavailable')) {
+      notes.push(el('p', { class: 'note warn', id: 'node-unavailable' }, el('strong', {}, 'The node could not be asked. '),
+        'If the command reaches it, it may not accept requests from this page (CORS), or it redirected elsewhere, which this page refuses. The browser\'s console says which.'));
+    }
   }
   if (exit === 0 && anchorRow && anchorRow.outcome !== 'checked-correct') {
     notes.push(el('p', { class: 'note warn', id: 'not-anchored' }, el('strong', {}, 'Exit 0 does not mean anchored. '),
@@ -432,7 +577,7 @@ function renderReport(out, report, run) {
       download('tzun-verify-report.json', 'application/json', out.stdout),
       download('tzun-verify-report.txt', 'text/plain', out.text)),
     el('details', { class: 'more' }, el('summary', {}, 'The text report, as the command prints it'), el('pre', { class: 'text-report', id: 'text-report' }, text)),
-    el('p', { class: 'ran' }, el('span', { class: 'k' }, 'Ran '), el('code', { id: 'ran' }, run.command)),
+    ranLine(run, { id: 'ran' }),
   ];
 }
 
@@ -441,7 +586,9 @@ async function verify(event) {
   const p = plan();
   if (!state.api || p.missing || state.running) return;
   const run = {
-    command: p.command,
+    command: p.ranCommand,
+    redacted: p.ranCommand !== p.command,
+    names: p.names,
     offline: !p.rpc,
     rpc: p.rpc,
     allowUnchecked: $('allow-unchecked').checked,
@@ -449,11 +596,20 @@ async function verify(event) {
   state.running = true;
   update();
   const result = $('result');
+  // A run that has not settled when the Go program exits never will.
+  const stopped = () => ({
+    exit: null,
+    stopped: true,
+    stdout: new Uint8Array(),
+    text: new Uint8Array(),
+    // What the runtime said, up to the goroutines it lists.
+    stderr: new TextEncoder().encode(runtimeStderr.split(/\n\s*\n/)[0].trim() || 'The Go runtime exited.'),
+  });
   let out;
   try {
-    out = await state.api.run(['--json', ...p.args], p.files);
+    out = await Promise.race([state.api.run(['--json', ...p.args], p.files), state.exited.then(stopped)]);
   } catch (err) {
-    out = { exit: -1, stdout: new Uint8Array(), text: new Uint8Array(), stderr: new TextEncoder().encode(String(err && err.message || err)) };
+    out = state.go.exited ? stopped() : { exit: null, stdout: new Uint8Array(), text: new Uint8Array(), stderr: new TextEncoder().encode(String(err && err.message || err)) };
   }
   state.running = false;
   update();
@@ -467,7 +623,7 @@ async function verify(event) {
   }
   for (const url of state.urls.splice(0)) URL.revokeObjectURL(url);
   result.replaceChildren(...(report ? renderReport(out, report, run) : renderError(out, run)));
-  result.dataset.exit = String(out.exit);
+  result.dataset.exit = out.exit == null ? 'none' : String(out.exit);
   result.hidden = false;
   result.focus({ preventScroll: true });
   result.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
@@ -487,9 +643,11 @@ function wire() {
   $('manifest-file').addEventListener('change', (e) => takeManifest(e.target.files[0]));
   $('tsa-roots').addEventListener('change', (e) => takeCerts(e.target, 'roots'));
   $('tsa-inters').addEventListener('change', (e) => takeCerts(e.target, 'inters'));
-  $('rpc').addEventListener('focus', () => {
-    form.elements.network.value = 'rpc';
-    update();
+  // Typing an endpoint chooses it. Focus alone does not, so that Tab
+  // passes through the field on its way to Verify with Offline still
+  // chosen. The form's own input listener then updates the page.
+  $('rpc').addEventListener('input', () => {
+    if ($('rpc').value.trim()) form.elements.network.value = 'rpc';
   });
 
   // A file dropped anywhere but the drop zone would make the browser open

@@ -62,8 +62,16 @@ try {
 }
 
 const server = createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
-  let path = decodeURIComponent(url.pathname);
+  let url;
+  let path;
+  try {
+    url = new URL(req.url, 'http://localhost');
+    path = decodeURIComponent(url.pathname);
+  } catch {
+    // A malformed address (GET /%E0%A4%A) is answered, never thrown.
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('bad request\n');
+    return;
+  }
   if (path.endsWith('/')) path += 'index.html';
   const file = normalize(join(root, path));
   if (file !== root && !file.startsWith(root + sep)) {

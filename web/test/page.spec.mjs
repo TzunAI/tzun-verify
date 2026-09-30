@@ -7,7 +7,7 @@
 // names is the only host asked, through the browser's fetch.
 
 import { test, expect } from '@playwright/test';
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { citeURL, citesFor, SPEC_DOCS } from '../spec.js';
@@ -197,37 +197,52 @@ test('offline, a failure: tampered-payload fails record.digest, exit 1', async (
   expect(seen.problems).toEqual([]);
 });
 
-test('the node the auditor names, through fetch: anchored-with-newer, exit 0', async ({ page }) => {
-  const c = corpusCase('anchored-with-newer');
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST' };
+
+// mockNode answers JSON-RPC at every address under endpoint from a corpus
+// case's header source, and returns the methods it is asked.
+async function mockNode(page, c, endpoint) {
   const [[chain, source]] = Object.entries(c.inputs.headerSources);
-  const endpoint = 'https://rpc.invalid/';
   const hex = (n) => `0x${n.toString(16)}`;
   const block = (n) => {
     const b = source.blocks.find((x) => x.number === n);
     return b ? { number: hex(b.number), hash: b.hash, timestamp: hex(b.timestamp) } : null;
   };
-  // A JSON-RPC node that answers from the case's header source.
   const methods = [];
   await page.route(`${endpoint}**`, async (route) => {
-    const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST' };
-    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
     const call = route.request().postDataJSON();
     methods.push(call.method);
     let result = null;
     if (call.method === 'eth_chainId') result = hex(Number(chain.split(':')[1]));
     else if (call.method === 'eth_getBlockByNumber') result = call.params[0] === 'finalized' ? block(source.finalizedBlockNumber) ?? { number: hex(source.finalizedBlockNumber), hash: `0x${'00'.repeat(32)}`, timestamp: '0x0' } : block(Number(call.params[0]));
-    return route.fulfill({ status: 200, headers: cors, contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: call.id, result }) });
+    return route.fulfill({ status: 200, headers: CORS, contentType: 'application/json', body: JSON.stringify({ jsonrpc: '2.0', id: call.id, result }) });
   });
+  return methods;
+}
 
-  const seen = await open(page);
+// chooseRPC makes the choices of an RPC verification of a corpus case:
+// its manifest and roots, and the endpoint, with no transaction lookup,
+// since the corpus's header sources look none up.
+async function chooseRPC(page, c, rpc) {
   await chooseBundle(page, c);
   await page.locator('#manifest-file').setInputFiles(manifestFile(c));
   await page.locator('#tsa-roots').setInputFiles(rootsFile(c));
   await page.locator('input[name="network"][value="rpc"]').check();
-  await page.locator('#rpc').fill(`${chain}=${endpoint}`);
+  await page.locator('#rpc').fill(rpc);
   await page.locator('details.more summary').first().click();
-  // The corpus's header source looks no transaction up; neither may the node.
   await page.locator('#no-tx-lookup').check();
+}
+
+test('the node the auditor names, through fetch: anchored-with-newer, exit 0', async ({ page }) => {
+  const c = corpusCase('anchored-with-newer');
+  const [[chain]] = Object.entries(c.inputs.headerSources);
+  const endpoint = 'https://rpc.invalid/';
+  // A JSON-RPC node that answers from the case's header source.
+  const methods = await mockNode(page, c, endpoint);
+
+  const seen = await open(page);
+  await chooseRPC(page, c, `${chain}=${endpoint}`);
 
   // The endpoint is stated before any request is made.
   await expect(page.locator('#rpc-shown')).toHaveText(endpoint);
@@ -258,8 +273,209 @@ test('an input the verifier cannot use is refused: exit 64 and its message', asy
   await page.locator('#manifest-file').setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{publishers') });
   await runVerification(page);
   await expect(page.locator('#exit-code')).toHaveText('exit 64');
-  await expect(page.locator('#result .stderr')).toContainText('broken.json: not JSON');
+  // The message names the file by its own name, as the command line does.
+  await expect(page.locator('#result .stderr')).toHaveText('tzun-verify: --publishers broken.json: not JSON: jsonv: offset 1: expected a string key\n');
+  await expect(page.locator('#result .cites a')).toHaveAttribute('href', 'https://spec.tzun.ai/verification/1.0/#s6-6');
   expect(seen.problems).toEqual([]);
+});
+
+test('the command line writes a file name that starts with - as ./-name', async ({ page }) => {
+  const c = corpusCase('anchored-offline');
+  await open(page);
+  await page.locator('#bundle-file').setInputFiles({ name: '-h', mimeType: 'application/json', buffer: readFileSync(c.bundle) });
+  await expect(page.locator('#bundle-facts')).toContainText('-h');
+  await expect(page.locator('#command')).toHaveText('tzun-verify ./-h');
+  await runVerification(page);
+  await expect(page.locator('#exit-code')).toHaveText(/^exit [0-4]$/);
+  await expect(page.locator('#ran')).toHaveText('tzun-verify ./-h');
+});
+
+test('keyboard only: Tab passes the endpoint field and reaches Verify with Offline still chosen', async ({ page }) => {
+  const c = corpusCase('anchored-offline');
+  await open(page);
+  await chooseBundle(page, c);
+  const offline = page.locator('input[name="network"][value="offline"]');
+  await offline.focus();
+  const trail = [];
+  for (let i = 0; i < 12 && trail.at(-1) !== 'verify'; i++) {
+    await page.keyboard.press('Tab');
+    trail.push(await page.evaluate(() => document.activeElement.id));
+  }
+  expect(trail).toContain('rpc');
+  expect(trail.at(-1)).toBe('verify');
+  await expect(offline).toBeChecked();
+  await expect(page.locator('#verify')).toHaveText('Verify offline');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#exit-code')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('#result')).toContainText('The on-chain lookup was skipped');
+
+  // Typing an endpoint is what chooses it.
+  await page.locator('#rpc').focus();
+  await expect(offline).toBeChecked();
+  await page.keyboard.type('https://rpc.invalid/');
+  await expect(page.locator('input[name="network"][value="rpc"]')).toBeChecked();
+  await expect(page.locator('#verify')).toHaveText('Verify and ask rpc.invalid');
+});
+
+test('the file chosen last is the one verified, however long the first takes to read', async ({ page }) => {
+  const c = corpusCase('anchored-offline');
+  // Reading slow.json takes two seconds, as a large bundle can.
+  await page.addInitScript(() => {
+    const arrayBuffer = Blob.prototype.arrayBuffer;
+    Blob.prototype.arrayBuffer = async function () {
+      const b = await arrayBuffer.call(this);
+      if (this.name === 'slow.json') await new Promise((r) => setTimeout(r, 2000));
+      return b;
+    };
+  });
+  await open(page);
+  const bytes = readFileSync(c.bundle);
+  await page.locator('#bundle-file').setInputFiles({ name: 'slow.json', mimeType: 'application/json', buffer: bytes });
+  await expect(page.locator('#why')).toHaveText('Reading slow.json…');
+  await expect(page.locator('#verify')).toBeDisabled();
+  await page.locator('#bundle-file').setInputFiles(c.bundle);
+  await expect(page.locator('#bundle-facts')).toContainText('bundle.json');
+  await page.waitForTimeout(2500);
+  await expect(page.locator('#drop-title')).toHaveText('bundle.json');
+  await expect(page.locator('#bundle-facts')).toContainText('bundle.json');
+  await expect(page.locator('#command')).toHaveText('tzun-verify bundle.json');
+  await expect(page.locator('#verify')).toBeEnabled();
+});
+
+test('a large bundle is flagged when it is chosen', async ({ page }, testInfo) => {
+  const big = testInfo.outputPath('big.json');
+  mkdirSync(dirname(big), { recursive: true });
+  writeFileSync(big, Buffer.alloc(33 * 1024 * 1024, 0x20));
+  await open(page);
+  await page.locator('#bundle-file').setInputFiles(big);
+  await expect(page.locator('#bundle-facts')).toContainText('big.json');
+  await expect(page.locator('#bundle-large')).toBeVisible();
+  await chooseBundle(page, corpusCase('anchored-offline'));
+  await expect(page.locator('#bundle-large')).toBeHidden();
+});
+
+test('an endpoint the page cannot reach as written is refused before anything is sent', async ({ page }) => {
+  const c = corpusCase('anchored-with-newer');
+  const seen = await open(page);
+  await chooseBundle(page, c);
+  await page.locator('input[name="network"][value="rpc"]').check();
+  for (const [rpc, why] of [
+    ['https://user:s3cret@rpc.invalid/', /user name or password/],
+    ['http://node.lan:8545/', /only a node on this machine.*Use https for node\.lan:8545/],
+    ['http://[::1]:8545/', /not \[::1\]/],
+  ]) {
+    await page.locator('#rpc').fill(rpc);
+    await expect(page.locator('#verify')).toBeDisabled();
+    await expect(page.locator('#why')).toHaveText(why);
+    await expect(page.locator('#network-notice')).toHaveText(why);
+    await expect(page.locator('#network-notice')).not.toContainText('s3cret');
+  }
+  for (const [rpc, host] of [['http://127.0.0.1:8545/', '127.0.0.1:8545'], ['http://localhost:8545', 'localhost:8545'], ['https://node.lan/', 'node.lan']]) {
+    await page.locator('#rpc').fill(rpc);
+    await expect(page.locator('#verify')).toHaveText(`Verify and ask ${host}`);
+    await expect(page.locator('#verify')).toBeEnabled();
+  }
+  expect(seen.requests.filter((r) => new URL(r.url).origin !== new URL(page.url()).origin)).toEqual([]);
+});
+
+test('a redirect from the endpoint is refused, not followed', async ({ page }) => {
+  const c = corpusCase('anchored-with-newer');
+  const [[chain]] = Object.entries(c.inputs.headerSources);
+  await page.route('https://rpc.invalid/**', (route) => route.request().method() === 'OPTIONS'
+    ? route.fulfill({ status: 204, headers: CORS })
+    : route.fulfill({ status: 307, headers: { ...CORS, Location: 'https://elsewhere.invalid/' } }));
+  const elsewhere = await mockNode(page, c, 'https://elsewhere.invalid/');
+  const seen = await open(page);
+  await chooseRPC(page, c, `${chain}=https://rpc.invalid/`);
+  await runVerification(page);
+  expect(elsewhere).toEqual([]);
+  expect(seen.requests.filter((r) => r.url.startsWith('https://elsewhere.invalid'))).toEqual([]);
+  await expect(page.locator('#exit-code')).toHaveText('exit 4');
+  await expect(page.locator('#rows tr[data-id="anchor.evm.canonical[0]"] td.reason > code')).toHaveText('evm_header_source_unavailable');
+  await expect(page.locator('#node-unavailable')).toContainText('redirected elsewhere');
+});
+
+test('the report view names the endpoint by its origin, never its path or query', async ({ page }) => {
+  const c = corpusCase('anchored-with-newer');
+  const [[chain]] = Object.entries(c.inputs.headerSources);
+  const methods = await mockNode(page, c, 'https://rpc.invalid/');
+  await open(page);
+  await chooseRPC(page, c, `${chain}=https://rpc.invalid/v1/k3y0123456789?apikey=s3cret`);
+  // Before Verify the page states the whole URL it will ask.
+  await expect(page.locator('#rpc-shown')).toHaveText('https://rpc.invalid/v1/k3y0123456789?apikey=s3cret');
+  await runVerification(page);
+  await expect(page.locator('#exit-code')).toHaveText(`exit ${c.exit}`);
+  expect(methods.length).toBeGreaterThan(0);
+  const result = await page.locator('#result').innerText();
+  expect(result).not.toContain('s3cret');
+  expect(result).not.toContain('k3y0123456789');
+  await expect(page.locator('#result')).toContainText('asked the node at https://rpc.invalid and no other host');
+  await expect(page.locator('#ran')).toHaveText(`tzun-verify --publishers publishers.json --tsa-roots roots.pem --evm-rpc '${chain}=https://rpc.invalid/…' --no-tx-lookup bundle.json`);
+});
+
+test('when the verifier stops, the page says so and verifies nothing more until reloaded', async ({ page }) => {
+  // Keep the page's Go runtime within reach of the test.
+  await page.addInitScript(() => {
+    let Go;
+    Object.defineProperty(globalThis, 'Go', {
+      configurable: true,
+      get: () => Go,
+      set: (v) => {
+        Go = class extends v {
+          constructor() {
+            super();
+            globalThis.testGo = this;
+          }
+        };
+      },
+    });
+  });
+  const c = corpusCase('anchored-with-newer');
+  const [[chain]] = Object.entries(c.inputs.headerSources);
+  // A node that never answers, so that the verification is still running.
+  await page.route('https://rpc.invalid/**', () => new Promise(() => {}));
+  await open(page);
+  await chooseRPC(page, c, `${chain}=https://rpc.invalid/`);
+  await page.locator('#verify').click();
+  await expect(page.locator('#verify')).toHaveText('Verifying…');
+  // The Go runtime ends as it does when it runs out of memory: it writes
+  // to standard error, then exits.
+  await page.evaluate(() => {
+    globalThis.fs.writeSync(2, new TextEncoder().encode('fatal error: out of memory\n'));
+    globalThis.testGo.exited = true;
+    globalThis.testGo._resolveExitPromise();
+  });
+  await expect(page.locator('#exit-code')).toHaveText('no exit code');
+  await expect(page.locator('#result-title')).toHaveText('The verifier stopped');
+  await expect(page.locator('#result .stderr')).toHaveText('fatal error: out of memory');
+  // No exit code, so no section of the exit codes.
+  await expect(page.locator('#result a.cite')).toHaveCount(0);
+  await expect(page.locator('#verifier-status')).toHaveText('The verifier stopped · reload the page');
+  await expect(page.locator('#verify')).toBeDisabled();
+  await expect(page.locator('#why')).toHaveText('The verifier stopped. Reload the page to verify again.');
+});
+
+test('long file names wrap, at 375 px and at 320 px', async ({ page }) => {
+  await open(page);
+  // Two roots with long names that have nowhere to break, measured as soon
+  // as they are chosen (the page names them while it reads them) and once
+  // they are listed.
+  for (const width of [375, 320]) {
+    await page.setViewportSize({ width, height: 812 });
+    const pem = Buffer.from('-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n');
+    await page.locator('#tsa-roots').setInputFiles([
+      { name: `${'r'.repeat(60)}.pem`, mimeType: 'application/x-pem-file', buffer: pem },
+      { name: `${'s'.repeat(60)}.pem`, mimeType: 'application/x-pem-file', buffer: pem },
+    ]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await expect(page.locator('#tsa-list li')).toHaveCount(2);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+});
+
+test('the local server answers a malformed address with 400 and keeps serving', async ({ request }) => {
+  expect((await request.get('/%E0%A4%A')).status()).toBe(400);
+  expect((await request.get('/')).status()).toBe(200);
 });
 
 test('the page states what the README and its headers state', () => {

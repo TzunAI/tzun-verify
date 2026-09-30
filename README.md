@@ -212,8 +212,9 @@ every file they name, to the command itself (`cli.RunBytes`), so the rows,
 the report and the exit code are the command's. It shows the equivalent
 command line, every row with its outcome, reason and the sections it cites,
 and the exit code's meaning. The one request it makes after loading is to the
-Ethereum endpoint the auditor names, which it states before any is sent;
-offline, it checks everything but the on-chain lookup. It has no third-party
+Ethereum endpoint the auditor names, which it states before any is sent, and
+it refuses a redirect to any other host (the command follows one); offline,
+it checks everything but the on-chain lookup. It has no third-party
 script, no analytics and a strict Content-Security-Policy. `web/build.sh`
 builds it and `web/serve.sh` serves it on 127.0.0.1; `web/README.md` has the
 details. Where it will be hosted is not decided yet.
