@@ -208,10 +208,14 @@ func parseArgs(args []string) (*config, error) {
 	return c, nil
 }
 
-func readCerts(paths []string) ([]*x509.Certificate, error) {
+// readFile reads a file the flags name: os.ReadFile for the command,
+// a lookup in memory for RunBytes.
+type readFile func(name string) ([]byte, error)
+
+func readCerts(read readFile, paths []string) ([]*x509.Certificate, error) {
 	var out []*x509.Certificate
 	for _, p := range paths {
-		data, err := os.ReadFile(p)
+		data, err := read(p)
 		if err != nil {
 			return nil, err
 		}
@@ -269,17 +273,18 @@ const (
 	manifestNone   manifestSource = "none: --no-publishers"
 )
 
-// options builds the verifier's inputs from the flags. Every error is a
-// usage error: an input the auditor named and the command could not read is
-// refused, never passed on as absent.
-func options(c *config) (bundle.Options, manifestSource, error) {
+// options builds the verifier's inputs from the flags, reading each file
+// they name with read. Every error is a usage error: an input the auditor
+// named and the command could not read is refused, never passed on as
+// absent.
+func options(c *config, read readFile) (bundle.Options, manifestSource, error) {
 	opts := bundle.Options{Timeout: c.timeout}
 	src := manifestPinned
 	switch {
 	case c.noPublishers:
 		src = manifestNone
 	case c.publishers != "":
-		data, err := os.ReadFile(c.publishers)
+		data, err := read(c.publishers)
 		if err != nil {
 			return opts, src, err
 		}
@@ -296,11 +301,11 @@ func options(c *config) (bundle.Options, manifestSource, error) {
 		opts.ManifestBytes = publishers.Pinned
 	}
 
-	roots, err := readCerts(c.tsaRoots)
+	roots, err := readCerts(read, c.tsaRoots)
 	if err != nil {
 		return opts, src, fmt.Errorf("--tsa-roots: %v", err)
 	}
-	inter, err := readCerts(c.tsaInter)
+	inter, err := readCerts(read, c.tsaInter)
 	if err != nil {
 		return opts, src, fmt.Errorf("--tsa-intermediates: %v", err)
 	}
@@ -340,7 +345,7 @@ func options(c *config) (bundle.Options, manifestSource, error) {
 		if err != nil {
 			return opts, src, err
 		}
-		data, err := os.ReadFile(path)
+		data, err := read(path)
 		if err != nil {
 			return opts, src, err
 		}
@@ -358,6 +363,13 @@ func options(c *config) (bundle.Options, manifestSource, error) {
 // Run runs the command and returns its exit code (Verification §6.6), or
 // report.ExitUsageError for arguments or inputs it cannot use.
 func Run(args []string, stdout, stderr io.Writer) int {
+	return run(args, os.ReadFile, stdout, stderr, nil)
+}
+
+// run is the command, reading each file the flags name, the bundle
+// included, with read. When text is not nil and the flags ask for the JSON
+// report, the text report of the same verification is written to text too.
+func run(args []string, read readFile, stdout, stderr, text io.Writer) int {
 	c, err := parseArgs(args)
 	if err == errHelp {
 		fmt.Fprint(stdout, usage)
@@ -371,12 +383,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stdout, "tzun-verify %s\npinned publisher manifest sha256 %s\n", Version, publishers.SHA256())
 		return 0
 	}
-	opts, src, err := options(c)
+	opts, src, err := options(c, read)
 	if err != nil {
 		fmt.Fprintf(stderr, "tzun-verify: %v\n", err)
 		return report.ExitUsageError
 	}
-	data, err := os.ReadFile(c.path)
+	data, err := read(c.path)
 	if err != nil {
 		fmt.Fprintf(stderr, "tzun-verify: %v\n", err)
 		return report.ExitBundle
@@ -393,6 +405,9 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	if c.json {
 		stdout.Write(out)
 		fmt.Fprintln(stdout)
+		if text != nil {
+			writeText(text, res, src, exit)
+		}
 		return exit
 	}
 	writeText(stdout, res, src, exit)

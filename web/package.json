@@ -1,0 +1,14 @@
+{
+  "name": "tzun-verify-web",
+  "private": true,
+  "description": "The browser page of tzun-verify: its local server and its Playwright test. Nothing here is published.",
+  "type": "module",
+  "scripts": {
+    "build": "./build.sh",
+    "serve": "node serve.mjs",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

@@ -84,6 +84,24 @@ jobs:
         # build too.
         run: go test -count=1 -tags purego ./...
 
+      - name: The browser page's WebAssembly build
+        # cmd/tzun-verify-wasm, with the flags web/build.sh uses. The page's
+        # own test (web/test, Playwright) runs locally; see web/README.md.
+        run: |
+          GOOS=js GOARCH=wasm go vet ./cmd/tzun-verify-wasm
+          CGO_ENABLED=0 GOOS=js GOARCH=wasm go build -trimpath -buildvcs=false -tags purego -o "$RUNNER_TEMP/tzun-verify.wasm" ./cmd/tzun-verify-wasm
+          echo "tzun-verify.wasm: $(wc -c <"$RUNNER_TEMP/tzun-verify.wasm") bytes, $(gzip -9 -c "$RUNNER_TEMP/tzun-verify.wasm" | wc -c) gzipped"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      - name: Tests under js/wasm, in Node.js
+        # The whole suite, the corpus runner included, compiled to
+        # WebAssembly as the browser page runs the verifier.
+        run: GOOS=js GOARCH=wasm go test -count=1 -tags purego -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
+
       - name: No Tzun imports
         run: scripts/check-no-tzun-imports.sh
 

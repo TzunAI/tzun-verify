@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Verify a Tzun proof bundle in your browser with tzun-verify compiled to WebAssembly. The bundle never leaves your machine.">
+<title>tzun-verify · verify a proof bundle</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script src="wasm_exec.js"></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-inner">
+    <a class="brand" href="./" aria-label="tzun-verify, this page">
+      <span class="wordmark">Tzun</span>
+      <span class="product">verify</span>
+    </a>
+    <p class="status" id="verifier-status" role="status">Loading the verifier…</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro">
+    <p class="eyebrow">Proof bundle verifier</p>
+    <h1>Check a Tzun evidence record yourself</h1>
+    <p class="lede">Drop a proof bundle and get the report of <code>tzun-verify</code>, the standalone verifier, compiled to WebAssembly. It runs in this browser: the bundle is read here and never uploaded, and the one request this page can make on its own is to the Ethereum node you name in step 4.</p>
+  </section>
+
+  <form id="form" class="steps" novalidate>
+    <section class="card" aria-labelledby="h-bundle">
+      <h2 id="h-bundle"><span class="step" aria-hidden="true">1</span>The bundle</h2>
+      <label class="drop" id="drop">
+        <input class="visually-hidden" type="file" id="bundle-file" accept=".json,application/json">
+        <span class="drop-title" id="drop-title">Drop the bundle here, or choose a file</span>
+        <span class="drop-note" id="drop-note">A b1 record bundle, as JSON. Read in this browser; never uploaded.</span>
+      </label>
+      <dl class="facts" id="bundle-facts" hidden></dl>
+    </section>
+
+    <section class="card" aria-labelledby="h-manifest">
+      <h2 id="h-manifest"><span class="step" aria-hidden="true">2</span>The publisher manifest</h2>
+      <p class="hint">Which keys may publish anchors, and on which chain. A publication whose sender it does not name is not checked.</p>
+      <fieldset>
+        <legend class="visually-hidden">Publisher manifest</legend>
+        <label class="choice">
+          <input type="radio" name="manifest" value="pinned" checked>
+          <span><strong>The manifest bundled with this page</strong>, the copy pinned in this build of tzun-verify</span>
+        </label>
+        <div class="sub" id="pinned-facts">
+          <p class="kv"><span class="k">SHA-256</span> <code class="hash" id="pinned-sha">…</code></p>
+          <p class="kv"><span class="k">File</span> <a href="publishers.json" id="pinned-link" download>publishers.json</a></p>
+          <p class="note" id="pinned-empty" hidden>It names no publisher: every EVM publication reads NOT CHECKED, <code>no_expectation:publisher</code>, unless you choose a manifest file.</p>
+        </div>
+        <label class="choice">
+          <input type="radio" name="manifest" value="file">
+          <span><strong>A manifest file you choose</strong></span>
+        </label>
+        <div class="sub">
+          <label class="file-input"><span>Manifest</span> <input type="file" id="manifest-file" accept=".json,application/json"></label>
+          <dl class="facts" id="manifest-facts" hidden></dl>
+        </div>
+        <label class="choice">
+          <input type="radio" name="manifest" value="none">
+          <span><strong>None</strong>: every EVM publication reads NOT CHECKED</span>
+        </label>
+      </fieldset>
+      <p class="cites" data-cites="Anchor §9"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-tsa">
+      <h2 id="h-tsa"><span class="step" aria-hidden="true">3</span>Timestamp authority roots <span class="optional">optional</span></h2>
+      <p class="hint">PEM certificates of the RFC 3161 authorities you trust. Without a root, a timestamp's trust row reads NOT CHECKED, <code>no_matching_trust_anchor</code>. A certificate this build cannot read in full is refused, never dropped.</p>
+      <label class="file-input"><span>Roots</span> <input type="file" id="tsa-roots" accept=".pem,.crt,.cer,application/x-pem-file" multiple></label>
+      <label class="file-input"><span>Intermediates</span> <input type="file" id="tsa-inters" accept=".pem,.crt,.cer,application/x-pem-file" multiple></label>
+      <ul class="file-list" id="tsa-list" hidden></ul>
+      <p class="cites" data-cites="Anchor §10.5|Verification §3.1"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-network">
+      <h2 id="h-network"><span class="step" aria-hidden="true">4</span>The Ethereum node</h2>
+      <fieldset>
+        <legend class="visually-hidden">Header source</legend>
+        <label class="choice">
+          <input type="radio" name="network" value="offline" checked>
+          <span><strong>Offline</strong>: check everything but the on-chain lookup</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="network" value="rpc">
+          <span><strong>An Ethereum JSON-RPC endpoint I choose</strong></span>
+        </label>
+        <div class="sub">
+          <label class="text-input" for="rpc">Endpoint</label>
+          <input type="text" id="rpc" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://ethereum-sepolia-rpc.publicnode.com">
+          <p class="hint">Or <code>eip155:&lt;chain id&gt;=&lt;url&gt;</code> for a node that serves one chain.</p>
+        </div>
+      </fieldset>
+      <div class="notice" id="network-notice" aria-live="polite"></div>
+      <details class="more">
+        <summary>Finality and lookups</summary>
+        <div class="more-body">
+          <label class="text-input" for="confirmations">Confirmations</label>
+          <input type="text" id="confirmations" inputmode="numeric" autocomplete="off" placeholder="the chain's finalized tag">
+          <p class="hint">Count a block final at this depth instead. Below 64 is not finality on Ethereum and is refused unless you accept it.</p>
+          <label class="check"><input type="checkbox" id="accept-non-final"> <span>Accept fewer than 64 confirmations</span></label>
+          <label class="check"><input type="checkbox" id="no-tx-lookup"> <span>Never ask the node for the transaction itself</span></label>
+          <label class="text-input" for="timeout">Deadline, in milliseconds</label>
+          <input type="text" id="timeout" inputmode="numeric" autocomplete="off" placeholder="30000">
+        </div>
+      </details>
+      <p class="cites" data-cites="Anchor §10.4"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-regime">
+      <h2 id="h-regime"><span class="step" aria-hidden="true">5</span>Your regime <span class="optional">optional</span></h2>
+      <label class="text-input" for="require">Rows that must be checked-correct</label>
+      <input type="text" id="require" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="anchor, ts.record.trust">
+      <p class="hint">Comma-separated row ids; exit 3 when one is not correct. <code>anchor.evm.canonical[*]</code> matches every index.</p>
+      <label class="check"><input type="checkbox" id="allow-unchecked"> <span><strong>Allow unchecked rows</strong>: exit 0 even when something present was not checked. Every NOT CHECKED row stays in the report.</span></label>
+      <p class="cites" data-cites="Verification §3.2"></p>
+    </section>
+
+    <div class="actions">
+      <button type="submit" class="primary" id="verify" disabled>Verify offline</button>
+      <p class="why" id="why" aria-live="polite">Choose a bundle first.</p>
+      <div class="command">
+        <p class="k">The same verification from a shell</p>
+        <code id="command">tzun-verify &lt;bundle.json&gt;</code>
+      </div>
+    </div>
+  </form>
+
+  <section class="result" id="result" hidden tabindex="-1" aria-labelledby="result-title"></section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p><span id="build-version">tzun-verify</span> compiled to WebAssembly<span id="build-sha"></span>. No analytics, no third-party scripts, no uploads.</p>
+    <p>The specification: <a href="https://spec.tzun.ai/" rel="noopener noreferrer">spec.tzun.ai</a>. Where this page and the specification differ, the specification governs.</p>
+  </div>
+</footer>
+</body>
+</html>
