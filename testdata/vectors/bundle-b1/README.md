@@ -11,10 +11,16 @@ tests.
 - Every bundle holds a record of one store, anchored on a local development
   chain: anvil, CAIP-2 chain `eip155:31337`, whose finalized block trails its
   head by two. The store's anchor origin is
-  `test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors`, a test
+  `test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors`, a test
   origin (Anchor §4.3.4), and its publisher is anvil's development
   account 5, `0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc`. No network registry
   names `eip155:31337`, so `anchorNetwork` is `null` in every report.
+- Every record is a `v1.0` record of the hashed field set of Record §4.1:
+  `action` and `reason`, a `decider` (a human under `acct` unless a case
+  names another), and `contributions` and `links` that are `null` unless a
+  case carries them. So every report has the rows `decider`,
+  `decider.freshness`, `contributions`, `contributions.binding` and `links`
+  of Verification §4.9 to §4.11, between `signoff.key` and `anchor`.
 - Record timestamps are RFC 3161 tokens from a test authority whose root,
   "Tzun Corpus Test Root CA", exists only for this corpus. A case that trusts
   a root supplies that one in `trustAnchorsPem`. Apart from the
@@ -27,6 +33,9 @@ tests.
 - Digests, origins, transaction ids, block numbers, block times and `genTime`
   values are those of the run the corpus comes from. Every outcome, reason and
   exit code is stated from the specification.
+- `regime.allowUnchecked` in `inputs.json` is `true` or `false`, or a list of
+  reasons: the scoped allowance, under which only rows left unchecked for one
+  of those reasons stop counting toward exit code 4.
 
 ## The cases
 
@@ -43,16 +52,25 @@ the newer anchor and both consistency proofs, every input supplied.
 
 **The record's own token, one step of Anchor §10.5 each.**
 `record-token-not-der` (1), `record-token-digest-algorithms-malformed` (1),
-`record-token-unreadable-certificate` (1),
-`record-token-no-signing-certificate` (1), `record-token-no-timestamping-eku`
-(1), `record-token-issuer-name-reencoded` (4).
+`record-token-unreadable-certificate` (1), `record-token-signer-off-curve`
+(1), `record-token-no-signing-certificate` (1),
+`record-token-no-timestamping-eku` (1), `record-token-issuer-name-reencoded`
+(4), `record-token-signer-unassigned-curve` (4),
+`record-token-intermediate-unassigned-curve` (4) and
+`record-token-unneeded-certificate-unassigned-curve` (0). The signer
+subjects that shape the fact `authority` (Anchor §10.7):
+`record-token-authority-first-cn`, `-multi-valued-rdn`, `-specials`,
+`-line-feed`, `-utf8-string`, `-bmp-string`, `-teletex-string`, `-empty-cn`,
+`-no-cn` and `-empty-subject`, each (0).
 
 **Unanchored records.** `unanchored-awaiting-epoch` (4),
 `unanchored-allow-unchecked` (0), `unanchored-awaiting-finality` (4),
 `unanchored-pending-stripped` (0),
 `unanchored-pending-stripped-require-anchor` (3).
 
-**The record altered.** `tampered-payload` (1), `envelope-version-unknown`
+**The record altered.** `tampered-payload` (1),
+`tampered-payload-artifact-stripped` (1),
+`payload-name-lone-surrogate-fffd-digest` (1), `envelope-version-unknown`
 (4), `rewrite-and-reseat` (1), `subject-mismatch` (1).
 
 **The anchor altered.** `transplanted-leaf` (1), `transplanted-chain` (1),
@@ -61,7 +79,10 @@ the newer anchor and both consistency proofs, every input supplied.
 
 **Publications.** `fabricated-header-offline` (4),
 `fabricated-header-with-source` (1), `manifest-chain-mismatch` (1),
-`sender-not-publisher` (1).
+`sender-not-publisher` (1), and a manifest entry whose `validFrom` falls
+half a millisecond either side of a block's second, read to its full
+precision (Anchor §9): `manifest-valid-from-fraction-late` (1),
+`manifest-valid-from-fraction-early` (0).
 
 **Carried checkpoints and consistency.** `consistency-proof-tampered` (1),
 `consistency-proof-missing` (4), `newer-anchor-tampered` (1), `split-view`
@@ -73,12 +94,25 @@ the newer anchor and both consistency proofs, every input supplied.
 `session-signoff-without-assertion` (1),
 `policy-session-signoff-without-assertion` (1), `junk-batch-signoff` (1).
 
+**The decider, contributions and links.** `decider-agent` (0): an agent's
+own decision. `contributions-single-model` (0): a decision on one model call,
+a list of one step. `contributions-decided-output-differs` (1): the output
+decided on is not the one proposed (`contributions.binding`).
+`links-derived-from` (4): a record with links, whose every edge abstains;
+`links-derived-from-allow-unchecked` (0) under the allowance, and
+`links-derived-from-allow-unchecked-scoped` (0) under the scoped allowance of
+`unsupported_link_edge`.
+
 **Material this version does not read.** `witness-extension` (4),
-`related-records-filled` (4), `policy-filled` (4), `unknown-member` (4).
+`related-records-filled` (4), `policy-filled` (4), `unknown-member` (4),
+`nonrepudiation-unread-members` (4), `subject-extra-member` (0).
 
 **Bundles read as a whole.** `bundle-version-unknown` (2),
 `bundle-version-absent` (2), `bundle-chain-profile` (2),
-`bundle-unreadable` (2).
+`bundle-unreadable` (2), and a lone surrogate in a member name a row id
+would carry (Bundle §4 step 9): `member-name-lone-surrogate` (2),
+`extension-name-lone-surrogate` (2), `nonrepudiation-name-lone-surrogate`
+(2).
 
 ## Cases to read with care
 
@@ -92,6 +126,10 @@ the newer anchor and both consistency proofs, every input supplied.
 - `session-signoff-stripped` exits 1 with or without `allowUnchecked`: a
   session record's missing sign-off is a finding, not an unchecked artifact
   (Verification §5).
+- `links-derived-from` exits 4 although every link holds: no edge is verified
+  in this version, so every `links[<i>].edge` row abstains (Verification
+  §4.11). A bundle holds no target record, so each link reports
+  `targetHeld` `false`.
 
 Where an expected report and the specification disagree, the specification
 governs, and the corrected report names the section it follows (Specs §7).

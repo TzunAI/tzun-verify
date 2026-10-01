@@ -2,8 +2,8 @@
   "reportVersion": "tzun-verify-report/1",
   "bundleVersion": "b1",
   "subject": {
-    "evidenceId": "307e314d-9269-408b-a572-5a51d40708a9",
-    "canonicalDigest": "6e1f3b99676c722cc5dfd13b0dbda95c430ca4eec8f50c8b3c541ca0a1e8776a"
+    "evidenceId": "a36ceba9-743e-45bc-b173-5d1e15b6256d",
+    "canonicalDigest": "9739ebd76cc45223ccc88920802c9032208f3c09f67fc129a41a769109dead6a"
   },
   "inputs": {
     "trustAnchors": [],

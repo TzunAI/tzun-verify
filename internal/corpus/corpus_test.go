@@ -45,6 +45,15 @@ var knownFiles = map[string]bool{
 	"v1.0-integrity-vectors.json":      true,
 	"signoff-expectation-vectors.json": true,
 	"bundle-b1":                        true,
+	"v1.0-worked-example-vectors.json": true,
+	"decider-vectors.json":             true,
+	"contributions-vectors.json":       true,
+	"links-vectors.json":               true,
+	"mandate-vectors.json":             true,
+	"agent-descriptor-vectors.json":    true,
+	"store-generation-vectors.json":    true,
+	"cross-sdk-parity-vectors.json":    true,
+	"evm-anchor-vectors.json":          true,
 }
 
 func load(t *testing.T, name string) *jsonv.Value {

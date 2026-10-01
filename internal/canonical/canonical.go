@@ -1,5 +1,6 @@
 // Package canonical is the DEO canonical serializer (schema v1.0), the part
-// of it a verifier needs to recompute a record's integrity.canonicalDigest.
+// of it a verifier needs to recompute a record's integrity.canonicalDigest
+// and the digests taken over parts of a record (Record §3).
 //
 // The rules are those of Record §3, which the conformance vectors
 // v1.0-canonical-vectors.json and v1.0-integrity-vectors.json pin:
@@ -45,16 +46,51 @@ var (
 	ErrDepth         = errors.New("canonical: nesting depth exceeded")
 )
 
-// HashedFieldsV1 is the v1.0 hashed field set of an evidence payload,
-// signoffExpectation included (Record §4.1). A field the payload
-// lacks is hashed as null (Record §4.2).
+// HashedFieldsV1 is the hashed field set of a v1.0 payload, the eleven
+// names of Record §4.1. A field the payload lacks is hashed as null
+// (Record §4.2).
 var HashedFieldsV1 = []string{
-	"aiBom", "aiOutput", "aiSystemId", "capturedAt", "evidenceId", "humanAction", "humanReason", "sequenceNumber",
-	"signoffExpectation",
+	"action", "aiOutput", "aiSystemId", "capturedAt", "contributions", "decider", "evidenceId", "links", "reason",
+	"sequenceNumber", "signoffExpectation",
+}
+
+// FieldSet07 and FieldSetBefore07 are the earlier field sets Record §4.1
+// names, "0.7" and "before-0.7". A record is never verified under either:
+// they only name the set a mismatching stored digest recomputes under
+// (Verification §4.3).
+var (
+	FieldSet07       = []string{"aiBom", "aiOutput", "aiSystemId", "capturedAt", "evidenceId", "humanAction", "humanReason", "sequenceNumber", "signoffExpectation"}
+	FieldSetBefore07 = []string{"aiBom", "aiOutput", "aiSystemId", "capturedAt", "evidenceId", "humanAction", "humanReason", "sequenceNumber"}
+)
+
+// PayloadMembers are the twelve payload members of Record §2.2: the
+// hashed set and schemaVersion. Any other member is reported, never hashed
+// (Verification §4.7).
+var PayloadMembers = map[string]bool{"schemaVersion": true}
+
+func init() {
+	for _, f := range HashedFieldsV1 {
+		PayloadMembers[f] = true
+	}
+}
+
+// EarlierFieldSet names the earlier field set under which a payload
+// recomputes to the stored digest, "0.7" or "before-0.7", or "" when
+// neither does.
+func EarlierFieldSet(payload *jsonv.Value, stored string) string {
+	for _, fs := range []struct {
+		name   string
+		fields []string
+	}{{"0.7", FieldSet07}, {"before-0.7", FieldSetBefore07}} {
+		if d, err := DigestOver(payload, fs.fields); err == nil && d == stored {
+			return fs.name
+		}
+	}
+	return ""
 }
 
 // SignoffExpectationKey is the hashed field that says which signature a
-// record owes (Record §6).
+// record owes (Record §9).
 const SignoffExpectationKey = "signoffExpectation"
 
 // Serialize renders v in canonical form.

@@ -224,12 +224,14 @@ func daysIn(year, month int) int {
 }
 
 // Network is the verifier's own registry of chains (§9): never from the
-// artifact. It returns "" for a chain the registry does not name.
+// artifact. Ethereum mainnet is mainnet, and the Sepolia and Hoodi test
+// networks are testnet. It returns "" for a chain the registry does not
+// name.
 func Network(chain string) string {
 	switch chain {
 	case "eip155:1":
 		return "mainnet"
-	case "eip155:11155111":
+	case "eip155:11155111", "eip155:560048":
 		return "testnet"
 	}
 	return ""

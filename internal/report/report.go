@@ -120,6 +120,10 @@ type Policy struct {
 	RequireRungs []string
 	// AllowUnchecked turns off exit code 4.
 	AllowUnchecked bool
+	// AllowReasons is the scoped allowance: a row left undecided for one of
+	// these reasons does not lead to exit code 4, and every other such row
+	// still does.
+	AllowReasons []string
 }
 
 // Exit codes of Verification §6.6.
@@ -192,6 +196,16 @@ func RequireMet(checks []Check, p Policy) bool {
 	return len(p.RequireRungs) == 0
 }
 
+// allowed reports whether a reason is one the scoped allowance names.
+func allowed(reason string, reasons []string) bool {
+	for _, r := range reasons {
+		if r == reason {
+			return true
+		}
+	}
+	return false
+}
+
 // ExitCode applies Verification §6.6: 2 when the bundle check is
 // not checked-correct,
 // then 1, then 3, then 4, then 0.
@@ -209,7 +223,7 @@ func ExitCode(r *Report, p Policy) int {
 	}
 	if !p.AllowUnchecked {
 		for _, c := range r.Checks {
-			if Unchecked(c) {
+			if Unchecked(c) && !allowed(c.Reason, p.AllowReasons) {
 				return ExitUnchecked
 			}
 		}

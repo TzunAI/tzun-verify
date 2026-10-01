@@ -329,7 +329,7 @@ func verify(in Input) Verdict {
 	b.add(report.Check{ID: IDCheckpoint, Outcome: report.Correct})
 
 	// Step 2b.
-	bind := checkpoint.Bind(anchorBody.Origin, logBody.Origin, in.ChainID, in.ChainOK)
+	bind := checkpoint.BindRecord(anchorBody.Origin, logBody.Origin, in.ChainID, in.ChainOK)
 	if bind.Result != checkpoint.BindOK {
 		v.Valid, v.Reason = boolp(false), bind.Result
 		c := report.Check{ID: IDOrigin, Outcome: report.Wrong, Reason: bind.Result}

@@ -1,18 +1,18 @@
 {
-  "description": "Records anchored end to end on anvil (Anchor §6 to §10, §13): each record's envelope with its nonRepudiation.anchor, the epochs its anchors name (the anchor checkpoint, P, the consistency proofs between published sizes and between a source log's anchored checkpoints), and each epoch's evm-calldata/1 publication with its heavy material. A verifier must: parse every checkpoint body; place each record's canonicalDigest at leafIndex = sequenceNumber - 1 in its logCheckpoint (logPath) and SHA-256(logCheckpoint) at anchorLeafIndex in its anchorCheckpoint (anchorPath); check P = SHA-256(anchorCheckpoint); verify each consistency proof with both sizes and roots taken from the bodies; check keccak256(blockHeader) = blockHash and the header's number; walk txProof from the header's transactionsRoot at key rlp(txIndex) to rawTransaction; recover the sender from rawTransaction and find it in the manifest for the anchor origin, on the chain it signed; check its calldata is exactly 0x || P; and give every record the verdicts in expect: bundleOnly with the manifest and the publication's material, withHeaderSource with those and a header source that reports canonicalBlock and a finalized height of headerSource.finalizedBlockNumber.",
-  "source": "Generated from one run of Tzun's reference implementation, anchoring a store under the namespace test.vectors.tzun on anvil (ghcr.io/foundry-rs/foundry:v1.5.1, chain id 31337, --slots-in-an-epoch 1, so its finalized tag is the head minus 2). The publisher is anvil's development account 5. The values are that run's; the expected verdicts are stated from Anchor §10.",
+  "description": "Records anchored end to end on anvil (Anchor \u00a76 to \u00a710, \u00a713): each record's envelope with its nonRepudiation.anchor, the epochs its anchors name (the anchor checkpoint, P, the consistency proofs between published sizes and between a source log's anchored checkpoints), and each epoch's evm-calldata/1 publication with its heavy material. A verifier must: parse every checkpoint body; place each record's canonicalDigest at leafIndex = sequenceNumber - 1 in its logCheckpoint (logPath) and SHA-256(logCheckpoint) at anchorLeafIndex in its anchorCheckpoint (anchorPath); check P = SHA-256(anchorCheckpoint); verify each consistency proof with both sizes and roots taken from the bodies; check keccak256(blockHeader) = blockHash and the header's number; walk txProof from the header's transactionsRoot at key rlp(txIndex) to rawTransaction; recover the sender from rawTransaction and find it in the manifest for the anchor origin, on the chain it signed; check its calldata is exactly 0x || P; and give every record the verdicts in expect: bundleOnly with the manifest and the publication's material, withHeaderSource with those and a header source that reports canonicalBlock and a finalized height of headerSource.finalizedBlockNumber.",
+  "source": "Generated from one run of Tzun's reference implementation, anchoring a store under the namespace test.vectors.tzun on anvil (ghcr.io/foundry-rs/foundry:v1.5.1, chain id 31337, --slots-in-an-epoch 1, so its finalized tag is the head minus 2). The publisher is anvil's development account 5. The values are that run's; the expected verdicts are stated from Anchor \u00a710.",
   "format": {
-    "records": "envelope is the stored record; its nonRepudiation.anchor is Anchor §8.1. epoch indexes epochs.",
+    "records": "envelope is the stored record; its nonRepudiation.anchor is Anchor \u00a78.1. epoch indexes epochs.",
     "epochs": "anchorCheckpoint is the anchor log at its published size; p = SHA-256(anchorCheckpoint), 64 lowercase hex, and the publication's calldata. previousAnchorSize is the previous published size (null for the first) and anchorConsistencyProof is PROOF(previousAnchorSize, size) (empty for the first). members are the source-log checkpoints this epoch appended, in anchor-leaf order: previousLogCheckpoint is that log's previous anchored checkpoint (null for its first) and consistencyProof is PROOF between the two (empty for the first). Hashes are bare lowercase hex, except the EVM values, which are 0x-prefixed.",
-    "publication": "The evm-calldata/1 entry as a record carries it (Anchor §8.2: kind, chain, transactionId, blockNumber, blockHash, publisher) joined with the export bundle's heavy material (rawTransaction, blockHeader: the header RLP, txIndex, txProof: the transactions-trie nodes from the root, each RLP).",
+    "publication": "The evm-calldata/1 entry as a record carries it (Anchor \u00a78.2: kind, chain, transactionId, blockNumber, blockHash, publisher) joined with the export bundle's heavy material (rawTransaction, blockHeader: the header RLP, txIndex, txProof: the transactions-trie nodes from the root, each RLP).",
     "canonicalBlock": "What anvil reported for the publication's block number when the file was made: its hash and its timestamp (unix seconds).",
     "headerSource": "The header source a withHeaderSource verdict uses: chainId, the finalized height, and for each epoch's block the canonicalBlock; it looks no transaction up."
   },
   "chain": "eip155:31337",
-  "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+  "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
   "manifest": {
     "publishers": {
-      "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors": [
+      "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors": [
         {
           "address": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
           "chain": "eip155:31337",
@@ -28,19 +28,19 @@
   },
   "epochs": [
     {
-      "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
-      "p": "ce160e900de68182541b9ef62cd84523717d9c83796243536d842ca87c8b5f7d",
+      "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n2\nMPVeCuD15QLWoo/1Lns4L5NAZar0Jjqsm5dkakOjoA0=\n",
+      "p": "12107b82a91db3886dc71388590db16c84d553505c7cd80ea6b0e366210f46be",
       "previousAnchorSize": null,
       "anchorConsistencyProof": [],
       "members": [
         {
-          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+          "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n3\nAwztbRVstXsxqhiPP6/+cPvpmK010U93hbTRULeXS/8=\n",
           "anchorLeafIndex": 0,
           "previousLogCheckpoint": null,
           "consistencyProof": []
         },
         {
-          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461\n2\n3D7DfkOWAscKUCe+mKnET4jiovrakpn7G/VTtfVPOQI=\n",
+          "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/62657461\n2\nrVdGwORlHQDStfrMAhrU7jjAR1wxevaTye9eOAE+nMs=\n",
           "anchorLeafIndex": 1,
           "previousLogCheckpoint": null,
           "consistencyProof": []
@@ -49,46 +49,46 @@
       "publication": {
         "kind": "evm-calldata/1",
         "chain": "eip155:31337",
-        "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+        "transactionId": "0xcc49360eb14b73a1921516495850287b430fafe0475f5f3f75bac1c1ba4fb1ed",
         "blockNumber": 1,
-        "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+        "blockHash": "0x2163f675e7e2ea6b419cab81b4bcd18e5b46c26667df8ab09c139468cde04230",
         "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
-        "rawTransaction": "0x02f88c827a6980843b9aca0084b2d05e00827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a0ce160e900de68182541b9ef62cd84523717d9c83796243536d842ca87c8b5f7dc001a071a3adee7b979cf83f7d262e35794c62d53e0916a84dcaf91621647dc1a056d7a00a11de0dc0fd9f7711fdfa5abd28c847dc4f3a2d1ff876caefec8bc60daa4d9e",
-        "blockHeader": "0xf90262a07cccdf46287d147165e644b9d6793a3a2022cb2424de4791e6d1cfc88d51a76fa01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a09a69c6ccf870a09d537b04614f1916745a56f297f6b08d26a14c2b836f4ab39aa019eff517c5be882a4911230f8791ac96f8f869ff5c5b0c55015a2ea85d4a66c9a04f5e6e0c9cfdec5244e2691c68730f0b2d97c486028285be7c6dbfd08f3ac4dfb901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080018401c9c3808306bfa8846ab8014880a0b93ce6dba9e0d9e0e63f6555b8b9721c03df73e457cda50cfc9fe9eaad893624880000000000000000843b9aca00a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "rawTransaction": "0x02f88c827a6980843b9aca0084b2d05e00827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a012107b82a91db3886dc71388590db16c84d553505c7cd80ea6b0e366210f46bec080a053d027732dca09e3822a158c0968acfe31ccf5d151b15a164bb7d4d346d8a571a025107cc2aee4556b7a2658d8684c87a9a137cfe2fa1da9d2ee01f29ccee4b5c3",
+        "blockHeader": "0xf90262a06061f1423dd7f7415758d57bd623ae69dd76b0a67b11d42cb5878f13e0e6563ca01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a09a69c6ccf870a09d537b04614f1916745a56f297f6b08d26a14c2b836f4ab39aa0e723f5471d0a004bcf3f492d571a382298dc622d54064609f1e64317dd50cfaea04f5e6e0c9cfdec5244e2691c68730f0b2d97c486028285be7c6dbfd08f3ac4dfb901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080018401c9c3808306bfa8846abe9b0e80a06562ddbce92261c30fe76e041852eb0d08a03921f02c9e53e2157c9bda794920880000000000000000843b9aca00a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "txIndex": 11,
         "txProof": [
-          "0xf871a0476cca8122ae79af40b67080cec775d57625690368991d40fb3f14417daed098a076a427e03cab35c5ef5836b1385ed9848bda2cd29df13865543ea12d1125d891808080808080a09f923f0bd25b4ca61ce65816372ab3d12d7b183f4612c1719632a0f1352c67598080808080808080",
-          "0xf901f180a0e778d90906784e07071636195ab3c60544b5f8f3aea769cba6312bb86f2cb615a007bb459a50928b14355fd1bb8dac25c97a6eda2145bc18a9feabff05713f32c5a0a87b2261360f32b6b37abb86e28db385e756d81e6420c346efda27dbe6cf687ea01f08bf84d755c7929892b0283e670eb63b3d977d322a8db4e6bc53cfc235a9b3a05893eb66de6be0915a29fcdfe9480a86d99e202c2015b1c065d094f99db906c4a035f9db515228a972dc959e6f222b21dd3e6f26cc2f5ede6f6b5ba6121a58738ba0d6d9142138e08c966c76d9df1d7e36e215d7c32ba25ff7d91ea61e24b56ca51ba0900d8f50b4f445fa42964f17b7db411cdddb1aba5740a9fcc5f888461ba85a74a0b4ecc44b789855090e38705416127d89ea6e7968bd5f33d682dded350c278feda07900e67be1b19e0d460b79930078de87ba98b1323a8c9ef92b4b8f48f882738ba056e3800db19bb0970b0020e42c63cc9667286d6eb8b68c654bd72d1bfa65a7ada01a9d431e297f93a60f72b2ca176b9a2a6460b3ba01c6d83e21d1fda8a3a329eaa0101deca855e7dd3577402b428571ce8d2b531ea4434a6603b56eca8e34423535a0524ad29e24af07913ce9b4ed1d54008664ef37c0a091c452af61c254e8c54118a07f4305aa9dab9088bad07d26865ef31f7cacc53403f627499e3f59e2972d1bf780",
-          "0xf89220b88f02f88c827a6980843b9aca0084b2d05e00827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a0ce160e900de68182541b9ef62cd84523717d9c83796243536d842ca87c8b5f7dc001a071a3adee7b979cf83f7d262e35794c62d53e0916a84dcaf91621647dc1a056d7a00a11de0dc0fd9f7711fdfa5abd28c847dc4f3a2d1ff876caefec8bc60daa4d9e"
+          "0xf871a05b159cf97e790056f86170ac80a37a7627000f75f8af96eda812aec8ffcaebfca076a427e03cab35c5ef5836b1385ed9848bda2cd29df13865543ea12d1125d891808080808080a09f923f0bd25b4ca61ce65816372ab3d12d7b183f4612c1719632a0f1352c67598080808080808080",
+          "0xf901f180a0e778d90906784e07071636195ab3c60544b5f8f3aea769cba6312bb86f2cb615a007bb459a50928b14355fd1bb8dac25c97a6eda2145bc18a9feabff05713f32c5a0a87b2261360f32b6b37abb86e28db385e756d81e6420c346efda27dbe6cf687ea01f08bf84d755c7929892b0283e670eb63b3d977d322a8db4e6bc53cfc235a9b3a05893eb66de6be0915a29fcdfe9480a86d99e202c2015b1c065d094f99db906c4a035f9db515228a972dc959e6f222b21dd3e6f26cc2f5ede6f6b5ba6121a58738ba0d6d9142138e08c966c76d9df1d7e36e215d7c32ba25ff7d91ea61e24b56ca51ba0900d8f50b4f445fa42964f17b7db411cdddb1aba5740a9fcc5f888461ba85a74a0b4ecc44b789855090e38705416127d89ea6e7968bd5f33d682dded350c278feda07900e67be1b19e0d460b79930078de87ba98b1323a8c9ef92b4b8f48f882738ba0ae3ff475d1be07360e29cd168eeb153dcc85f238208151e816482224c84d8679a01a9d431e297f93a60f72b2ca176b9a2a6460b3ba01c6d83e21d1fda8a3a329eaa0101deca855e7dd3577402b428571ce8d2b531ea4434a6603b56eca8e34423535a0524ad29e24af07913ce9b4ed1d54008664ef37c0a091c452af61c254e8c54118a07f4305aa9dab9088bad07d26865ef31f7cacc53403f627499e3f59e2972d1bf780",
+          "0xf89220b88f02f88c827a6980843b9aca0084b2d05e00827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a012107b82a91db3886dc71388590db16c84d553505c7cd80ea6b0e366210f46bec080a053d027732dca09e3822a158c0968acfe31ccf5d151b15a164bb7d4d346d8a571a025107cc2aee4556b7a2658d8684c87a9a137cfe2fa1da9d2ee01f29ccee4b5c3"
         ]
       },
       "canonicalBlock": {
         "number": 1,
-        "hash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
-        "timestamp": 1790443848
+        "hash": "0x2163f675e7e2ea6b419cab81b4bcd18e5b46c26667df8ab09c139468cde04230",
+        "timestamp": 1790876430
       }
     },
     {
-      "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
-      "p": "3f7e698dfb8531a729cf806f2b933803c3cd5cb41f4bc91d42cc1a1d7d209f09",
+      "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n4\nJ8skaAYTdQoZUU/MsZ43OHvRDaZPv2cATcK6JVu9/RE=\n",
+      "p": "66352ab027d8cea586a0e93a2c936712990f102d17c0d4fa8018f372c3298a24",
       "previousAnchorSize": 2,
       "anchorConsistencyProof": [
-        "f0609cbb45c809da9ea4b502057ffa3373adba19d5531a614fde095e0459c62a"
+        "d9c10e4784bd95815b21f8669702cd90201696bb6d1f07de3662c245743fe70e"
       ],
       "members": [
         {
-          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n5\nhWgskm9ri7GHk4MMje13BD0YtsNJzqJrYhh9PINjBc0=\n",
+          "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n5\nsk8Jug0a7cY5g/5ZWCHpfmCu1d9se/y37eO2HwRlFXo=\n",
           "anchorLeafIndex": 2,
-          "previousLogCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+          "previousLogCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n3\nAwztbRVstXsxqhiPP6/+cPvpmK010U93hbTRULeXS/8=\n",
           "consistencyProof": [
-            "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47",
-            "1ea5ca049f7e6a337ed32c9874550f175ff1475e15e4c84268456b35e9a22ee2",
-            "f8abea7a9a650969ecd8a7969df830ecc1f18d6809b35f613d3eed2201ce36c8",
-            "68a824cdaa76ae0fcfdcf31d0d6f45f8fc6095bffd506a2ad9659c6645851eaa"
+            "b0d6a3b6d4d8147c91545da7585db9898e2a339ea31ef59f0893a7d20f8be869",
+            "3eaeaad9af46acdc2219b2e85bd528ad6114e3f698ea5280b0e3e5869a2582ad",
+            "107dc5fa86ba02415f274f3a06f4560e14a48c41292ac3ed74fbfbec47df88c6",
+            "8a6a6a9b83649ed1a6b855a23a3b04d6eea4542f7f36d4245cef97d2da9c21d4"
           ]
         },
         {
-          "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/67616d6d61\n1\nmi5GO0+jbN+h5739DvlYMlh34Vi5VOIV93P8vXUZRyQ=\n",
+          "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/67616d6d61\n1\niHnRDQwNS8rWc+VHYtGdcVX4zTdKjf4FXdm0mdIkjgs=\n",
           "anchorLeafIndex": 3,
           "previousLogCheckpoint": null,
           "consistencyProof": []
@@ -97,23 +97,23 @@
       "publication": {
         "kind": "evm-calldata/1",
         "chain": "eip155:31337",
-        "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+        "transactionId": "0x2b7156f632ff2a0aca02fa8e33d46adf22b0c0d62d61648aa80d0d8f2d72f36c",
         "blockNumber": 5,
-        "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+        "blockHash": "0x3431d35f10c028fdb86fccc057f57c2b630b5ba2f28e8f9e39394eed0df89a6e",
         "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
-        "rawTransaction": "0x02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a03f7e698dfb8531a729cf806f2b933803c3cd5cb41f4bc91d42cc1a1d7d209f09c080a0206405501b59d2555ffe4d7debac171542fc5c0b976d04fd1af657a35858d006a0606759f94b4391ae4607c2a39fb47f5136a98001d8d88c4af2bbacd7372f0c88",
-        "blockHeader": "0xf90262a0daa188a0dd91f71a56105d6077065b68073461625966cc12b8be3eedd091ae34a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a07cb671f485ed2cdab6770d532a37ffd08c1ffc502b26d76c9f8fd725605c5d63a00f95627bf73482e95db66bc3ffe21b64cd252e97840a452ef1e556b08ba396dca05be60f9fdbb5d82e12151e054c240b05ac06ea414f9465ffcb55c6eb86edc190b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080058401c9c38083014d20846ab8014880a05ecfb8380cbb480a31281b0dad624cf0585ca22fb0c66f89e049796defb62cad88000000000000000084231618ffa056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "rawTransaction": "0x02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a066352ab027d8cea586a0e93a2c936712990f102d17c0d4fa8018f372c3298a24c001a016b462b85b80432b52c5b743c39541d232cf4170d6a738ecf457765fa4b309efa0690fa59db88393de11db49d7ce84d6216c6b2ef6d7444ab742bff5c2cf0cc34e",
+        "blockHeader": "0xf90262a0733d494bd660b61d873e40ce83b27a5e61628064be9e796e9e3b61f6a6cfcb04a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a07cb671f485ed2cdab6770d532a37ffd08c1ffc502b26d76c9f8fd725605c5d63a04a8c87f20e9741b1b630753e85aa83a1396215eac6e79f27f6023c8b300e9d77a05be60f9fdbb5d82e12151e054c240b05ac06ea414f9465ffcb55c6eb86edc190b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080058401c9c38083014d20846abe9b0f80a031aee937701504ed48ac77549e34412a7cf7ff0bc7b6201f1cd6d9926742607188000000000000000084231618ffa056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "txIndex": 2,
         "txProof": [
-          "0xf851a01a365020cb3648ced2fdad1a4c31bc4483e17d18f38d5aafd16e2889647db18580808080808080a0d49f9481c280239e1ee0279e25b6d96c39496e43f0fadccf916696619aad46d18080808080808080",
-          "0xf87180a0fd08b33f18c2b9724304985053723b062cdfe5fe922911704830e0e7303c8dbba0d0b50e586d0c76c63a600064abdaa3430960a038b42c8893aa5aa4ec5382ee10a0fc40860d6b5be083e48bdb0bd7af96d02db0dad925bf9b1e702b68ca10979ab380808080808080808080808080",
-          "0xf89220b88f02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a03f7e698dfb8531a729cf806f2b933803c3cd5cb41f4bc91d42cc1a1d7d209f09c080a0206405501b59d2555ffe4d7debac171542fc5c0b976d04fd1af657a35858d006a0606759f94b4391ae4607c2a39fb47f5136a98001d8d88c4af2bbacd7372f0c88"
+          "0xf851a073661e39de999e0a3d671a56049d96425b757bdc309e1e661fac35d0214cb27280808080808080a0d49f9481c280239e1ee0279e25b6d96c39496e43f0fadccf916696619aad46d18080808080808080",
+          "0xf87180a0fd08b33f18c2b9724304985053723b062cdfe5fe922911704830e0e7303c8dbba07487b8dc5c8c08bd3f9c0f6d88cffbaeee01b0a57101e6700504993d8beee1ffa0fc40860d6b5be083e48bdb0bd7af96d02db0dad925bf9b1e702b68ca10979ab380808080808080808080808080",
+          "0xf89220b88f02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a066352ab027d8cea586a0e93a2c936712990f102d17c0d4fa8018f372c3298a24c001a016b462b85b80432b52c5b743c39541d232cf4170d6a738ecf457765fa4b309efa0690fa59db88393de11db49d7ce84d6216c6b2ef6d7444ab742bff5c2cf0cc34e"
         ]
       },
       "canonicalBlock": {
         "number": 5,
-        "hash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
-        "timestamp": 1790443848
+        "hash": "0x3431d35f10c028fdb86fccc057f57c2b630b5ba2f28e8f9e39394eed0df89a6e",
+        "timestamp": 1790876431
       }
     }
   ],
@@ -125,7 +125,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "1f7fd3f0-c49a-44db-b2bb-7faff6a0163a",
+          "evidenceId": "e2527051-51a5-470e-9647-e8017a8b3c9f",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -133,15 +133,23 @@
             "chain": "alpha",
             "i": 1
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: alpha #1",
-          "capturedAt": "2026-09-26T17:30:47.749Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: alpha #1",
+          "capturedAt": "2026-10-01T17:40:30.269Z",
           "sequenceNumber": 1,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "76c5927fa0904173f1de5921faf58c8fe7c38218d96d3ed4be99094ff8fd519d",
+          "canonicalDigest": "e57debd5aab6e7cfb168b9fc9f23f60bebb7361e8e0574f10c7fca4080f71826",
           "chainLink": null
         },
         "nonRepudiation": {
@@ -149,23 +157,23 @@
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 0,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n3\nAwztbRVstXsxqhiPP6/+cPvpmK010U93hbTRULeXS/8=\n",
             "logPath": [
-              "dd582e915890ec8fe6583c4d088116c7b559891be7874ab150edb812dc8e7ee9",
-              "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47"
+              "dcf4d9276ecbc096b93b10066c054753b56833cca66e564ff7c6ae4663a54b84",
+              "b0d6a3b6d4d8147c91545da7585db9898e2a339ea31ef59f0893a7d20f8be869"
             ],
             "anchorLeafIndex": 0,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n2\nMPVeCuD15QLWoo/1Lns4L5NAZar0Jjqsm5dkakOjoA0=\n",
             "anchorPath": [
-              "91003f805070445bd82714a493fca983abc3295b4c2d324a186afcc02c269e42"
+              "538299b0784037751c6391784829dd2c962de2d7695a2656189186b0b1d81f2f"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "transactionId": "0xcc49360eb14b73a1921516495850287b430fafe0475f5f3f75bac1c1ba4fb1ed",
                 "blockNumber": 1,
-                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "blockHash": "0x2163f675e7e2ea6b419cab81b4bcd18e5b46c26667df8ab09c139468cde04230",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -173,8 +181,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:47.749Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:30.269Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -198,15 +206,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:30.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861",
             "leafIndex": 0,
             "treeSize": 3,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 0,
             "anchorSize": 2,
             "leafIndexChecked": true,
@@ -223,7 +231,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "230a96ca-e300-469d-9799-914164c7a0d0",
+          "evidenceId": "28c0a914-67fd-4884-888d-c352769fc046",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -231,39 +239,47 @@
             "chain": "alpha",
             "i": 2
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: alpha #2",
-          "capturedAt": "2026-09-26T17:30:47.754Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: alpha #2",
+          "capturedAt": "2026-10-01T17:40:30.280Z",
           "sequenceNumber": 2,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "ae98c5c2c20888b3ff9c19c8964f64ad6c7de36ee1e6a796521d1bc9286129ae",
-          "chainLink": "8f00830dc4974364f7b76a0e43dc5cd821bd293869b8afa2190e932f69af8098"
+          "canonicalDigest": "bba245f8e95e7d162471fe9c5d2f2ba3d35dfb304eb64ef0a421ca6ef966c93b",
+          "chainLink": "7239cf5392d07d16e627da21214ed2daa7680b63e4ad4aceccd1639345207a98"
         },
         "nonRepudiation": {
           "anchor": {
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 1,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n3\nAwztbRVstXsxqhiPP6/+cPvpmK010U93hbTRULeXS/8=\n",
             "logPath": [
-              "da3f254b4dfbdcb2448409b928e8fa1d5be225f668beba75a643dbe01c88ba5d",
-              "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47"
+              "c23c3a95871335157bf529b1bf6c7a2237e61c5061fe2f1aa69bbb168f572536",
+              "b0d6a3b6d4d8147c91545da7585db9898e2a339ea31ef59f0893a7d20f8be869"
             ],
             "anchorLeafIndex": 0,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n2\nMPVeCuD15QLWoo/1Lns4L5NAZar0Jjqsm5dkakOjoA0=\n",
             "anchorPath": [
-              "91003f805070445bd82714a493fca983abc3295b4c2d324a186afcc02c269e42"
+              "538299b0784037751c6391784829dd2c962de2d7695a2656189186b0b1d81f2f"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "transactionId": "0xcc49360eb14b73a1921516495850287b430fafe0475f5f3f75bac1c1ba4fb1ed",
                 "blockNumber": 1,
-                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "blockHash": "0x2163f675e7e2ea6b419cab81b4bcd18e5b46c26667df8ab09c139468cde04230",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -271,8 +287,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:47.754Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:30.280Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -296,15 +312,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:30.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861",
             "leafIndex": 1,
             "treeSize": 3,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 0,
             "anchorSize": 2,
             "leafIndexChecked": true,
@@ -321,7 +337,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "456f683d-076b-4ff5-808d-1c963cf24e19",
+          "evidenceId": "a5ea8c2f-f893-4bda-975b-4a93da1e2546",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -329,38 +345,46 @@
             "chain": "alpha",
             "i": 3
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: alpha #3",
-          "capturedAt": "2026-09-26T17:30:47.756Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: alpha #3",
+          "capturedAt": "2026-10-01T17:40:30.283Z",
           "sequenceNumber": 3,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "ab9f3facaf6814b296b42f4b6251ddb464654163e54114ac2fd9bb2cf5c4bb28",
-          "chainLink": "08b6d7e2bbf1a26bc1fb04519208aff0e15c62958d8b5ede89d4be7c8ab0dbbd"
+          "canonicalDigest": "736d073348c60192babfc7e412e847c3e0479d806bfa26c155ba59268c6ecc8d",
+          "chainLink": "d1b3ce53e38986e8065eb9f517fa1ea81418cc244bc5a104a88a4cbbf760aab7"
         },
         "nonRepudiation": {
           "anchor": {
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 2,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n3\nNiB9H401/NPysSLdvIlEkkHv3eW0R0jihFAC3EZgAXc=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n3\nAwztbRVstXsxqhiPP6/+cPvpmK010U93hbTRULeXS/8=\n",
             "logPath": [
-              "f8abea7a9a650969ecd8a7969df830ecc1f18d6809b35f613d3eed2201ce36c8"
+              "107dc5fa86ba02415f274f3a06f4560e14a48c41292ac3ed74fbfbec47df88c6"
             ],
             "anchorLeafIndex": 0,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n2\nMPVeCuD15QLWoo/1Lns4L5NAZar0Jjqsm5dkakOjoA0=\n",
             "anchorPath": [
-              "91003f805070445bd82714a493fca983abc3295b4c2d324a186afcc02c269e42"
+              "538299b0784037751c6391784829dd2c962de2d7695a2656189186b0b1d81f2f"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "transactionId": "0xcc49360eb14b73a1921516495850287b430fafe0475f5f3f75bac1c1ba4fb1ed",
                 "blockNumber": 1,
-                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "blockHash": "0x2163f675e7e2ea6b419cab81b4bcd18e5b46c26667df8ab09c139468cde04230",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -368,8 +392,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:47.756Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:30.283Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -393,15 +417,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:30.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861",
             "leafIndex": 2,
             "treeSize": 3,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 0,
             "anchorSize": 2,
             "leafIndexChecked": true,
@@ -418,7 +442,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "0a99835d-50ae-4e81-ad29-e64e31bafedc",
+          "evidenceId": "41638342-79c3-4e23-bef0-f2a1e3ecab7a",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -426,15 +450,23 @@
             "chain": "beta",
             "i": 4
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: beta #4",
-          "capturedAt": "2026-09-26T17:30:47.758Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: beta #4",
+          "capturedAt": "2026-10-01T17:40:30.288Z",
           "sequenceNumber": 1,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "eb556bc7d8fbb8677add915ac2fd9b14136eecc64c08f025aacf2ca95af44ee9",
+          "canonicalDigest": "41937c7026bfded5b68e9a525cb405181cead5364c7762f5c6990532212f4adc",
           "chainLink": null
         },
         "nonRepudiation": {
@@ -442,22 +474,22 @@
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 0,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461\n2\n3D7DfkOWAscKUCe+mKnET4jiovrakpn7G/VTtfVPOQI=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/62657461\n2\nrVdGwORlHQDStfrMAhrU7jjAR1wxevaTye9eOAE+nMs=\n",
             "logPath": [
-              "48597da3b8e65b6ba82da13a4328b2ba1e32fea15380678554b6fcc641b2237e"
+              "92d22081a36b2c36b4e57a778d7970421de7bd36d1b967cfa44bf1b2e56ce193"
             ],
             "anchorLeafIndex": 1,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n2\nMPVeCuD15QLWoo/1Lns4L5NAZar0Jjqsm5dkakOjoA0=\n",
             "anchorPath": [
-              "2b56c836eb1b870f90b819003f2ccfde66dab5dfbe2766e004dbe51d647f2d31"
+              "4878b313e02ddbbc021eb05942be4ddda25d7ae55ab86d23cb4a3bb73bb3a6af"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "transactionId": "0xcc49360eb14b73a1921516495850287b430fafe0475f5f3f75bac1c1ba4fb1ed",
                 "blockNumber": 1,
-                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "blockHash": "0x2163f675e7e2ea6b419cab81b4bcd18e5b46c26667df8ab09c139468cde04230",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -465,8 +497,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:47.758Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:30.288Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -490,15 +522,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:30.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/62657461",
             "leafIndex": 0,
             "treeSize": 2,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 1,
             "anchorSize": 2,
             "leafIndexChecked": true,
@@ -515,7 +547,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "d488bc46-3d2f-48fc-a3c8-79e5053cdb2b",
+          "evidenceId": "9043aec6-606f-4e77-98f0-972989e2b8f5",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -523,38 +555,46 @@
             "chain": "beta",
             "i": 5
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: beta #5",
-          "capturedAt": "2026-09-26T17:30:47.760Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: beta #5",
+          "capturedAt": "2026-10-01T17:40:30.291Z",
           "sequenceNumber": 2,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "f0388642203c615b607c713104c0b109bfb95b2c13cf3c9c768f5bd3d7fa67a6",
-          "chainLink": "c334bdff0d2aa5b73955b71e02e413ebb9ed3f6cffa766d1fe878f007ed24b77"
+          "canonicalDigest": "c19dc9b3255bdd03a5f8341689995dadaaeff7ee9ae5077bb8812fc15a6bf465",
+          "chainLink": "a999e42c645559c1ea9f02df605059c2d17a7a5144b605c643719a1ee5d4441c"
         },
         "nonRepudiation": {
           "anchor": {
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 1,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461\n2\n3D7DfkOWAscKUCe+mKnET4jiovrakpn7G/VTtfVPOQI=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/62657461\n2\nrVdGwORlHQDStfrMAhrU7jjAR1wxevaTye9eOAE+nMs=\n",
             "logPath": [
-              "452760081bb67fab81f68bca4353d9988c1d9458719573bb6a46ca97865fbd09"
+              "6a7f305dabdd82a7b718af1bf22880dda082c76f60193095146a18892158578b"
             ],
             "anchorLeafIndex": 1,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n2\nJ5KsqSdBhb0vQoEApvOqLbPunNx803f/C/TgF2+5WAk=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n2\nMPVeCuD15QLWoo/1Lns4L5NAZar0Jjqsm5dkakOjoA0=\n",
             "anchorPath": [
-              "2b56c836eb1b870f90b819003f2ccfde66dab5dfbe2766e004dbe51d647f2d31"
+              "4878b313e02ddbbc021eb05942be4ddda25d7ae55ab86d23cb4a3bb73bb3a6af"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0xfbd6d01beea95c059c2dfad21ea6d82958df4d4bda6bd40b4aa372600fe0e7f7",
+                "transactionId": "0xcc49360eb14b73a1921516495850287b430fafe0475f5f3f75bac1c1ba4fb1ed",
                 "blockNumber": 1,
-                "blockHash": "0x4cdcee49ea905a0891e992f9fd4fe512d905ea57669ccb752ba19bee676cdb25",
+                "blockHash": "0x2163f675e7e2ea6b419cab81b4bcd18e5b46c26667df8ab09c139468cde04230",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -562,8 +602,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:47.760Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:30.291Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -587,15 +627,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:30.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/62657461",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/62657461",
             "leafIndex": 1,
             "treeSize": 2,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 1,
             "anchorSize": 2,
             "leafIndexChecked": true,
@@ -612,7 +652,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "8607bb87-b9c8-4e62-bc01-6210392e3fba",
+          "evidenceId": "9d2da6f9-bff1-4ce1-8bab-651d8c1b2a4e",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -620,41 +660,49 @@
             "chain": "alpha",
             "i": 6
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: alpha #6",
-          "capturedAt": "2026-09-26T17:30:48.451Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: alpha #6",
+          "capturedAt": "2026-10-01T17:40:30.996Z",
           "sequenceNumber": 4,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "ee2723b79013fcd4b2b77f70968b154c91509ef3eb7a039c2ca8be0f6007ead3",
-          "chainLink": "caa065fd7b97eb98602ce52bd6186ea29e5502e07ac7712506fb4c496ee461bc"
+          "canonicalDigest": "227bf2e8c9161207d3e26574ad7b4f9c837cb4558c523776312d064535ada10e",
+          "chainLink": "d82e0ce9f4e41bbb8bd0194b407b8c2758a9e9ca3a77f7b15b15394bd098b779"
         },
         "nonRepudiation": {
           "anchor": {
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 3,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n5\nhWgskm9ri7GHk4MMje13BD0YtsNJzqJrYhh9PINjBc0=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n5\nsk8Jug0a7cY5g/5ZWCHpfmCu1d9se/y37eO2HwRlFXo=\n",
             "logPath": [
-              "f1f52554795de3b316d6c9e9e4c63bb035d1df7845952b69c178a74729aa4a47",
-              "f8abea7a9a650969ecd8a7969df830ecc1f18d6809b35f613d3eed2201ce36c8",
-              "68a824cdaa76ae0fcfdcf31d0d6f45f8fc6095bffd506a2ad9659c6645851eaa"
+              "b0d6a3b6d4d8147c91545da7585db9898e2a339ea31ef59f0893a7d20f8be869",
+              "107dc5fa86ba02415f274f3a06f4560e14a48c41292ac3ed74fbfbec47df88c6",
+              "8a6a6a9b83649ed1a6b855a23a3b04d6eea4542f7f36d4245cef97d2da9c21d4"
             ],
             "anchorLeafIndex": 2,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n4\nJ8skaAYTdQoZUU/MsZ43OHvRDaZPv2cATcK6JVu9/RE=\n",
             "anchorPath": [
-              "8689c05a5262bbbc241bff8a90aede6f623a52f30001d6bb67cc6379c43cc7b5",
-              "2792aca9274185bd2f428100a6f3aa2db3ee9cdc7cd377ff0bf4e0176fb95809"
+              "d9ceaefc2e17bd0d347221e5f943c8a05b58b77b810781a85e3a1f5cb69ef951",
+              "30f55e0ae0f5e502d6a28ff52e7b382f934065aaf4263aac9b97646a43a3a00d"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+                "transactionId": "0x2b7156f632ff2a0aca02fa8e33d46adf22b0c0d62d61648aa80d0d8f2d72f36c",
                 "blockNumber": 5,
-                "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+                "blockHash": "0x3431d35f10c028fdb86fccc057f57c2b630b5ba2f28e8f9e39394eed0df89a6e",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -662,8 +710,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:48.451Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:30.996Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -687,15 +735,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:31.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861",
             "leafIndex": 3,
             "treeSize": 5,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 2,
             "anchorSize": 4,
             "leafIndexChecked": true,
@@ -712,7 +760,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "c008cb7d-d5ba-472f-878f-26675f375ff4",
+          "evidenceId": "43b446a8-0bc3-4ae0-8575-1e15075ebb34",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -720,39 +768,47 @@
             "chain": "alpha",
             "i": 7
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: alpha #7",
-          "capturedAt": "2026-09-26T17:30:48.453Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: alpha #7",
+          "capturedAt": "2026-10-01T17:40:30.998Z",
           "sequenceNumber": 5,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "73bc542daa4c5413174e9cc917ce7dfe1c3608699555a7b9c192c0d0b9b7da6e",
-          "chainLink": "d4d31f3de398622e419e8ba4798a93b3ea5b5a160e176b9eab3fb708d618eb13"
+          "canonicalDigest": "336bd14de04cd07af6720e09198cfc77ce933aa133f171322a88e0ef36abf7cb",
+          "chainLink": "d4893a6a060706a779bf2205b6051fa2ae7c2fe2148be8ea241a6615af6cad79"
         },
         "nonRepudiation": {
           "anchor": {
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 4,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861\n5\nhWgskm9ri7GHk4MMje13BD0YtsNJzqJrYhh9PINjBc0=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861\n5\nsk8Jug0a7cY5g/5ZWCHpfmCu1d9se/y37eO2HwRlFXo=\n",
             "logPath": [
-              "b481dbd34867439aa9dc81fb6133e1c3a9c6c1f089651572e8341fa7f49812bd"
+              "da7348db3b2c223c2a0317cbe42113b8ba979cd43eda97f3c70bcca11e6cd70c"
             ],
             "anchorLeafIndex": 2,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n4\nJ8skaAYTdQoZUU/MsZ43OHvRDaZPv2cATcK6JVu9/RE=\n",
             "anchorPath": [
-              "8689c05a5262bbbc241bff8a90aede6f623a52f30001d6bb67cc6379c43cc7b5",
-              "2792aca9274185bd2f428100a6f3aa2db3ee9cdc7cd377ff0bf4e0176fb95809"
+              "d9ceaefc2e17bd0d347221e5f943c8a05b58b77b810781a85e3a1f5cb69ef951",
+              "30f55e0ae0f5e502d6a28ff52e7b382f934065aaf4263aac9b97646a43a3a00d"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+                "transactionId": "0x2b7156f632ff2a0aca02fa8e33d46adf22b0c0d62d61648aa80d0d8f2d72f36c",
                 "blockNumber": 5,
-                "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+                "blockHash": "0x3431d35f10c028fdb86fccc057f57c2b630b5ba2f28e8f9e39394eed0df89a6e",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -760,8 +816,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:48.453Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:30.998Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -785,15 +841,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:31.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/616c706861",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/616c706861",
             "leafIndex": 4,
             "treeSize": 5,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 2,
             "anchorSize": 4,
             "leafIndexChecked": true,
@@ -810,7 +866,7 @@
       "envelope": {
         "envelopeVersion": "e1",
         "payload": {
-          "evidenceId": "e15482d3-9373-4f07-a9fa-eed17355beec",
+          "evidenceId": "35c1ef0d-27d5-4723-95b3-e5cc00b92698",
           "schemaVersion": "v1.0",
           "aiSystemId": "anchor-e2e-vectors",
           "aiOutput": {
@@ -818,15 +874,23 @@
             "chain": "gamma",
             "i": 8
           },
-          "humanAction": "approved",
-          "humanReason": "anchor e2e vector: gamma #8",
-          "capturedAt": "2026-09-26T17:30:48.455Z",
+          "action": "approved",
+          "reason": "anchor e2e vector: gamma #8",
+          "capturedAt": "2026-10-01T17:40:31.001Z",
           "sequenceNumber": 1,
-          "aiBom": null,
+          "decider": {
+            "kind": "human",
+            "id": "acct:u-anchor-e2e",
+            "agent": null,
+            "credential": null,
+            "freshness": null
+          },
+          "contributions": null,
+          "links": null,
           "signoffExpectation": null
         },
         "integrity": {
-          "canonicalDigest": "a7d71598ccf07843c99c579983dba97731adc1e8acf532a133cca2876814e42a",
+          "canonicalDigest": "4900d015c9f2354e7545b9c6354153c35a481f8de314e8a078c1d1a6df9f44d2",
           "chainLink": null
         },
         "nonRepudiation": {
@@ -834,21 +898,21 @@
             "anchorSpec": "tzun-anchor/1",
             "merkleSpec": "rfc6962",
             "leafIndex": 0,
-            "logCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/67616d6d61\n1\nmi5GO0+jbN+h5739DvlYMlh34Vi5VOIV93P8vXUZRyQ=\n",
+            "logCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/67616d6d61\n1\niHnRDQwNS8rWc+VHYtGdcVX4zTdKjf4FXdm0mdIkjgs=\n",
             "logPath": [],
             "anchorLeafIndex": 3,
-            "anchorCheckpoint": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors\n4\ndaTTGoaIdlaivFhKGH09OBNiUwsCMxTJjGza8dj89N0=\n",
+            "anchorCheckpoint": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors\n4\nJ8skaAYTdQoZUU/MsZ43OHvRDaZPv2cATcK6JVu9/RE=\n",
             "anchorPath": [
-              "270977e8da24a262388daf46be548a50c95f87d2bc7ca1f70f98126745b5ce07",
-              "2792aca9274185bd2f428100a6f3aa2db3ee9cdc7cd377ff0bf4e0176fb95809"
+              "bc7f41e27e4ea75c442b7b8d925119135e374623ff71d2b56659e970f99077f0",
+              "30f55e0ae0f5e502d6a28ff52e7b382f934065aaf4263aac9b97646a43a3a00d"
             ],
             "publications": [
               {
                 "kind": "evm-calldata/1",
                 "chain": "eip155:31337",
-                "transactionId": "0x2bbd88e6fa97922c05386dcdc8a7b16ca8b2f54708b36d7bdff905d7222c9323",
+                "transactionId": "0x2b7156f632ff2a0aca02fa8e33d46adf22b0c0d62d61648aa80d0d8f2d72f36c",
                 "blockNumber": 5,
-                "blockHash": "0x10fd4d4dfc945d61bb142fd3f383587df930f426d5ef519a8fafcb037058422a",
+                "blockHash": "0x3431d35f10c028fdb86fccc057f57c2b630b5ba2f28e8f9e39394eed0df89a6e",
                 "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
               }
             ]
@@ -856,8 +920,8 @@
         },
         "custodyChain": [
           {
-            "timestamp": "2026-09-26T17:30:48.455Z",
-            "actor": "unknown",
+            "timestamp": "2026-10-01T17:40:31.001Z",
+            "actor": "acct:u-anchor-e2e",
             "action": "decision_captured",
             "systemId": "anchor-e2e-vectors"
           }
@@ -881,15 +945,15 @@
           "anchorNetwork": null,
           "anchorFinality": "finalized",
           "existedBy": {
-            "at": "2026-09-26T17:30:48.000Z",
+            "at": "2026-10-01T17:40:31.000Z",
             "source": "evm-calldata"
           },
           "inclusion": "tx_proof",
           "anchorPosition": {
-            "origin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/evidence/67616d6d61",
+            "origin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/evidence/67616d6d61",
             "leafIndex": 0,
             "treeSize": 1,
-            "anchorOrigin": "test.vectors.tzun/655ae486c3979269faadc2d3e3091811/anchors",
+            "anchorOrigin": "test.vectors.tzun/380ebe56b8af417a1117079b31bd3c9c/anchors",
             "anchorLeafIndex": 3,
             "anchorSize": 4,
             "leafIndexChecked": true,

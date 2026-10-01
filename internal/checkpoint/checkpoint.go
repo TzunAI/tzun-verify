@@ -252,6 +252,22 @@ func Bind(anchorOrigin, logOrigin string, chainID *string, chainOK bool) BindRes
 	return r
 }
 
+// BindRecord is step 2b for a record's own artifact (§10.3). On top of
+// Bind, a log origin of a kind other than evidence is chain_id_mismatch
+// whether or not a chain id is supplied, since a record has a leaf in its
+// own chain's evidence log and nowhere else; an opaque hosted log, whose
+// kind cannot be read (§4.3.3), is the one exception.
+func BindRecord(anchorOrigin, logOrigin string, chainID *string, chainOK bool) BindResult {
+	r := Bind(anchorOrigin, logOrigin, chainID, chainOK)
+	if r.Result != BindOK {
+		return r
+	}
+	if lo, _ := ParseOrigin(logOrigin); lo.Kind != KindEvidence && !IsPlatformNamespace(lo.Namespace) {
+		return BindResult{Result: BindChainIDMismatch}
+	}
+	return r
+}
+
 // ValidNamespace applies the writer's grammar for a store's ns
 // (§4.3.2): lowercase DNS-style labels of [a-z0-9] with interior "-",
 // separated by ".", at most 63 characters a label and 253 in all. A reader

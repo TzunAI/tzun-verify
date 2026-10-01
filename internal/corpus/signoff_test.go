@@ -138,7 +138,7 @@ func wantAnswer(t *testing.T, e doc) (valid, reason string) {
 
 // TestSignoffExpectationVectors runs every envelope of the sign-off
 // expectation vectors through the command, each in a bundle, and holds its
-// signoff.expectation row to the answer stated (Record §6,
+// signoff.expectation row to the answer stated (Record §9,
 // Verification §5).
 //   - checks: the table of Verification §5, row by row;
 //   - verifications: whole records, with and without a digest that holds;
@@ -214,7 +214,7 @@ func TestSignoffKey(t *testing.T) {
 	}
 }
 
-// TestSignoffBindingRules: binding rules (Record §6.5) that the vectors do not
+// TestSignoffBindingRules: binding rules (Record §9.5) that the vectors do not
 // separate. A per-record assertion binds only as a webauthn.get; a batch
 // sign-off binds only with a statement whose mode is batch, even when the
 // assertion carries the challenge of that statement and the path verifies.
@@ -277,7 +277,7 @@ func TestSignoffBindingRules(t *testing.T) {
 	}
 }
 
-// TestSessionSignoffNeedsNoAssertion: Record §6.3 defines a session sign-off by
+// TestSessionSignoffNeedsNoAssertion: Record §9.3 defines a session sign-off by
 // its signoff block alone (a statement whose mode is session, or a
 // sessionSeq member), and the rows that answer session_signoff_not_expected
 // come before any rule that asks for an assertion. So under a null or a
