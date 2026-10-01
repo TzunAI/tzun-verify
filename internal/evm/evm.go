@@ -369,6 +369,10 @@ func parseHeader(b []byte) (*blockHeader, bool) {
 	return &blockHeader{txRoot: common.BytesToHash(root.val), number: number, time: time}, true
 }
 
+// SourceErrReason names a failed header-source call: the deadline shared
+// by every call of one verification passed, or the source failed.
+func SourceErrReason(ctx context.Context, err error) string { return sourceErrReason(ctx, err) }
+
 func sourceErrReason(ctx context.Context, err error) string {
 	if errors.Is(err, context.DeadlineExceeded) || ctx.Err() != nil {
 		return ReasonTimeout

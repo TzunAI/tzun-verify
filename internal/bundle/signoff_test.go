@@ -23,7 +23,7 @@ func loadVectors(t *testing.T) *jsonv.Value {
 }
 
 // TestStatementDigestVectors: the statement digest and challenge of
-// Record §6.4, and no digest for a statement outside its value
+// Record §9.4, and no digest for a statement outside its value
 // domain (signoff-expectation-vectors.json, statementDigests).
 func TestStatementDigestVectors(t *testing.T) {
 	cases, _ := loadVectors(t).Get("statementDigests")
@@ -48,7 +48,7 @@ func TestStatementDigestVectors(t *testing.T) {
 	}
 }
 
-// TestExpectationShapes: the grammar of Record §6.2
+// TestExpectationShapes: the grammar of Record §9.2
 // (signoff-expectation-vectors.json, shapes). Any violation is
 // malformed_signoff_expectation.
 func TestExpectationShapes(t *testing.T) {

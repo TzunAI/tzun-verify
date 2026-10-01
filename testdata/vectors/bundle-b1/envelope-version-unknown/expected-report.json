@@ -2,12 +2,12 @@
   "reportVersion": "tzun-verify-report/1",
   "bundleVersion": "b1",
   "subject": {
-    "evidenceId": "307e314d-9269-408b-a572-5a51d40708a9",
-    "canonicalDigest": "6e1f3b99676c722cc5dfd13b0dbda95c430ca4eec8f50c8b3c541ca0a1e8776a"
+    "evidenceId": "a36ceba9-743e-45bc-b173-5d1e15b6256d",
+    "canonicalDigest": "9739ebd76cc45223ccc88920802c9032208f3c09f67fc129a41a769109dead6a"
   },
   "inputs": {
     "trustAnchors": [
-      "ff7a3693418d56cd8bcb35756c75dc0d380e7fc9f37390297142a7bdcdfc5860"
+      "535be65e39de04f2848dfaf528d3ad5710e401ccc0e502aaa102c5d421c77e37"
     ],
     "evmHeaderSources": [
       {
@@ -15,7 +15,7 @@
         "finality": "finalized"
       }
     ],
-    "publisherManifest": "f9a030928f1426a2b8a36ed313d32f2109157a285176b4bdd603bee5a9d316e2",
+    "publisherManifest": "1599b8db9254d270b390bd0e704ed2ed3b41e048d3397838bb2866f24fce998b",
     "frameOrigins": null,
     "vkeys": null,
     "mdsRoots": null
@@ -64,6 +64,31 @@
       "reason": "absent"
     },
     {
+      "id": "decider",
+      "outcome": "not-checked",
+      "reason": "blocked_by:record.digest"
+    },
+    {
+      "id": "decider.freshness",
+      "outcome": "not-checked",
+      "reason": "blocked_by:record.digest"
+    },
+    {
+      "id": "contributions",
+      "outcome": "not-checked",
+      "reason": "blocked_by:record.digest"
+    },
+    {
+      "id": "contributions.binding",
+      "outcome": "not-checked",
+      "reason": "blocked_by:record.digest"
+    },
+    {
+      "id": "links",
+      "outcome": "not-checked",
+      "reason": "blocked_by:record.digest"
+    },
+    {
       "id": "anchor",
       "outcome": "not-checked",
       "reason": "blocked_by:record.digest"
@@ -104,12 +129,12 @@
       "reason": "blocked_by:record.digest"
     },
     {
-      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors]",
+      "id": "anchor.consistency[test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors]",
       "outcome": "not-checked",
       "reason": "blocked_by:anchor"
     },
     {
-      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861]",
+      "id": "anchor.consistency[test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/evidence/616c706861]",
       "outcome": "not-checked",
       "reason": "blocked_by:anchor"
     }
@@ -130,7 +155,7 @@
     "outcomes": {
       "checked-correct": 3,
       "checked-wrong": 0,
-      "not-checked": 15,
+      "not-checked": 20,
       "abstain": 1
     }
   }

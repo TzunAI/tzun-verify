@@ -14,7 +14,7 @@ import (
 
 // realTokenDigest is the record digest the two public authorities' responses
 // in internal/rfc3161/testdata are over: corpus case anchored-with-newer's.
-const realTokenDigest = "6e1f3b99676c722cc5dfd13b0dbda95c430ca4eec8f50c8b3c541ca0a1e8776a"
+const realTokenDigest = "9739ebd76cc45223ccc88920802c9032208f3c09f67fc129a41a769109dead6a"
 
 // TestRealAuthorityTokenInBundle runs the command, with the flags an
 // auditor passes, over corpus case anchored-with-newer

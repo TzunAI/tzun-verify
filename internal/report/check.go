@@ -81,6 +81,9 @@ func B(b bool) *jsonv.Value { return &jsonv.Value{Kind: jsonv.Bool, B: b} }
 // N is a JSON number from an integer.
 func N(n uint64) *jsonv.Value { return &jsonv.Value{Kind: jsonv.Number, N: float64(n)} }
 
+// Int is a JSON number from a signed integer.
+func Int(n int64) *jsonv.Value { return &jsonv.Value{Kind: jsonv.Number, N: float64(n)} }
+
 // Null is the JSON null.
 func Null() *jsonv.Value { return &jsonv.Value{Kind: jsonv.Null} }
 

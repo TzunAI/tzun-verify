@@ -2,12 +2,12 @@
   "reportVersion": "tzun-verify-report/1",
   "bundleVersion": "b1",
   "subject": {
-    "evidenceId": "307e314d-9269-408b-a572-5a51d40708a9",
-    "canonicalDigest": "6e1f3b99676c722cc5dfd13b0dbda95c430ca4eec8f50c8b3c541ca0a1e8776a"
+    "evidenceId": "a36ceba9-743e-45bc-b173-5d1e15b6256d",
+    "canonicalDigest": "9739ebd76cc45223ccc88920802c9032208f3c09f67fc129a41a769109dead6a"
   },
   "inputs": {
     "trustAnchors": [
-      "ff7a3693418d56cd8bcb35756c75dc0d380e7fc9f37390297142a7bdcdfc5860"
+      "535be65e39de04f2848dfaf528d3ad5710e401ccc0e502aaa102c5d421c77e37"
     ],
     "evmHeaderSources": [
       {
@@ -15,7 +15,7 @@
         "finality": "finalized"
       }
     ],
-    "publisherManifest": "f9a030928f1426a2b8a36ed313d32f2109157a285176b4bdd603bee5a9d316e2",
+    "publisherManifest": "1599b8db9254d270b390bd0e704ed2ed3b41e048d3397838bb2866f24fce998b",
     "frameOrigins": null,
     "vkeys": null,
     "mdsRoots": null
@@ -58,6 +58,35 @@
     },
     {
       "id": "signoff.key",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "decider",
+      "outcome": "checked-correct",
+      "facts": {
+        "kind": "human",
+        "scheme": "acct",
+        "level": "human-asserted"
+      }
+    },
+    {
+      "id": "decider.freshness",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "contributions",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "contributions.binding",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "links",
       "outcome": "not-checked",
       "reason": "absent"
     },
@@ -105,7 +134,7 @@
       "id": "anchor.evm.tx[0]",
       "outcome": "checked-correct",
       "facts": {
-        "transactionId": "0x320fd362a9361a4be9ae17432ef4f72da115722e71c39303dd4e9485573eeb51",
+        "transactionId": "0x5a834efc5029cfa477695602c4e2887df485133af0a6c2fe0e84eef2bc56b9a9",
         "txType": 2,
         "sender": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
         "signedChainId": "31337"
@@ -118,7 +147,7 @@
         "chain": "eip155:31337",
         "namespace": "test",
         "network": null,
-        "blockTime": "2026-09-27T13:09:41.000Z",
+        "blockTime": "2026-10-01T16:40:35.000Z",
         "inclusion": "tx_proof",
         "finality": "finalized"
       }
@@ -132,7 +161,7 @@
       }
     },
     {
-      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors]",
+      "id": "anchor.consistency[test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors]",
       "outcome": "checked-correct",
       "facts": {
         "fromSize": 2,
@@ -140,7 +169,7 @@
       }
     },
     {
-      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861]",
+      "id": "anchor.consistency[test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/evidence/616c706861]",
       "outcome": "checked-correct",
       "facts": {
         "fromSize": 2,
@@ -158,7 +187,7 @@
     "uv": null,
     "actorBound": null,
     "existedBy": {
-      "at": "2026-09-27T13:09:41.000Z",
+      "at": "2026-10-01T16:40:35.000Z",
       "source": "evm-calldata",
       "check": "anchor"
     },
@@ -166,9 +195,9 @@
     "anchorNamespace": "test",
     "anchorOriginAuthenticated": true,
     "outcomes": {
-      "checked-correct": 18,
+      "checked-correct": 19,
       "checked-wrong": 1,
-      "not-checked": 3,
+      "not-checked": 7,
       "abstain": 0
     }
   }

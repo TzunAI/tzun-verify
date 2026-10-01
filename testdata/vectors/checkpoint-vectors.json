@@ -3581,7 +3581,7 @@
       }
     },
     {
-      "case": "a leaf of a store log of another kind, with no chain id: the chain is unchecked",
+      "case": "a leaf of an SDK log of another kind, with no chain id: refused all the same",
       "digest": "7adf236442079cd1a53b3a3f46701015791a5188c6444c8ee24c51132c30854b",
       "sequenceNumber": 2,
       "chainId": null,
@@ -3612,27 +3612,16 @@
         }
       },
       "expect": {
-        "anchorValid": null,
-        "reason": "publication_not_checked",
-        "merkleProofValid": true,
+        "anchorValid": false,
+        "reason": "chain_id_mismatch",
+        "merkleProofValid": null,
         "p": "2ecd7f6bab96d201afc29f35511f51de1b2cd696418b426270633f8200ec61f4",
         "anchorNamespace": null,
-        "anchorPosition": {
-          "origin": "local.invalid/25ac38d72cae99471b7346254f28ce88/k2",
-          "leafIndex": 1,
-          "treeSize": 2,
-          "anchorOrigin": "local.invalid/25ac38d72cae99471b7346254f28ce88/anchors",
-          "anchorLeafIndex": 4,
-          "anchorSize": 5,
-          "leafIndexChecked": true,
-          "chainChecked": false,
-          "authenticated": false
-        },
         "checks": [
           {
             "id": "anchor",
-            "outcome": "not-checked",
-            "reason": "publication_not_checked"
+            "outcome": "checked-wrong",
+            "reason": "chain_id_mismatch"
           },
           {
             "id": "anchor.spec",
@@ -3644,41 +3633,97 @@
           },
           {
             "id": "anchor.origin",
-            "outcome": "checked-correct",
-            "facts": {
-              "originAuthenticated": false,
-              "namespace": null,
-              "chainChecked": false
-            }
+            "outcome": "checked-wrong",
+            "reason": "chain_id_mismatch"
           },
           {
             "id": "anchor.leafIndex",
-            "outcome": "checked-correct",
-            "facts": {
-              "leafIndexChecked": true
-            }
+            "outcome": "not-checked",
+            "reason": "blocked_by:anchor.origin"
           },
           {
             "id": "anchor.inclusion",
-            "outcome": "checked-correct"
+            "outcome": "not-checked",
+            "reason": "blocked_by:anchor.origin"
           },
           {
             "id": "anchor.anchorInclusion",
+            "outcome": "not-checked",
+            "reason": "blocked_by:anchor.origin"
+          }
+        ]
+      }
+    },
+    {
+      "case": "a leaf of an SDK log of another kind, with neither a chain id nor a sequence number: refused all the same",
+      "digest": "7adf236442079cd1a53b3a3f46701015791a5188c6444c8ee24c51132c30854b",
+      "sequenceNumber": null,
+      "chainId": null,
+      "artifacts": {
+        "anchor": {
+          "anchorSpec": "tzun-anchor/1",
+          "merkleSpec": "rfc6962",
+          "leafIndex": 1,
+          "logCheckpoint": "local.invalid/25ac38d72cae99471b7346254f28ce88/k2\n2\nXirile2FAo00ruh0KlxXrX8e/U3y/W6tT2Z1fIsS65I=\n",
+          "logPath": [
+            "47d83dcde1d48b121b1947e5fb68466347279c2f96addafa3104b4794764c64c"
+          ],
+          "anchorLeafIndex": 4,
+          "anchorCheckpoint": "local.invalid/25ac38d72cae99471b7346254f28ce88/anchors\n5\n2FzLrXw8YSErWqFY+MJwfvv87rvtAA+hWiAYtWLeI+M=\n",
+          "anchorPath": [
+            "0f5e756071108800b41bbca6d3c7f9ce63d4cd5d8236b764743a41c9707da649"
+          ],
+          "publications": [
+            {
+              "kind": "evm-calldata/1",
+              "chain": "eip155:11155111",
+              "transactionId": "0x37e421e1d56f11aeadb4123eb6522b7c4e7abf6e73010de3a0e4089ba0e73f5e",
+              "blockNumber": 7123456,
+              "blockHash": "0x5ae2703971644dd27fa018ae111aedabbd802afac8cc87ced82a913b778ab1f5",
+              "publisher": "0xf2cb11ecb55521e777ee1361282868e4f977c816"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "anchorValid": false,
+        "reason": "chain_id_mismatch",
+        "merkleProofValid": null,
+        "p": "2ecd7f6bab96d201afc29f35511f51de1b2cd696418b426270633f8200ec61f4",
+        "anchorNamespace": null,
+        "checks": [
+          {
+            "id": "anchor",
+            "outcome": "checked-wrong",
+            "reason": "chain_id_mismatch"
+          },
+          {
+            "id": "anchor.spec",
             "outcome": "checked-correct"
           },
           {
-            "id": "anchor.publication[0]",
+            "id": "anchor.checkpoint",
             "outcome": "checked-correct"
           },
           {
-            "id": "anchor.evm.tx[0]",
-            "outcome": "not-checked",
-            "reason": "not_in_bundle:raw_transaction"
+            "id": "anchor.origin",
+            "outcome": "checked-wrong",
+            "reason": "chain_id_mismatch"
           },
           {
-            "id": "anchor.evm.canonical[0]",
+            "id": "anchor.leafIndex",
             "outcome": "not-checked",
-            "reason": "blocked_by:anchor.evm.tx[0]"
+            "reason": "blocked_by:anchor.origin"
+          },
+          {
+            "id": "anchor.inclusion",
+            "outcome": "not-checked",
+            "reason": "blocked_by:anchor.origin"
+          },
+          {
+            "id": "anchor.anchorInclusion",
+            "outcome": "not-checked",
+            "reason": "blocked_by:anchor.origin"
           }
         ]
       }
@@ -5713,6 +5758,109 @@
               "originAuthenticated": false,
               "namespace": "test",
               "chainChecked": true
+            }
+          },
+          {
+            "id": "anchor.leafIndex",
+            "outcome": "checked-correct",
+            "facts": {
+              "leafIndexChecked": true
+            }
+          },
+          {
+            "id": "anchor.inclusion",
+            "outcome": "checked-correct"
+          },
+          {
+            "id": "anchor.anchorInclusion",
+            "outcome": "checked-correct"
+          },
+          {
+            "id": "anchor.publication[0]",
+            "outcome": "checked-correct"
+          },
+          {
+            "id": "anchor.evm.tx[0]",
+            "outcome": "not-checked",
+            "reason": "not_in_bundle:raw_transaction"
+          },
+          {
+            "id": "anchor.evm.canonical[0]",
+            "outcome": "not-checked",
+            "reason": "blocked_by:anchor.evm.tx[0]"
+          }
+        ]
+      }
+    },
+    {
+      "case": "a platform origin with no chain id: opaque, so neither its kind nor its chain is checked",
+      "digest": "e378c7cdfcd3a0d92b892722e2ee88a68d7a5822d47fa7dcff97f50626d7d50e",
+      "sequenceNumber": 3,
+      "chainId": null,
+      "artifacts": {
+        "anchor": {
+          "anchorSpec": "tzun-anchor/1",
+          "merkleSpec": "rfc6962",
+          "leafIndex": 2,
+          "logCheckpoint": "log.tzun.ai/1af3063bccfed69b40637f819adfe235/acc22df3fd490b8daeb05712752819cc\n3\n6wW7AK/JHEms2sOt3kkIH8GNa1nOf/281x74KM15iHo=\n",
+          "logPath": [
+            "a49f399e082db1cca8bf099a168af3e465caae498be9986130fba8a612bdccbe"
+          ],
+          "anchorLeafIndex": 1,
+          "anchorCheckpoint": "log.tzun.ai/1af3063bccfed69b40637f819adfe235/anchors\n2\nWbqyZy9XjwrQV9Hp0zqwf9Ev26geQDmf0dARCkOST5Y=\n",
+          "anchorPath": [
+            "41c305289ec40e56b689ae0618d47e92dab08ff0431348179226b6a0bcfca962"
+          ],
+          "publications": [
+            {
+              "kind": "evm-calldata/1",
+              "chain": "eip155:11155111",
+              "transactionId": "0xf8b094145d8063309aeb9f31b68bb5a91b33b9fc25087a12dd801f0d52ef1729",
+              "blockNumber": 7123456,
+              "blockHash": "0x4f8152747b4d377348c919ce8d46574771b22c34f8ba6b9617661dc7481ed778",
+              "publisher": "0xf2cb11ecb55521e777ee1361282868e4f977c816"
+            }
+          ]
+        }
+      },
+      "expect": {
+        "anchorValid": null,
+        "reason": "publication_not_checked",
+        "merkleProofValid": true,
+        "p": "00fca5c1230b4f2220345bcda7f2b4d4da633117f5f1617454f67b23680913dd",
+        "anchorNamespace": null,
+        "anchorPosition": {
+          "origin": "log.tzun.ai/1af3063bccfed69b40637f819adfe235/acc22df3fd490b8daeb05712752819cc",
+          "leafIndex": 2,
+          "treeSize": 3,
+          "anchorOrigin": "log.tzun.ai/1af3063bccfed69b40637f819adfe235/anchors",
+          "anchorLeafIndex": 1,
+          "anchorSize": 2,
+          "leafIndexChecked": true,
+          "chainChecked": false,
+          "authenticated": false
+        },
+        "checks": [
+          {
+            "id": "anchor",
+            "outcome": "not-checked",
+            "reason": "publication_not_checked"
+          },
+          {
+            "id": "anchor.spec",
+            "outcome": "checked-correct"
+          },
+          {
+            "id": "anchor.checkpoint",
+            "outcome": "checked-correct"
+          },
+          {
+            "id": "anchor.origin",
+            "outcome": "checked-correct",
+            "facts": {
+              "originAuthenticated": false,
+              "namespace": null,
+              "chainChecked": false
             }
           },
           {

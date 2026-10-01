@@ -306,7 +306,7 @@ func TestHostileCertificateSetIsBounded(t *testing.T) {
 // and a path to the root valid at genTime. Under the other authority's root
 // alone neither reaches a supplied root.
 func TestRealAuthorityTokens(t *testing.T) {
-	digest, _ := hex.DecodeString("6e1f3b99676c722cc5dfd13b0dbda95c430ca4eec8f50c8b3c541ca0a1e8776a")
+	digest, _ := hex.DecodeString("9739ebd76cc45223ccc88920802c9032208f3c09f67fc129a41a769109dead6a")
 	readRoot := func(name string) *x509.Certificate {
 		raw, err := os.ReadFile(filepath.Join("testdata", name))
 		if err != nil {
@@ -324,8 +324,8 @@ func TestRealAuthorityTokens(t *testing.T) {
 		file, authority, genTime string
 		root, other              *x509.Certificate
 	}{
-		{"freetsa.tsr", "www.freetsa.org", "2026-09-27T14:30:00.", free, sectigo},
-		{"sectigo.tsr", "Sectigo Public Time Stamping Signer R37", "2026-09-27T14:30:01.", sectigo, free},
+		{"freetsa.tsr", "www.freetsa.org", "2026-10-01T19:40:02.", free, sectigo},
+		{"sectigo.tsr", "Sectigo Public Time Stamping Signer R37", "2026-10-01T19:40:03.", sectigo, free},
 	} {
 		raw, err := os.ReadFile(filepath.Join("testdata", c.file))
 		if err != nil {
