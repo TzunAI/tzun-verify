@@ -319,6 +319,11 @@ M = [
     ("internal/report/report.go", "if Unchecked(c) && !allowed(c.Reason, p.AllowReasons) {", "if Unchecked(c) {", "the scoped allowance"),
     ("internal/report/report.go", "\t\tif r == reason {\n\t\t\treturn true", "\t\tif r != \"\" {\n\t\t\treturn true", "the scoped allowance names reasons"),
     ("internal/cli/cli.go", "c.policy.AllowReasons = append(c.policy.AllowReasons, r)", "_ = r", "--allow-unchecked-reason"),
+    ("internal/links/links.go", "\tcase readsSelf && self == nil:\n", "\tcase readsSelf && self == nil && (target != nil || !rel.target):\n", "a link record names the subject missing before the target"),
+    ("internal/bundle/rules.go", "dv.Kind == jsonv.Object && ok && f.Kind == jsonv.Null {", "dv.Kind == jsonv.Object && (!ok || f.Kind == jsonv.Null) {", "a decider without a freshness member is not one whose freshness is null"),
+    ("internal/bundle/rules.go", "len(l.A) >= 1 && len(l.A) <= 256 {", "len(l.A) >= 1 {", "no per-link rows for more than 256 links when the digest fails"),
+    ("internal/contrib/contrib.go", "\t\tif a.Kind != jsonv.Object {\n\t\t\treturn Step{}, false\n\t\t}\n\t\ts.AIBom = a", "\t\ts.AIBom = a", "a step aiBom is null or an object"),
+    ("internal/bundle/rules.go", "\tif m.block == nil {\n\t\treturn v.presentsPerRecord(m)", "\tif m.block == nil || m.block.Kind != jsonv.Object {\n\t\treturn v.presentsPerRecord(m)", "a sign-off block of any type is a block"),
 ]
 
 with tarfile.open(os.path.join(work, "tree.tar")) as t:
