@@ -664,11 +664,12 @@ func linkRow(in Input, ls []Link, i int, l Link) report.Check {
 	if rel.undefined {
 		return set(report.Abstain, ReasonUnsupportedRule, held)
 	}
+	// The subject is named before the target when neither is held.
 	switch {
-	case rel.target && target == nil:
-		return set(report.NotChecked, ReasonNoTarget, held, fact("missing", report.S("target")))
 	case readsSelf && self == nil:
 		return set(report.NotChecked, ReasonNoTarget, held, fact("missing", report.S("subject")))
+	case rel.target && target == nil:
+		return set(report.NotChecked, ReasonNoTarget, held, fact("missing", report.S("target")))
 	}
 	ruleFails := func(name string) report.Check {
 		return set(report.Wrong, ReasonRuleViolated, fact("rule", report.S(name)), held)

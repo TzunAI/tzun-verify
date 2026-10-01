@@ -3,6 +3,7 @@ package corpus
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -393,5 +394,101 @@ func TestLinkRowsBlockedByDigest(t *testing.T) {
 	}
 	if exit != 1 {
 		t.Errorf("exit %d", exit)
+	}
+}
+
+// TestStepAIBomNotObject: a step's aiBom is null or an object (Record
+// §7.1); any other JSON type makes the contributions malformed.
+func TestStepAIBomNotObject(t *testing.T) {
+	w2 := vectorDoc(t, "v1.0-worked-example-vectors.json", "records", "id", "W2")["payload"].(doc)
+	w2["sequenceNumber"] = 1
+	for name, val := range map[string]any{"a string": "gpt", "an array": []any{}, "a number": 7, "true": true} {
+		p := clone(t, w2)
+		p["contributions"].(doc)["steps"].([]any)[0].(doc)["aiBom"] = val
+		exit, rows, rep := runDocReport(t, bundleOf(sealed(t, p, nil)), "--no-publishers")
+		if rows["contributions"] != "checked-wrong malformed_contributions" || exit != 1 {
+			t.Errorf("aiBom %s: contributions %q, exit %d", name, rows["contributions"], exit)
+		}
+		if f := canonicalOf(t, factsOf(rowOf(t, rep, "contributions"))); f != `{"failedStep":0}` {
+			t.Errorf("aiBom %s: facts %s", name, f)
+		}
+	}
+}
+
+// TestFreshnessMemberMissing: a decider object without a freshness member
+// is not a decider whose freshness is null (Verification §4.9 step 1), so
+// decider.freshness is blocked by the decider row, as it is for a decider
+// that is not an object.
+func TestFreshnessMemberMissing(t *testing.T) {
+	base := vectorDoc(t, "decider-vectors.json", "rows", "case", "a human under acct")["envelope"].(doc)["payload"].(doc)
+	p := clone(t, base)
+	delete(p["decider"].(doc), "freshness")
+	_, rows := runDoc(t, bundleOf(sealed(t, p, nil)), "--no-publishers")
+	if rows["decider"] != "checked-wrong malformed_decider" || rows["decider.freshness"] != "not-checked blocked_by:decider" {
+		t.Errorf("no freshness member: decider %q, decider.freshness %q", rows["decider"], rows["decider.freshness"])
+	}
+	p = clone(t, base)
+	p["decider"] = "acct:u-1"
+	_, rows = runDoc(t, bundleOf(sealed(t, p, nil)), "--no-publishers")
+	if rows["decider.freshness"] != "not-checked blocked_by:decider" {
+		t.Errorf("a decider that is a string: decider.freshness %q", rows["decider.freshness"])
+	}
+}
+
+// TestLinksOver256DigestFails: a links list longer than 256 has no
+// per-link rows (Verification §4.11), also when the digest fails.
+func TestLinksOver256DigestFails(t *testing.T) {
+	p := clone(t, vectorDoc(t, "decider-vectors.json", "rows", "case", "a human under acct")["envelope"].(doc)["payload"].(doc))
+	ls := []any{}
+	for i := 0; i < 257; i++ {
+		ls = append(ls, doc{"rel": "derivedFrom", "target": doc{"digest": strings.Repeat(fmt.Sprintf("%04x", i), 16), "evidenceId": nil, "locator": nil}, "attrs": nil})
+	}
+	p["links"] = ls
+	env := sealed(t, p, nil)
+	env["integrity"].(doc)["canonicalDigest"] = strings.Repeat("0", 64)
+	b := bundleOf(env)
+	exit, rows := runDoc(t, b, "--no-publishers")
+	if rows["links"] != "not-checked blocked_by:record.digest" || exit != 1 {
+		t.Errorf("links %q, exit %d", rows["links"], exit)
+	}
+	for id := range rows {
+		if strings.HasPrefix(id, "links[") {
+			t.Errorf("a %s row for a list of 257 links", id)
+		}
+	}
+}
+
+// TestLinkRecordNothingHeld: in a link record, a ratifies link reads the
+// subject and the target; a bundle holds neither, and the row names the
+// subject as the record missing.
+func TestLinkRecordNothingHeld(t *testing.T) {
+	p := vectorDoc(t, "v1.0-worked-example-vectors.json", "records", "id", "W7")["payload"].(doc)
+	p["sequenceNumber"] = 1
+	ls := p["links"].([]any)
+	ls[0].(doc)["rel"] = "ratifies"
+	_, rows, rep := runDocReport(t, bundleOf(sealed(t, p, nil)), "--no-publishers")
+	if rows["links"] != "checked-correct" || rows["links[0]"] != "not-checked not_in_bundle:link_target" {
+		t.Fatalf("links %q, links[0] %q", rows["links"], rows["links[0]"])
+	}
+	if f := canonicalOf(t, factsOf(rowOf(t, rep, "links[0]"))); f != `{"missing":"subject","targetHeld":false}` {
+		t.Errorf("links[0] facts %s", f)
+	}
+}
+
+// TestJunkSignoffBlock: a sign-off block of any JSON type is a block (Record
+// §9.3), so a per-record assertion beside it is not human material that
+// binds the record (§9.5), and the decider row carries no levelUndetermined.
+func TestJunkSignoffBlock(t *testing.T) {
+	base := vectorDoc(t, "decider-vectors.json", "rows", "case", "a human under acct with a per-record assertion bound")["envelope"].(doc)
+	for name, junk := range map[string]any{"a string": "junk", "a number": 7, "an array": []any{}, "false": false} {
+		env := clone(t, base)
+		env["nonRepudiation"].(doc)["signoff"] = junk
+		_, rows, rep := runDocReport(t, bundleOf(env), "--no-publishers")
+		if rows["signoff.expectation"] != "checked-wrong signoff_unbound" {
+			t.Errorf("signoff %s: signoff.expectation %q", name, rows["signoff.expectation"])
+		}
+		if f := canonicalOf(t, factsOf(rowOf(t, rep, "decider"))); rows["decider"] != "checked-correct" || strings.Contains(f, "levelUndetermined") {
+			t.Errorf("signoff %s: decider %q %s", name, rows["decider"], f)
+		}
 	}
 }
