@@ -296,6 +296,14 @@ func TestMandateRowsInBundle(t *testing.T) {
 	if _, ok := rows["nonRepudiation.confirmation"]; ok {
 		t.Error("a nonRepudiation.confirmation row with no confirmation")
 	}
+
+	// A confirmation on a record whose confirm is false: no row reads it.
+	_, rows, _ = run("unowed", clone(t, w6), clone(t, block), func(b doc) {
+		b["envelope"].(doc)["nonRepudiation"].(doc)["confirmation"] = doc{"clientDataJSON": "e30"}
+	})
+	if rows["nonRepudiation.confirmation"] != "abstain unsupported_artifact" || rows["signoff.expectation"] != "checked-correct" {
+		t.Errorf("a confirmation not owed: %q, signoff.expectation %q", rows["nonRepudiation.confirmation"], rows["signoff.expectation"])
+	}
 }
 
 // TestIssuanceInBundle: mandate.issuance and mandate.key for the issuance

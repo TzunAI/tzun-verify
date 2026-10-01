@@ -69,3 +69,16 @@ func TestUnknownEntryMembersIgnored(t *testing.T) {
 		t.Errorf("%+v", got)
 	}
 }
+
+// TestNetworkRegistry: the chains every registry names (Anchor §9):
+// mainnet, and the Sepolia and Hoodi test networks; any other is null.
+func TestNetworkRegistry(t *testing.T) {
+	for chain, want := range map[string]string{
+		"eip155:1": "mainnet", "eip155:11155111": "testnet", "eip155:560048": "testnet",
+		"eip155:31337": "", "eip155:5": "",
+	} {
+		if got := Network(chain); got != want {
+			t.Errorf("%s: %q, want %q", chain, got, want)
+		}
+	}
+}
