@@ -143,7 +143,9 @@ func Rejection() string {
 // signing library will not produce: a missing or wrong signer binding, a
 // content-type attribute naming something else.
 type TokenOptions struct {
-	Digest  []byte
+	Digest []byte
+	// GenTime is written with the fraction of a second it carries, which
+	// RFC 3161 §2.4.2 allows; Token writes whole seconds only.
 	GenTime time.Time
 	Signer  *Cert
 	// Certs are carried in the token; the signer's certificate is added
@@ -196,7 +198,14 @@ type tstInfo struct {
 		HashedMessage []byte
 	}
 	SerialNumber *big.Int
-	GenTime      time.Time `asn1:"generalized"`
+	GenTime      asn1.RawValue
+}
+
+// generalizedTime is t as a DER GeneralizedTime: UTC, with a fraction of a
+// second only when t has one, and without trailing zeros.
+func generalizedTime(t time.Time) asn1.RawValue {
+	s := t.UTC().Format("20060102150405.999999999") + "Z"
+	return asn1.RawValue{Class: asn1.ClassUniversal, Tag: asn1.TagGeneralizedTime, Bytes: []byte(s)}
 }
 
 func must(b []byte, err error) []byte {
@@ -274,7 +283,7 @@ func BuildToken(o TokenOptions) string {
 	tst.MessageImprint.HashAlgorithm = algID{Algorithm: oidSHA256}
 	tst.MessageImprint.HashedMessage = o.Digest
 	tst.SerialNumber = big.NewInt(42)
-	tst.GenTime = o.GenTime.UTC()
+	tst.GenTime = generalizedTime(o.GenTime)
 	content := must(asn1.Marshal(tst))
 	digest := sha256.Sum256(content)
 
