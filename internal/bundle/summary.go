@@ -2,6 +2,7 @@ package bundle
 
 import (
 	"sort"
+	"time"
 
 	"github.com/TzunAI/tzun-verify/internal/anchor"
 	"github.com/TzunAI/tzun-verify/internal/canonical"
@@ -67,11 +68,17 @@ func inputsOf(opts Options) *jsonv.Value {
 
 // existedBy is the earliest proven bound (Verification §6.4): the
 // record's own anchor, the newer anchor, or the record's RFC 3161 token
-// once both its rows hold. On a tie the first in that order is named.
+// once both its rows hold. Bounds are compared as the report writes them,
+// to the millisecond with the digits beyond dropped (Verification §6.5),
+// and of equal instants the first in that order is named.
 func (v *verification) existedBy() *ExistedBy {
 	var best *ExistedBy
 	offer := func(e *ExistedBy) {
-		if e != nil && (best == nil || e.At.Before(best.At)) {
+		if e == nil {
+			return
+		}
+		e.At = e.At.UTC().Truncate(time.Millisecond)
+		if best == nil || e.At.Before(best.At) {
 			best = e
 		}
 	}
