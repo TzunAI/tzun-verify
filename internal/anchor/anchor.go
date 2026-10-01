@@ -132,6 +132,18 @@ type ExistedBy struct {
 	Source string
 }
 
+// replacesBound reports whether a true publication's bound at `at`, from
+// source, replaces cur, the bound kept from the publications before it in
+// array order (§10.6): it is earlier, or it is at the same instant from an
+// EVM publication, which also authenticates the origin, and cur is not.
+// Otherwise the first in array order stays.
+func replacesBound(cur *ExistedBy, at time.Time, source string) bool {
+	if cur == nil || at.Before(cur.At) {
+		return true
+	}
+	return at.Equal(cur.At) && source == "evm-calldata" && cur.Source != "evm-calldata"
+}
+
 // Verdict is the result of the anchor verification: the checks and the
 // §10.6 fields.
 type Verdict struct {
@@ -470,7 +482,7 @@ func verify(in Input) Verdict {
 					nsAgree = false
 				}
 				at := time.Unix(int64(r.evm.BlockTime), 0).UTC()
-				if v.ExistedBy == nil || at.Before(v.ExistedBy.At) {
+				if replacesBound(v.ExistedBy, at, "evm-calldata") {
 					v.ExistedBy = &ExistedBy{At: at, Source: "evm-calldata"}
 				}
 			case rfc3161.Kind:
@@ -478,7 +490,7 @@ func verify(in Input) Verdict {
 					v.Publication = "rfc3161"
 				}
 				at := r.tsa.GenTime.UTC()
-				if v.ExistedBy == nil || at.Before(v.ExistedBy.At) {
+				if replacesBound(v.ExistedBy, at, "rfc3161") {
 					v.ExistedBy = &ExistedBy{At: at, Source: "rfc3161"}
 				}
 			}
