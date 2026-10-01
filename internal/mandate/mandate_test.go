@@ -1,6 +1,7 @@
 package mandate
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/TzunAI/tzun-verify/internal/jsonv"
@@ -66,5 +67,28 @@ func TestGlob(t *testing.T) {
 		if got := Glob(c.pattern, c.subject); got != c.want {
 			t.Errorf("%q ~ %q: %v", c.pattern, c.subject, got)
 		}
+	}
+}
+
+// TestAssertionDER: an ES256 signature is a SEQUENCE of two INTEGERs and
+// nothing more: a sequence whose stated length leaves its second INTEGER
+// outside it has no assertion digest.
+func TestAssertionDER(t *testing.T) {
+	enc := base64.RawURLEncoding
+	der := []byte{0x30, 0x06, 0x02, 0x01, 0x05, 0x02, 0x01, 0x07}
+	a := func(sig []byte) *jsonv.Value {
+		return parse(t, `{"algorithm":"ES256","authenticatorData":"AA","clientDataJSON":"e30","signature":"`+enc.EncodeToString(sig)+`"}`)
+	}
+	if _, ok := AssertionDigest(a(der)); !ok {
+		t.Fatal("a minimal DER signature has no digest")
+	}
+	short := append([]byte{}, der...)
+	short[1] = 0x03
+	if _, ok := AssertionDigest(a(short)); ok {
+		t.Error("a sequence shorter than its INTEGERs has a digest")
+	}
+	long := append(append([]byte{}, der...), 0x00)
+	if _, ok := AssertionDigest(a(long)); ok {
+		t.Error("a byte after the sequence has a digest")
 	}
 }
