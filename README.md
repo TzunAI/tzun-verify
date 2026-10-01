@@ -68,7 +68,7 @@ reasons are the check catalogue of Verification §4 and Anchor §10.7.
 
 | Row | What it decides |
 |---|---|
-| `bundle` | The file is JSON, `bundleVersion` is `b1`, `profile` is `record`, and every b1 slot is there (null when empty) with the type Bundle §3.1 gives it; every carried checkpoint body parses and names the origin it sits under, so checkpoints of two logs are never compared; a record bundle carries at most two checkpoints per log; no member name a row id would carry (of the bundle, `extensions`, `nonRepudiation` or `anchoring`) holds a lone surrogate, so every report can be written (Bundle §4 step 9). An absent or unknown version or profile abstains on the whole bundle; anything else wrong is `malformed_bundle`. When this row fails it is the report's only row, and the exit code is 2. |
+| `bundle` | The file is JSON, `bundleVersion` is `b1`, `profile` is `record`, and every b1 slot is there (null when empty) with the type Bundle §3.1 gives it; every carried checkpoint body parses and names the origin it sits under, so checkpoints of two logs are never compared; a record bundle carries at most two checkpoints per log; no member name a row id would carry (of the bundle, `extensions`, `envelope.payload`, `nonRepudiation` or `anchoring`) holds a lone surrogate, so every report can be written (Bundle §4 step 9). An absent or unknown version or profile abstains on the whole bundle; anything else wrong is `malformed_bundle`. When this row fails it is the report's only row, and the exit code is 2. |
 | `subject` | The bundle's `subject` names the envelope's evidence id and its stored digest. |
 | `record.digest` | `integrity.canonicalDigest`, recomputed from the payload by the DEO v1.0 canonical serializer over the eleven names of Record §4.1: `action`, `aiOutput`, `aiSystemId`, `capturedAt`, `contributions`, `decider`, `evidenceId`, `links`, `reason`, `sequenceNumber` and `signoffExpectation`. An absent key is hashed as null. A digest computed over any other set reads `digest_mismatch`; when an earlier draft's set (`0.7`, `before-0.7`) reproduces it, the fact `fieldSet` names that set, which explains the mismatch and never excuses it. An envelope version other than `e1` abstains (`unsupported_envelope_version`), and so does a schema other than `v1.0`. |
 | `record.chainLink` | `integrity.chainLink` against `chain.predecessor`: the predecessor is the record numbered one below, and the link is SHA-256 over the two stored digests as hex text. A chain's first record has no link. |
@@ -429,12 +429,50 @@ implementation, until the text is revised:
   the fact `models` lists model digests in the order the steps name them;
 - an ES256 assertion signature in non-minimal DER is read for its value; a
   reader of a mandate document does not apply the writer's rules on
-  delegation and on the order of the validity window.
+  delegation and on the order of the validity window;
+- when the digest does not hold, `decider.freshness` and
+  `contributions.binding` are blocked by `record.digest`;
+- in a link record, the fact `missing` on a link row that reads a record
+  the bundle does not hold names the subject before the target.
 
-Anchor §10.4 item 13 is the one place this build keeps the text: a window
-that excludes the sender at the block time a source confirms fails
+Anchor §10.4 item 13 is one place this build keeps the text: a window that
+excludes the sender at the block time a source confirms fails
 `anchor.evm.tx`, and `anchor.evm.canonical` stays correct, where
 `evm-anchor-vectors.json` blocks it.
+
+Where the vectors state no answer, this build keeps the text too, and its
+report can differ from the reference implementation's, in some cases in its
+exit code:
+
+- `mandate.key` is reported for a record that carries an issuance block,
+  blocked by `mandate.issuance` when that row fails, and blocked by
+  `signoff.expectation` when the expectation of the mandate form fails
+  (Verification §4.12);
+- a confirmation the record does not owe has the row
+  `nonRepudiation.confirmation` (Verification §4.7);
+- a step `aiBom` that is neither null nor an object makes the contributions
+  malformed (Record §7.1);
+- assertion text is decoded as Record §9.3 decodes it: trailing `=`
+  removed, CR and LF skipped, and any other character outside the alphabet
+  refused;
+- the `mandate.scope` fact `failed` lists the failed constraints as names;
+- when the digest does not hold, `mandate.scope` and `mandate.limits` are
+  blocked by `signoff.expectation`, and a links list of 1 to 256 elements
+  still has its `links[<i>]` rows, blocked by `links`; a list longer than
+  256 has no per-link rows;
+- when both `decision_unbound` and `decided_output_differs` hold,
+  `decision_unbound` is reported, as the text orders them, and the fact
+  `approvals` is carried whenever the record is decided, also when
+  `contributions.binding` fails;
+- an issuance block of the wrong type fails the link `document`, the first
+  link that needs it;
+- a decider object without a `freshness` member is not one whose freshness
+  is null, so `decider.freshness` is blocked by `decider`;
+- a sign-off block of any JSON type is a block, so a per-record assertion
+  beside a block that is not an object binds nothing, and the `decider` row
+  has no `levelUndetermined`;
+- a payload member name holding a lone surrogate makes the bundle
+  unreadable (Bundle §4 step 9).
 
 ## Layout
 
