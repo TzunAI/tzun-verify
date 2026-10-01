@@ -67,11 +67,15 @@ import unicodedata
 
 # First words of tzun-<word> names that the public protocol and this
 # repository use: tzun-anchor/1, the tzun-verify-report/1 report, the
-# tzun-signoff-v1 and tzun-decision-v1 challenge domains, the
-# tzun-merkle-vector- leaf label of the tree vectors, the tzun-spec
-# repository that builds spec.tzun.ai,
-# scripts/check-no-tzun-imports.sh, and a CI variable of the workflows.
-PUBLIC_WORDS = {"anchor", "verify", "spec", "signoff", "decision", "merkle", "imports", "runner"}
+# tzun-signoff-v1, tzun-decision-v1 and tzun-confirm-v1 challenge domains,
+# the tzun-mandate/1 document, the tzun-agent/1 descriptor, the
+# tzun-assertion-v1 and tzun-decider-cmt-v1 digest domains and the
+# tzun-cmt-salt-v1 derived salt of Record, the tzun-merkle-vector- leaf
+# label of the tree vectors, the tzun-spec repository that builds
+# spec.tzun.ai, scripts/check-no-tzun-imports.sh, and a CI variable of the
+# workflows.
+PUBLIC_WORDS = {"anchor", "verify", "spec", "signoff", "decision", "confirm", "mandate", "agent", "assertion",
+                "decider", "cmt", "merkle", "imports", "runner"}
 
 # Domains reserved for examples and tests (RFC 2606, RFC 6761): an address
 # there belongs to no one.
