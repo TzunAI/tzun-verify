@@ -72,7 +72,7 @@ reasons are the check catalogue of Verification §4 and Anchor §10.7.
 | `subject` | The bundle's `subject` names the envelope's evidence id and its stored digest. |
 | `record.digest` | `integrity.canonicalDigest`, recomputed from the payload by the DEO v1.0 canonical serializer over the eleven names of Record §4.1: `action`, `aiOutput`, `aiSystemId`, `capturedAt`, `contributions`, `decider`, `evidenceId`, `links`, `reason`, `sequenceNumber` and `signoffExpectation`. An absent key is hashed as null. A digest computed over any other set reads `digest_mismatch`; when an earlier draft's set (`0.7`, `before-0.7`) reproduces it, the fact `fieldSet` names that set, which explains the mismatch and never excuses it. An envelope version other than `e1` abstains (`unsupported_envelope_version`), and so does a schema other than `v1.0`. |
 | `record.chainLink` | `integrity.chainLink` against `chain.predecessor`: the predecessor is the record numbered one below, and the link is SHA-256 over the two stored digests as hex text. A chain's first record has no link. |
-| `custody.ledger` | Never `checked-correct`: this version does not verify custody material. `not_applicable` when the bundle carries none (a null `custody` slot, or one whose `entries` is an empty array); otherwise the row abstains, `unsupported_artifact`, rather than passing custody material unexamined (Verification §4.3). |
+| `custody.ledger` | Never `checked-correct`: this version does not verify custody material. `not_applicable` when the bundle carries none: a null `custody` slot, or one whose `entries` is an empty array, and no hashed entry (one with an `entryHash`) in the envelope's `custodyChain`. Otherwise the row abstains, `unsupported_artifact`, rather than passing custody material unexamined (Verification §4.3, Bundle §6). A hashed `custodyChain` entry mirrors a ledger row: beside a slot with no rows, it names a row the bundle left out. |
 | `ts.record.token` / `ts.record.trust` | The record's own RFC 3161 token over its digest, by the steps of Anchor §10.5, then its path to a root the auditor supplied. A key or an algorithm this build does not implement (Libraries, below) makes the check whose step needs it `not-checked`, `missing_dependency`, never `checked-wrong`; a valid path decides the trust row first. `authority` is the first common name of the signer's subject as it stands, or the empty string. |
 | `signoff.expectation` | The record's hashed `signoffExpectation` against the sign-off material it carries, by the table of Verification §5, the first matching rule deciding. It needs no key and no signature: it reads which challenge an assertion presented and a batch's inclusion proof. A session sign-off (a `signoff` block whose statement's mode is `session`, or that carries `sessionSeq`, with or without an assertion) on a record whose expectation is null or the policy form is `session_signoff_not_expected`; a sign-off that binds nothing, `signoff_unbound`; a session record's sign-off removed, `signoff_stripped`; another session's statement, `statement_digest_mismatch`; another slot, `session_seq_mismatch`; a value outside the grammar of Record §9.2, `malformed_signoff_expectation`. Under the policy form, when no carried assertion binds the record, the row is `not-checked`, `signature_missing`: that signature may still come. Under the mandate form (rows 17 to 24), the record's `mandate` block: its statement, an assertion whose digest is the record's `mandateAssertion` and that presents the statement's challenge, and a document the statement names; `confirmation_missing` (not checked) while a confirmation is owed. A mandate block on a record of another form is `mandate_not_expected` (row 1a). `blocked_by:record.digest` unless the digest holds: the expectation is authenticated by the digest alone. |
 | `signoff.key` | If `signoff.expectation` failed, `blocked_by:signoff.expectation`; `signature_missing` when `signoff.expectation` reads `signature_missing` and the record carries no assertion; an abstention when the `credentials` slot is filled, since this build verifies no WebAuthn signature; `absent` when no assertion is carried; otherwise `not_in_bundle:credential`, because no b1 slot carries the key (Verification §4.5). |
@@ -108,8 +108,9 @@ record states, agent descriptors, pipeline definitions, link targets and
 edges and the rules of relations it does not know, who signed a mandate and
 whether it was in force (Verification §4.8). Each one a bundle carries is
 reported, as an abstention or a NOT CHECKED line, and unless it reads
-`not_applicable` (a custody slot with no entries) it holds the exit code at
-4 or above (Verification §4.8, §6.6). Stored summaries are never an input:
+`not_applicable` (a custody slot with no entries, beside a `custodyChain`
+that mirrors no ledger row) it holds the exit code at 4 or above
+(Verification §4.8, §6.6). Stored summaries are never an input:
 `exporter`, the envelope's `attestationStatus` and
 `nonRepudiation.rfc3161Metadata` are not read, and every fact is re-derived
 (Verification §1).
@@ -355,8 +356,9 @@ Its correctness does not rest on reading the Go:
    `internal/corpus/signoff_test.go` (`signoff.key`, and binding rules the
    vectors do not separate), `internal/corpus/anchoring_test.go`
    (Anchor §10.8 without a composed anchor, an unauthenticated body,
-   carried bodies that do not parse, the predecessor), and each package's
-   own tests.
+   carried bodies that do not parse, the predecessor),
+   `internal/corpus/custody_test.go` (a hashed `custodyChain` entry whose
+   ledger row the bundle leaves out), and each package's own tests.
 4. **No Tzun imports.** `scripts/check-no-tzun-imports.sh` fails CI if any
    package the build or the tests link, or any module in the build list,
    comes from the TzunAI organisation. CI also refuses a `go.mod` that
@@ -439,6 +441,17 @@ Anchor §10.4 item 13 is one place this build keeps the text: a window that
 excludes the sender at the block time a source confirms fails
 `anchor.evm.tx`, and `anchor.evm.canonical` stays correct, where
 `evm-anchor-vectors.json` blocks it.
+
+`custody.ledger` is one place this build reads Verification §4.3 together
+with Bundle §6 and Specs §4, which say custody material is never passed
+over and never counts as a pass, rather than by its first rule alone. That
+rule names only the `custody` slot, so a bundle whose custody row was
+removed, while the envelope's `custodyChain` still carries the row's hashed
+mirror entry, would read `not_applicable` and exit 0. This build abstains
+on it, `unsupported_artifact`, exit 4 (`internal/corpus/custody_test.go`).
+The reference implementation, which verifies custody material, reports that
+bundle `checked-wrong` and exits 1, with a reason Verification §2.3 does not
+list; the vectors pinned here leave its custody cases out.
 
 Where the vectors state no answer, this build keeps the text too, and its
 report can differ from the reference implementation's, in some cases in its
