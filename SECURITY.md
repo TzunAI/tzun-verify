@@ -12,8 +12,8 @@ exploit it, so please report those the same way.
 Use GitHub's private vulnerability reporting on this repository:
 **Security → Advisories → Report a vulnerability**
 ([direct link](https://github.com/TzunAI/tzun-verify/security/advisories/new)).
-If you cannot use it, open an issue that asks for a private channel and says
-nothing about the problem itself.
+If you cannot use it, email security@tzun.ai with a subject line that
+starts with `[SECURITY]`.
 
 Please include, as far as you can:
 
