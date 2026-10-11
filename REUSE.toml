@@ -1,0 +1,60 @@
+# Copyright and licence of the files that cannot carry, or do not carry, a
+# notice of their own (https://reuse.software/). Each Go file names its
+# licence in its first line and takes its copyright from here; the scripts,
+# the commit hook and the workflows carry both in their own header comment.
+# Every other file is listed below by path, so a file added later is
+# covered only once it is listed or carries its own notice. The licence
+# texts (LICENSE, LICENSES/ and third_party/LICENSE-THIRD-PARTY) are not
+# files REUSE covers. `reuse lint` checks that every file is covered, and
+# CI runs it (.github/workflows/public-hygiene.yml).
+#
+# Where more than one annotation matches a file, the last one applies.
+version = 1
+
+[[annotations]]
+path = "**/*.go"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Tzun, Inc."
+
+[[annotations]]
+path = [
+  "NOTICE",
+  "README.md",
+  "go.mod",
+  "go.sum",
+  "publishers/publishers.json",
+  "internal/rfc3161/testdata/openssl-tokens.json",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Tzun, Inc."
+SPDX-License-Identifier = "BSD-3-Clause-Clear"
+
+[[annotations]]
+path = "testdata/vectors/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Tzun, Inc."
+SPDX-License-Identifier = "CC0-1.0"
+
+# Third-party test data: a public timestamp authority's root certificate and
+# a response it issued, each kept as published (the Sectigo root re-encoded
+# as PEM) or as received.
+# They are not Tzun's and are not under BSD-3-Clause-Clear or CC0-1.0;
+# LICENSES/LicenseRef-Timestamp-Authority-Material.txt says what each file
+# is, where it came from, and on what terms it is here.
+[[annotations]]
+path = [
+  "internal/rfc3161/testdata/freetsa-root.pem",
+  "internal/rfc3161/testdata/freetsa.tsr",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "Free TSA (www.freetsa.org)"
+SPDX-License-Identifier = "LicenseRef-Timestamp-Authority-Material"
+
+[[annotations]]
+path = [
+  "internal/rfc3161/testdata/sectigo-root-r46.pem",
+  "internal/rfc3161/testdata/sectigo.tsr",
+]
+precedence = "override"
+SPDX-FileCopyrightText = "Sectigo Limited"
+SPDX-License-Identifier = "LicenseRef-Timestamp-Authority-Material"

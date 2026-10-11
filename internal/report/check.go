@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package report holds the check model of the verification contract
 // (Verification §2, Anchor §10.1), the tzun-verify-report/1
 // JSON report, the human-readable report and the exit codes of

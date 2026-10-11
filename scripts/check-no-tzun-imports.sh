@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#
 # tzun-verify imports nothing from Tzun. Every package the build and the tests
 # link, and every module in the build list, must come from somewhere whose
 # path does not name Tzun, this module excepted.

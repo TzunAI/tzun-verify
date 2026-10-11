@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package publishers holds the publisher manifest pinned in this release
 // (Anchor §9), whose address is https://tzun.ai/anchors/publishers.json:
 // the manifest tzun-verify uses when the auditor passes no --publishers file.

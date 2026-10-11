@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package checkpoint reads Tzun checkpoint bodies and origins
 // (Anchor §4). A bare §n in this package's comments is a section of
 // Anchor.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package rfc3161 verifies an rfc3161/1 publication (Anchor §7.3,
 // §10.5): an RFC 3161 timestamp token whose imprint is P. A bare §n in this
 // package's comments is a section of Anchor; an RFC's sections are named

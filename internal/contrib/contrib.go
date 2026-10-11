@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package contrib reads payload.contributions (Record §7) and decides the
 // rows contributions, contributions.binding and contributions.pipeline of
 // Verification §4.10. A bare §n in this package's comments is a section of

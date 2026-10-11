@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package cli is the tzun-verify command: its flags, the verifier's inputs
 // they build, and the JSON and human-readable reports. The conformance
 // corpus runner (internal/corpus) drives it through Run, so the report's
