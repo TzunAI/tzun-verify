@@ -34,8 +34,9 @@
 #   session        a link to a conversation with an assistant.
 #   local-path     an absolute path under a home, temporary, mount or root
 #                  directory, on any operating system.
-#   email          an email address, except a noreply address or one at a
-#                  domain reserved for examples.
+#   email          an email address, except a noreply address, one at a
+#                  domain reserved for examples, or a role address in
+#                  PUBLIC_EMAILS below.
 #   host           a subdomain of tzun.ai other than the ones in PUBLIC_HOSTS
 #                  below.
 #   requirement    a requirement id (REQ-...). The specification states none.
@@ -89,6 +90,10 @@ EXAMPLE_TLDS = (".example", ".test", ".invalid", ".localhost")
 # specification is published.
 PUBLIC_HOSTS = {"www", "demo", "spec", "log", "test", "xlog"}
 
+# Role addresses at tzun.ai that this repository gives for reports: conduct
+# in CODE_OF_CONDUCT.md and security in SECURITY.md.
+PUBLIC_EMAILS = {"conduct@tzun.ai", "security@tzun.ai"}
+
 SELF_REPO = "tzun-verify"
 SPEC_REPO = "tzun-spec"
 
@@ -114,6 +119,8 @@ def allow_cross_ref(m, line):
 
 
 def allow_email(m, line):
+    if m.group(0).lower() in PUBLIC_EMAILS:
+        return True
     local, _, domain = m.group(0).lower().partition("@")
     if local in ("noreply", "no-reply") or domain.endswith("users.noreply.github.com"):
         return True

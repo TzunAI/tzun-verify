@@ -612,7 +612,7 @@ publishers          the pinned publisher manifest
 scripts             CI, release-gate, release, licence and public-hygiene scripts
 .githooks           the commit-message hook of the public-hygiene check
 testdata/vectors    the pinned copy of the conformance vectors (Specs §5)
-LICENSES            the licence texts: BSD-3-Clause-Clear, CC0-1.0 for the vectors, and the note on the timestamp authorities' test files
+LICENSES            the licence texts: BSD-3-Clause-Clear, CC0-1.0 for the vectors, CC-BY-4.0 for the code of conduct, and the note on the timestamp authorities' test files
 third_party         the licences of the third-party code in a release binary (scripts/third-party-licenses.sh writes them)
 ```
 
@@ -623,7 +623,8 @@ Questions and ideas go to
 wrong result or a crash to an [issue](https://github.com/TzunAI/tzun-verify/issues/new/choose).
 A security problem is reported privately, as [`SECURITY.md`](SECURITY.md)
 says. [`CONTRIBUTING.md`](CONTRIBUTING.md) lists the checks a change must
-pass.
+pass. The [code of conduct](CODE_OF_CONDUCT.md) applies in all of these
+places.
 
 ## License
 
@@ -641,6 +642,11 @@ Free TSA and Sectigo, and a timestamp response from each, kept as published
 (the Sectigo root re-encoded as PEM) and as received.
 `LICENSES/LicenseRef-Timestamp-Authority-Material.txt` says what each file
 is and where it came from. No release binary contains them.
+
+`CODE_OF_CONDUCT.md` is the Contributor Covenant, version 2.1, which is not
+Tzun's either. It is under the Creative Commons Attribution 4.0
+International licence (`LICENSES/CC-BY-4.0.txt`), and its last paragraph
+names its creator and its steward.
 
 A release binary also contains the Go standard library and runtime and the
 modules the build links, each under its own licence: go-ethereum's library

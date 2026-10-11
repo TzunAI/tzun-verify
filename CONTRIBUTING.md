@@ -15,6 +15,8 @@ comes from that.
   it must not give: an issue, with the conformance form.
 - The specification's text looks wrong or unclear: a discussion.
 - A security problem: [`SECURITY.md`](SECURITY.md), never a public issue.
+- Behaviour that breaks the [code of conduct](CODE_OF_CONDUCT.md), which
+  applies in all of these places: conduct@tzun.ai.
 
 Proof bundles can hold personal data. Before you attach one to an issue,
 remove it or build a minimal case that shows the same thing.
@@ -82,4 +84,5 @@ public hygiene.
 Under GitHub's Terms of Service, a contribution to this repository is made
 under the repository's licence: BSD-3-Clause-Clear for the code
 ([`LICENSE`](LICENSE)), CC0-1.0 for the conformance vectors in
-`testdata/vectors`. There is no separate contributor agreement.
+`testdata/vectors`, and CC-BY-4.0 for `CODE_OF_CONDUCT.md`. There is no
+separate contributor agreement.

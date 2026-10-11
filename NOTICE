@@ -11,3 +11,8 @@ neither licence: two root certificates and two timestamp responses made by
 the public timestamp authorities Free TSA (www.freetsa.org) and Sectigo
 Limited. LICENSES/LicenseRef-Timestamp-Authority-Material.txt says what
 they are and where they came from.
+
+CODE_OF_CONDUCT.md is the Contributor Covenant, version 2.1, which is not
+Tzun's either: it was created by Coraline Ada Ehmke, is stewarded by the
+Organization for Ethical Source, and is licensed under the Creative Commons
+Attribution 4.0 International licence (LICENSES/CC-BY-4.0.txt).
