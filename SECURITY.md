@@ -65,9 +65,12 @@ Until the first release, the `main` branch. After it, the latest release.
 ## Safe harbour
 
 We will not pursue or support legal action under computer-misuse,
-anti-circumvention or similar laws against anyone who reports in good faith
-under this policy, who avoids privacy violations and service degradation,
-and who gives us reasonable time to remediate before disclosing publicly.
+anti-circumvention or similar laws against anyone who, in good faith,
+researches what is in scope above and reports what they find under this
+policy, who avoids privacy violations and service degradation, and who gives
+us reasonable time to remediate before disclosing publicly. This safe
+harbour does not cover testing any system you neither own nor have
+permission to test, Tzun's hosted services among them.
 
 This safe harbour grants no licence under any patent or patent application.
 The code's own licence is in [`LICENSE`](LICENSE).
