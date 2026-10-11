@@ -153,15 +153,36 @@ func (v *verification) chainLinkRow() report.Check {
 }
 
 // custodyRow is custody.ledger (Verification §4.3). This version
-// does not verify custody material: a bundle that carries none, a null slot
-// or one whose entries are an empty array, reads not_applicable, and any
-// other slot abstains, so that what it holds is never passed over.
+// does not verify custody material, so the row is never checked-correct.
+// It reads not_applicable only for a bundle that carries none: a null slot
+// or one whose entries are an empty array, beside an envelope whose
+// custodyChain mirrors no ledger row. Anything else abstains, so that what
+// the bundle holds is never passed over (Bundle §6, Specs §4): a hashed
+// mirror entry beside a ledger that holds no rows names a row the bundle
+// leaves out, and only a verifier of custody material could decide it.
 func (v *verification) custodyRow() report.Check {
 	slot := member(v.root, "custody")
-	if entries := member(slot, "entries"); slot == nil || entries != nil && entries.Kind == jsonv.Array && len(entries.A) == 0 {
+	if entries := member(slot, "entries"); (slot == nil || entries != nil && entries.Kind == jsonv.Array && len(entries.A) == 0) && !mirrorsLedger(v.env) {
 		return report.Check{ID: IDCustody, Outcome: report.NotChecked, Reason: ReasonNA}
 	}
 	return report.Check{ID: IDCustody, Outcome: report.Abstain, Reason: ReasonUnsupported}
+}
+
+// mirrorsLedger reports whether the envelope's custodyChain holds a hashed
+// entry: an object whose entryHash is present and not null, the mirror of a
+// custody ledger row. An entry without one, such as the capture's own,
+// mirrors no row (Record §2.1 leaves the chain's content undefined).
+func mirrorsLedger(env *jsonv.Value) bool {
+	chain := member(env, "custodyChain")
+	if chain == nil || chain.Kind != jsonv.Array {
+		return false
+	}
+	for _, e := range chain.A {
+		if isObject(e) && member(e, "entryHash") != nil {
+			return true
+		}
+	}
+	return false
 }
 
 // recordTimestampRows run Anchor §10.5 over the record's own token

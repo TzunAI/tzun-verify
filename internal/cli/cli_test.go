@@ -602,6 +602,13 @@ func TestNothingPresentPassesSilently(t *testing.T) {
 	clientData := base64.RawURLEncoding.EncodeToString([]byte(`{"type":"webauthn.get","challenge":"x","origin":"https://example.test"}`))
 	// A batch statement with the members Record §9.4 reads.
 	statement := report.Obj("mode", report.S("batch"), "root", report.S(strings.Repeat("cd", 32)), "treeSize", report.N(2))
+	// custodyChain entries: the capture's own, which mirrors no ledger row,
+	// and a hashed one, the mirror of a row.
+	captureEntry := report.Obj("timestamp", report.S("2026-01-01T00:00:00.000Z"), "actor", report.S("acct:u-1"),
+		"action", report.S("decision_captured"), "systemId", report.S("sys-1"))
+	mirrorEntry := report.Obj("timestamp", report.S("2026-01-01T00:01:00.000Z"), "actor", report.S("ops@example.com"),
+		"action", report.S("reviewed"), "systemId", report.S("sys-1"), "entryHash", report.S(strings.Repeat("ab", 32)),
+		"prevEntryHash", report.Null())
 	for _, c := range []struct {
 		name     string
 		bundle   *jsonv.Value
@@ -621,6 +628,21 @@ func TestNothingPresentPassesSilently(t *testing.T) {
 		{"an empty custody slot", with(base, "custody", report.Obj("entries", report.Arr())),
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"a null custody slot", with(base, "custody", report.Null()),
+			"custody.ledger", "not-checked", "not_applicable", 0},
+		// A hashed custodyChain entry mirrors a ledger row: beside a slot
+		// that holds no rows, the row it names was left out, and custody
+		// material is present that this build does not verify (Bundle §6).
+		{"a hashed mirror entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
+			"envelope", with(env, "custodyChain", report.Arr(captureEntry, mirrorEntry))),
+			"custody.ledger", "abstain", "unsupported_artifact", 4},
+		{"a hashed mirror entry beside a null custody slot", with(with(base, "custody", report.Null()),
+			"envelope", with(env, "custodyChain", report.Arr(mirrorEntry))),
+			"custody.ledger", "abstain", "unsupported_artifact", 4},
+		{"an unhashed custodyChain entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
+			"envelope", with(env, "custodyChain", report.Arr(captureEntry))),
+			"custody.ledger", "not-checked", "not_applicable", 0},
+		{"a custodyChain entry whose entryHash is null", with(with(base, "custody", report.Null()),
+			"envelope", with(env, "custodyChain", report.Arr(with(mirrorEntry, "entryHash", report.Null())))),
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"related records", with(base, "relatedRecords", report.Obj("x", report.Obj("role", report.S("credential-registration")))),
 			"relatedRecords", "abstain", "unsupported_slot", 4},
