@@ -56,7 +56,7 @@ jobs:
         # file begins with its licence line. The tool is pinned by version.
         run: |
           python3 -m venv "$RUNNER_TEMP/reuse"
-          "$RUNNER_TEMP/reuse/bin/pip" install --quiet --disable-pip-version-check reuse==6.2.0
+          "$RUNNER_TEMP/reuse/bin/pip" install --quiet --disable-pip-version-check 'reuse[charset-normalizer]==6.2.0'
           "$RUNNER_TEMP/reuse/bin/reuse" lint
 
       - name: Commit messages
