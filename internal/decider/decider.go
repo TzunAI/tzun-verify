@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package decider reads payload.decider (Record §6) and a step's actor
 // (Record §7.1), and decides the decider row of Verification §4.9. A bare
 // §n in this package's comments is a section of Record.

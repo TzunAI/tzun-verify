@@ -1,0 +1,13 @@
+tzun-verify
+Copyright 2026 Tzun, Inc.
+Licensed under the BSD 3-Clause Clear License (LICENSE). No patent
+licence, express or implied, is granted by it; the licence text says so.
+
+The conformance vectors in testdata/vectors/** are licensed under CC0-1.0
+(LICENSES/CC0-1.0.txt).
+
+Four test files in internal/rfc3161/testdata are not Tzun's and are under
+neither licence: two root certificates and two timestamp responses made by
+the public timestamp authorities Free TSA (www.freetsa.org) and Sectigo
+Limited. LICENSES/LicenseRef-Timestamp-Authority-Material.txt says what
+they are and where they came from.

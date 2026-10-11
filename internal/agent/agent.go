@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package agent reads an agent descriptor tzun-agent/1 (Record §6.9): its
 // grammar, its digest and the limits a writer applies when it registers
 // one. A b1 bundle carries no descriptor and a bundle verifier resolves no

@@ -1213,7 +1213,7 @@
     {
       "id": "V37",
       "kind": "envelope-v1.0",
-      "description": "A salted step output (\u00a74.8): the output digest of { salt, value }",
+      "description": "A salted step output (Record \u00a77.6): the output digest of { salt, value }",
       "note": "The step output is outputDigest({ \"salt\": \"AAECAwQFBgcICQoLDA0ODw\", \"value\": { \"verdict\": \"approve\" } }); the salt travels outside the record.",
       "input": {
         "evidenceId": "abc",

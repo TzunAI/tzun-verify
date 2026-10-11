@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package evm verifies an evm-calldata/1 publication (Anchor §7.2,
 // §10.4) with go-ethereum: the raw transaction's type, signature and sender,
 // its calldata against P, its signed chain id against the publisher

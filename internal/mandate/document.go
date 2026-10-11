@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package mandate reads the mandate material of Record §9.6 to §9.9: the
 // document tzun-mandate/1 and its digest, its predicates, the statement
 // tzun-signoff-mandate/1 and its challenge, the assertion digest, and the

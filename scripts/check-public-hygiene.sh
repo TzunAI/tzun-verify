@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#
 # Public hygiene: this repository, its history and its pull requests say
 # nothing a reader outside Tzun cannot follow. Every reference is to this
 # repository or to a public place, the specification at spec.tzun.ai among them.
@@ -44,7 +47,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 usage() {
-  sed -n '6,12p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '9,15p' "$0" | sed 's/^# \{0,1\}//' >&2
   exit 2
 }
 

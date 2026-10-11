@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Command tzun-verify verifies a Tzun evidence record's b1 proof bundle
 // without Tzun code and without asking Tzun.
 //

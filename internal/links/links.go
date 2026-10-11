@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package links reads payload.links (Record §8) and decides the rows links,
 // links[<i>] and links[<i>].edge of Verification §4.11. A bare §n in this
 // package's comments is a section of Record.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package manifest reads the publisher manifest (Anchor §9): the
 // verifier's own list of which addresses may publish for which anchor
 // origin. It never comes from the artifact. A bare §n in this package's

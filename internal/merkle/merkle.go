@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package merkle checks RFC 6962 proofs over Tzun logs (Tree, the tree
 // profile revision 2) with transparency-dev/merkle, pinned at main
 // commit fbbcd741: that commit refuses every invalid consistency vector,

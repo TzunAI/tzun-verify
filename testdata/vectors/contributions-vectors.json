@@ -41,7 +41,7 @@
       "digest": "sha256:c200d7ae8c395f2dc28452f2c4dd28d66be147ff81c9133a504f31d75849a0a5"
     },
     {
-      "label": "the salted convention of \u00a74.8: the same verdict under a 16-byte salt",
+      "label": "the salted convention of Record \u00a77.6: the same verdict under a 16-byte salt",
       "value": {
         "salt": "AAECAwQFBgcICQoLDA0ODw",
         "value": {

@@ -1,0 +1,64 @@
+Timestamp authority material
+
+This is not a licence. It records what four files of this repository are,
+where they came from, and why they are here. They were made by two public
+timestamp authorities, Free TSA (www.freetsa.org) and Sectigo Limited, not
+by Tzun, Inc. Tzun claims no copyright in them and grants no licence to
+them: the BSD 3-Clause Clear License and CC0-1.0 that cover the rest of
+this repository do not apply to them. Whatever rights exist in them are
+their issuers'.
+
+An authority publishes its root certificate, and returns a signed
+response to whoever requests a timestamp, so that anyone can verify the
+timestamp. The files are here, their content unchanged, for that purpose
+alone: the tests verify each response against its authority's root
+(internal/rfc3161/rfc3161_test.go, internal/corpus/realtsa_test.go). The
+build does not use them, and no release binary contains them.
+
+Both responses are over one SHA-256 digest, the record digest of corpus
+case anchored-with-newer:
+
+  9739ebd76cc45223ccc88920802c9032208f3c09f67fc129a41a769109dead6a
+
+Free TSA (www.freetsa.org)
+
+  internal/rfc3161/testdata/freetsa-root.pem
+    The Free TSA Root CA certificate, byte for byte the file Free TSA
+    publishes at https://freetsa.org/files/cacert.pem.
+    SHA-256 of the certificate (DER):
+      a6379e7cecc05faa3cbf076013d745e327bbbaa38c0b9af22469d4701d18aabc
+
+  internal/rfc3161/testdata/freetsa.tsr
+    The RFC 3161 response the service at https://freetsa.org/tsr returned
+    to a request over the digest above, kept as received. Its token is
+    dated 2026-10-01T19:40:02Z and carries the Free TSA signing
+    certificate and the root above.
+
+Sectigo Limited
+
+  internal/rfc3161/testdata/sectigo-root-r46.pem
+    The Sectigo Public Time Stamping Root R46 certificate, in PEM. Its DER
+    is byte for byte the file Sectigo publishes at
+    http://crt.sectigo.com/SectigoPublicTimeStampingRootR46.crt.
+    SHA-256 of the certificate (DER):
+      4941b001b8a97e961b7817c9d9e960ec4b056bfc915a8c1aabf6ef6b3ac046a5
+
+  internal/rfc3161/testdata/sectigo.tsr
+    The RFC 3161 response the service at http://timestamp.sectigo.com
+    returned to a request over the digest above, kept as received. Its
+    token is dated 2026-10-01T19:40:03Z and carries the Sectigo Public
+    Time Stamping Signer R37 certificate, the Sectigo Public Time Stamping
+    CA R41 certificate, and a certificate for Root R46 issued by USERTrust
+    RSA Certification Authority, a root Sectigo operates.
+
+To obtain these files from their source rather than from this repository,
+download the two roots from the addresses above, and request new
+responses from the two services, for example with
+`openssl ts -query -digest <digest> -sha256 -cert`.
+
+SHA-256 of each file as this repository holds it:
+
+  2151b61137ffa86bf664691ba67e7da0b19f98c758e3d228d5d8ebf27e044438  freetsa-root.pem
+  e1e121c12d62bfdfea2dee70ae9803945cf51b861974227c47369af79eaefc3e  freetsa.tsr
+  a5ad15883feead6740b67585c8e2e45011daed986bb43efe73e3fbc7f0ac1baa  sectigo-root-r46.pem
+  36ca96a8ee9e57c69c739df8adccc6b0f498f31a4b0a391fda31b6f0361395d0  sectigo.tsr

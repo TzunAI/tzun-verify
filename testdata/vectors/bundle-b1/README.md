@@ -58,7 +58,7 @@ the newer anchor and both consistency proofs, every input supplied.
 (4), `record-token-signer-unassigned-curve` (4),
 `record-token-intermediate-unassigned-curve` (4) and
 `record-token-unneeded-certificate-unassigned-curve` (0). The signer
-subjects that shape the fact `authority` (Anchor §10.7):
+subjects that shape the fact `authority` (Anchor §10.5 step 4, §10.7):
 `record-token-authority-first-cn`, `-multi-valued-rdn`, `-specials`,
 `-line-feed`, `-utf8-string`, `-bmp-string`, `-teletex-string`, `-empty-cn`,
 `-no-cn` and `-empty-subject`, each (0).
