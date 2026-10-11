@@ -22,6 +22,7 @@ path = [
   "CONTRIBUTING.md",
   "NOTICE",
   "README.md",
+  "RELEASING.md",
   "SECURITY.md",
   ".github/pull_request_template.md",
   "go.mod",

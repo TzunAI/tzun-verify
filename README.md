@@ -172,43 +172,15 @@ record's own timestamp trusted.
 
 ## Install
 
-Every way of installing tzun-verify installs the same file: a release's
-binary for the platform, byte for byte. None of them builds anything.
-
-| Way | Command | Platforms |
-|---|---|---|
-| A GitHub release | download, check and unpack the archive (below) | Linux x86_64 and arm64, macOS 13 or later on Intel and Apple silicon, Windows x86_64 |
-| npm (Node.js 18 or later) | `npx tzun-verify record-42.json`, or `npm install -g tzun-verify` | the same |
-| pip (Python 3.10 or later) | `pip install tzun-verify` (or `pipx install tzun-verify`, `uv tool install tzun-verify`) | the same |
-| Homebrew | `brew install` from the TzunAI organisation's tap | macOS 13 or later and Linux, x86_64 and arm64 |
-
-- **npm**: the `tzun-verify` package is a small launcher. npm installs, with
-  it, the one package that holds the binary for the machine
-  (`tzun-verify-linux-x64`, `tzun-verify-linux-arm64`,
-  `tzun-verify-darwin-x64`, `tzun-verify-darwin-arm64`,
-  `tzun-verify-win32-x64`), and the launcher runs that binary with the same
-  arguments, streams and exit code. No package has an install script, and
-  nothing is downloaded at run time.
-- **pip**: each wheel carries the binary for its platform and installs it as
-  the `tzun-verify` command. `import tzun_verify` gives
-  `tzun_verify.verify(path, **options)`, which runs it with `--json` and
-  returns the report and the exit code; nothing is verified in Python.
-- **Homebrew**: the formula installs the release's archive for the platform,
-  with the SHA-256 its `SHA256SUMS` gives, and its `brew test` runs one case
-  of the conformance corpus. The tap is not set up yet; once it is, this
-  section gives its `brew install` line.
-
-Each package's version is the release's (PyPI spells a pre-release its own
-way: `0.2.0-rc.1` is `0.2.0rc1`). Before any of them is published, the
-workflow that publishes it downloads the published release's `SHA256SUMS`,
-requires every file it ships to be one listed there, and checks that file's
-build provenance attestation (below) with `gh attestation verify`.
-RELEASING.md says which of them carries which release.
+A GitHub release holds tzun-verify's binary for Linux x86_64 and arm64,
+macOS on Intel and Apple silicon, and Windows x86_64, each built
+reproducibly and attested (below). Packages for npm (#2), PyPI (#3) and
+Homebrew (#4) are planned; none is published yet.
 
 The macOS binaries are not notarized. A file downloaded with a web browser
 is quarantined by Gatekeeper and will not open until the quarantine is
-removed (`xattr -d com.apple.quarantine tzun-verify`); curl, npm, pip and
-brew do not quarantine what they download.
+removed (`xattr -d com.apple.quarantine tzun-verify`); curl does not
+quarantine what it downloads.
 
 ### From a GitHub release
 
@@ -216,12 +188,15 @@ Each release is a `v<version>` tag, and its GitHub release holds, for
 linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64:
 
 - the binary, `tzun-verify_<version>_<os>_<arch>` (`.exe` on Windows);
-- an archive holding it, named `tzun-verify`, with this README:
-  `tzun-verify_<version>_<os>_<arch>.tar.gz` (`.zip` on Windows);
+- an archive holding it, named `tzun-verify`, with this README, `LICENSE`,
+  `NOTICE` and `LICENSE-THIRD-PARTY`: `tzun-verify_<version>_<os>_<arch>.tar.gz`
+  (`.zip` on Windows);
 
-one `SHA256SUMS` over every file, and a build provenance attestation (GitHub
-artifact attestations) for every file. RELEASING.md lists the names. A
-release's notes list the specification versions it implements.
+and `LICENSE-THIRD-PARTY` on its own, one `SHA256SUMS` over every file, and
+a build provenance attestation (GitHub artifact attestations) for every
+file. RELEASING.md lists the names. A release's notes list the
+specification versions it implements and the SHA-256 of the publisher
+manifest it pins.
 
 Download the archive for your platform and `SHA256SUMS`, check the archive
 against `SHA256SUMS` and against its attestation, then unpack it:
@@ -263,6 +238,10 @@ the release flags:
 ```
 CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags purego -o tzun-verify ./cmd/tzun-verify
 ```
+
+`go install github.com/TzunAI/tzun-verify/cmd/tzun-verify@v<version>` builds
+the same code with your toolchain's default flags, so its bytes are not a
+release binary's.
 
 Then:
 

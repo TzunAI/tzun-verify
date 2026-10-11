@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#
 # Makes a release's files: every target's binary, built reproducibly by
 # scripts/reproducible-build.sh (two builds, which must agree), an archive of
-# each, and SHA256SUMS. The release workflow (.github/workflows/release.yml)
+# each, the third-party licences, and SHA256SUMS. The release workflow (.github/workflows/release.yml)
 # runs it twice, on two machines from two clean checkouts, and requires the
 # two SHA256SUMS to be identical. Anyone can run it on a checkout of a
 # release tag with the pinned toolchain and compare the SHA256SUMS it writes
@@ -15,13 +18,20 @@
 # tag is v<version>, the version is not a -dev one, HEAD is the tag's commit
 # (when the tag is here) and no tracked file has uncommitted changes.
 #
-# The files, for each target <os>/<arch> (RELEASING.md, which the npm, PyPI
-# and Homebrew packaging read):
+# The files (RELEASING.md lists them), for each target <os>/<arch>:
 #
 #   tzun-verify_<version>_<os>_<arch>          the binary (.exe on windows)
-#   tzun-verify_<version>_<os>_<arch>.tar.gz   linux and darwin: tzun-verify and README.md
-#   tzun-verify_<version>_<os>_<arch>.zip      windows: tzun-verify.exe and README.md
+#   tzun-verify_<version>_<os>_<arch>.tar.gz   linux and darwin: tzun-verify and the licence files
+#   tzun-verify_<version>_<os>_<arch>.zip      windows: tzun-verify.exe and the licence files
+#
+# and once:
+#
+#   LICENSE-THIRD-PARTY                        third_party/LICENSE-THIRD-PARTY
 #   SHA256SUMS                                 the SHA-256 of each file above, sha256sum's format
+#
+# An archive's licence files are README.md, LICENSE, NOTICE and
+# LICENSE-THIRD-PARTY: the licence of tzun-verify and of every module the
+# binary links travel with it.
 #
 # The archives are reproducible too: fixed order, owner, modes and times (the
 # tagged commit's), written by GNU tar, gzip -n and Info-ZIP zip -X.
@@ -60,8 +70,8 @@ if [[ -n "$tag" ]]; then
     echo "release-artifacts: the tag is $tag, but internal/cli/cli.go sets Version $version (tag v$version)" >&2
     exit 1
   fi
-  # A -dev version is main between two releases (RELEASING.md), never a
-  # release: every channel would publish it, and PyPI keeps a version forever.
+  # A -dev version is what main carries between two releases (RELEASING.md),
+  # never a release.
   if [[ "$version" == *-dev* ]]; then
     echo "release-artifacts: $version is a development version, which is never released; tag a release version" >&2
     exit 1
@@ -113,20 +123,23 @@ for t in "${TARGETS[@]}"; do
   stage="$tmp/stage/${goos}_$goarch"
   mkdir -p "$stage"
   cp "$tmp/bin/${goos}_$goarch/$exe" "$stage/$exe"
-  cp README.md "$stage/README.md"
+  cp README.md LICENSE NOTICE third_party/LICENSE-THIRD-PARTY "$stage/"
   chmod 0755 "$stage/$exe"
-  chmod 0644 "$stage/README.md"
-  touch -d "@$epoch" "$stage/$exe" "$stage/README.md"
+  chmod 0644 "$stage/README.md" "$stage/LICENSE" "$stage/NOTICE" "$stage/LICENSE-THIRD-PARTY"
+  touch -d "@$epoch" "$stage/$exe" "$stage/README.md" "$stage/LICENSE" "$stage/NOTICE" "$stage/LICENSE-THIRD-PARTY"
   if [[ "$goos" == windows ]]; then
     cp -p "$stage/$exe" "$out/$name.exe"
-    (cd "$stage" && zip -q -X -D -9 "$out/$name.zip" "$exe" README.md)
+    (cd "$stage" && zip -q -X -D -9 "$out/$name.zip" "$exe" README.md LICENSE NOTICE LICENSE-THIRD-PARTY)
   else
     cp -p "$stage/$exe" "$out/$name"
     tar --format=ustar --owner=0 --group=0 --numeric-owner --mtime="@$epoch" \
-      -C "$stage" -cf - "$exe" README.md | gzip -9 -n >"$out/$name.tar.gz"
+      -C "$stage" -cf - "$exe" README.md LICENSE NOTICE LICENSE-THIRD-PARTY | gzip -9 -n >"$out/$name.tar.gz"
   fi
 done
+cp third_party/LICENSE-THIRD-PARTY "$out/LICENSE-THIRD-PARTY"
 
-(cd "$out" && sha256sum tzun-verify_* >SHA256SUMS)
+# LC_ALL=C sorts LICENSE-THIRD-PARTY before the tzun-verify_ files, so the
+# list is in name order.
+(cd "$out" && sha256sum LICENSE-THIRD-PARTY tzun-verify_* >SHA256SUMS)
 echo "== SHA256SUMS of tzun-verify $version"
 cat "$out/SHA256SUMS"
