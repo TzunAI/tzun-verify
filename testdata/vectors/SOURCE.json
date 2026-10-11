@@ -9,7 +9,7 @@
     "bundle-b1": {
       "files": {
         "README.md": {
-          "sha256": "4fcde25c0dcdcb5fb37d65e6ec89e9399fe23f02060f4a7a9c20f6e4d1b04c5f"
+          "sha256": "b394df285e6e7440b89a8a34b96ad6c699c676ca07af6de2e219e9ad210289b9"
         },
         "anchored-latest-epoch/bundle.json": {
           "sha256": "216de47eb97451dc6ba51fa9dc05b8550f1d8533d2128bc39976a98049589ff7"
@@ -312,7 +312,7 @@
           "sha256": "2ed5664652c578e22f16b8fbb386f1f2e263e2634541af799066939dce6e307c"
         },
         "index.json": {
-          "sha256": "922f8c37f5d3658f30e2273fdc13951d9e6280e389c98d3171ebb8cdfe484262"
+          "sha256": "834d8a11ed6e60546f4e7ce54c5053f1ff02cbb2fde5f13d20bbce139f303b1b"
         },
         "junk-batch-signoff/bundle.json": {
           "sha256": "cb8fbe66106da0cac01f3e172af71d0ee244a5a938842889e23e3ba784f6eaa9"
@@ -1040,7 +1040,7 @@
       "sha256": "30c046beefe16827bb4af7dd102ee040c1c8719cb1167ebf7f620283a0ff705b"
     },
     "contributions-vectors.json": {
-      "sha256": "ddf4b0e96ffd705fd64086fdc1be02a4eba4402136c0303528478c30d3692e09"
+      "sha256": "a4c6e921c66e0173625a4a0050f42260746bc7ed7be2d6f2ad6cacfde829ab0a"
     },
     "cross-sdk-parity-vectors.json": {
       "sha256": "dbad2fe26f2fa1ac6b7dc877fe42562c47c7d29f3c6eb4f4fd4cd5707ca37ad5"
@@ -1052,7 +1052,7 @@
       "sha256": "1cc9b573fec5fffbf53392483f0487c6acebee9b49c2b4540c8afb307e2cef43"
     },
     "evm-anchor-vectors.json": {
-      "sha256": "3226a8b12184f31ada9f2aa0832fa75a37fd15ec7fed96ad682cf581bf518b3a"
+      "sha256": "361dbfd5f8df8c9bf0467ffae8f3fd1883dbb5a0629490042fe73492e8575583"
     },
     "links-vectors.json": {
       "sha256": "99b73b8375a052621ef2deb2f148994531390543d8981b678a7327df53bab71d"
@@ -1073,7 +1073,7 @@
       "sha256": "5438eedf9ce9bab5dfa429f788108d6e7eea4147b93466c85781aa6423a38539"
     },
     "v1.0-canonical-vectors.json": {
-      "sha256": "aff70b82654abb9322ee84725cad4cf22a2729d7443810c1efa027d23372bd69"
+      "sha256": "e0e70388f4ccd0bfa5da5409930321bcc955fe04ccc96eee236f4cabada19a48"
     },
     "v1.0-integrity-vectors.json": {
       "sha256": "c8c6e25d89d6b38d42e291a861c657b87b08392833dc2ea9af416c3452a2ddf1"
