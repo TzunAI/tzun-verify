@@ -16,8 +16,8 @@ repository's tests hold tzun-verify to each of them.
 ## Specification
 
 The specification is published at [spec.tzun.ai](https://spec.tzun.ai/).
-This repository holds no copy of its text, only a pinned copy of its
-conformance vectors. Where this README, the code or its comments differ from
+This repository holds no copy of its text, only its own pinned copy of the
+conformance vectors (below). Where this README, the code or its comments differ from
 the specification, the specification governs, and the difference is a defect
 here (Specs §7).
 
@@ -49,10 +49,13 @@ mismatch, and `record.digest` names the set it recomputes under
 ### The conformance vectors
 
 `testdata/vectors` is the pinned copy of the conformance vectors that hold
-under the revised text. The archive at https://spec.tzun.ai/vectors/1.0/
-predates the revision, and Specs §5 names the parts of it the revision
-supersedes; it is rebuilt from vectors written under the revised text, and
-until then this copy is the one this build is held to.
+under the revised text. The archive published at
+https://spec.tzun.ai/vectors/1.0/ predates the revision: Specs §5 names the
+parts of it the revision supersedes, and it has no vectors for the members
+Record §6 to §9 add. It is to be rebuilt from vectors written under the
+revised text. Until then the text governs (Specs §7), this copy is the one
+this build is held to, and the two hold different files: the SHA-256 the
+Vectors page gives is the archive's, not this copy's.
 
 `testdata/vectors/SOURCE.json` is this repository's own record: the SHA-256
 of every file of the copy, and where the files come from. The tests fail on a
@@ -190,7 +193,7 @@ tzun-verify --require 'anchor,anchor.evm.canonical[*]' record-42.json
 | `--confirmations <n>` | Count a block final at depth n instead of the chain's `finalized` tag, which is the default. Below 64 blocks is not finality on Ethereum and is refused unless you also pass `--accept-non-final`. The report states the mode either way. |
 | `--evm-header-file [eip155:<id>=]<file.json>` | A header source you wrote, for an audit with no network: `{"chainId", "finality": "finalized" or {"confirmations": n}, "finalizedBlockNumber", "blocks": [{"number", "hash", "timestamp"}]}`. It is taken at its word, as any header source is: it has no block at a height it does not list, and looks no transaction up. A member it does not know is refused. |
 | `--no-tx-lookup` | Never ask the node for the transaction. Without a trie proof in the bundle, nothing then places it in its block. |
-| `--publishers <manifest.json>` | The publisher manifest to trust. The default is the copy of https://tzun.ai/anchors/publishers.json pinned in this release (`publishers/publishers.json`); `--version` prints the SHA-256 of its bytes, which is how the report names it and what to compare with the site's copy. A file that is not JSON is refused. |
+| `--publishers <manifest.json>` | The publisher manifest to trust. The default is the manifest pinned in this release (`publishers/publishers.json`), whose address is https://tzun.ai/anchors/publishers.json; `--version` prints the SHA-256 of its bytes, which is how the report names it and what to compare with a copy fetched from that address. A file that is not JSON is refused. |
 | `--no-publishers` | Trust no publisher manifest: every EVM publication is then NOT CHECKED, `no_expectation:publisher`. |
 | `--tsa-roots <file.pem>`, `--tsa-intermediates <file.pem>` | RFC 3161 trust roots and intermediates. A certificate this build cannot read in full, its key included, is refused with exit 64, never dropped (Verification §3.1). |
 | `--timeout <ms>` | One deadline shared by every call to your node (default 30000). |
