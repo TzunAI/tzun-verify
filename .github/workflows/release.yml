@@ -1,0 +1,184 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+name: Release
+
+# On a v* tag only: the release files made on two machines from two clean
+# checkouts (scripts/release-artifacts.sh), each machine building every
+# binary twice (scripts/reproducible-build.sh); the job before the release
+# refuses any byte difference between the two machines' files, binaries and
+# archives, then attests each file's build provenance, and the last job puts
+# the files, SHA256SUMS and the notes in a draft release. Nothing is
+# published until a person publishes the draft (RELEASING.md). ci.yml runs
+# the checks and the release gate on the same tag.
+on:
+  push:
+    tags: ['v*']
+
+# Each job asks for what it needs and nothing else.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # The toolchain go.mod pins, never a download of another.
+  GOTOOLCHAIN: local
+
+jobs:
+  build:
+    name: build (first machine)
+    # GitHub-hosted on purpose: a release comes from fresh VMs.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, to check that the tag is on main.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The tagged commit is on main
+        run: git merge-base --is-ancestor HEAD origin/main
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.1'
+          # A release reads no cache another run wrote.
+          cache: false
+
+      - name: Toolchain is the pinned one
+        run: |
+          want="go$(sed -n 's/^toolchain go//p' go.mod)"
+          got="$(go env GOVERSION)"
+          echo "go.mod pins $want; runner has $got"
+          test "$got" = "$want"
+
+      - name: Build the release files
+        # Refuses a tag other than v<the Version internal/cli sets>.
+        run: scripts/release-artifacts.sh "$RUNNER_TEMP/dist" "$GITHUB_REF_NAME"
+
+      - name: Keep them for the next jobs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: ${{ runner.temp }}/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  rebuild:
+    name: rebuild (second machine, clean checkout)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Another path than the first machine's.
+          path: rebuild/elsewhere
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.1'
+          cache: false
+
+      - name: Toolchain is the pinned one
+        working-directory: rebuild/elsewhere
+        run: |
+          want="go$(sed -n 's/^toolchain go//p' go.mod)"
+          got="$(go env GOVERSION)"
+          echo "go.mod pins $want; runner has $got"
+          test "$got" = "$want"
+
+      - name: Build the release files again
+        working-directory: rebuild/elsewhere
+        run: scripts/release-artifacts.sh "$RUNNER_TEMP/dist" "$GITHUB_REF_NAME"
+
+      - name: Keep their SHA256SUMS
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rebuild-sha256sums
+          path: ${{ runner.temp }}/dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+
+  attest:
+    name: compare and attest
+    needs: [build, rebuild]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Fetch the first machine's files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist
+
+      - name: Fetch the second machine's SHA256SUMS
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: rebuild-sha256sums
+          path: rebuild
+
+      - name: Both machines built the same bytes
+        working-directory: dist
+        run: |
+          # The files are exactly the ones SHA256SUMS names, and match it.
+          listed="$(cut -d' ' -f3- SHA256SUMS | LC_ALL=C sort)"
+          present="$(find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\n' | LC_ALL=C sort)"
+          if [ "$listed" != "$present" ]; then
+            echo "SHA256SUMS names:"; echo "$listed"; echo "the files are:"; echo "$present"
+            exit 1
+          fi
+          sha256sum --check --strict SHA256SUMS
+          # The second machine's build of every file is identical.
+          diff -u SHA256SUMS ../rebuild/SHA256SUMS
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS
+
+  release:
+    name: draft release
+    needs: attest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the files
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: ${{ runner.temp }}/dist
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          scripts/release-notes.sh "$version" "$RUNNER_TEMP/dist/SHA256SUMS" >"$RUNNER_TEMP/notes.md"
+          prerelease=()
+          if [[ "$version" == *-* ]]; then prerelease=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP"/dist/* \
+            --repo "$GITHUB_REPOSITORY" --draft --verify-tag "${prerelease[@]}" \
+            --title "tzun-verify $version" --notes-file "$RUNNER_TEMP/notes.md"

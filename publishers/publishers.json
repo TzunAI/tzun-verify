@@ -1,1 +1,49 @@
-{"publishers":{}}
+{
+  "publishers": {
+    "demo.tzun.ai/972309676bfd886c408f9e1a3cbf8501/anchors": [
+      {
+        "address": "0xAf88B437dC7507c3E938FbB299F21a157159a0D1",
+        "chain": "eip155:11155111",
+        "namespace": "production",
+        "validFrom": "2026-10-10T00:00:00Z",
+        "validUntil": null
+      }
+    ],
+    "test.demo.tzun.ai/c994b8163f5a165a3d0f6f8e857f676a/anchors": [
+      {
+        "address": "0xB6c2e6cC74df5a7a9710235C61bB2C86A54Fa66a",
+        "chain": "eip155:11155111",
+        "namespace": "test",
+        "validFrom": "2026-10-06T14:00:00Z",
+        "validUntil": "2026-10-06T16:00:00Z"
+      }
+    ],
+    "test.tzun.ai/32b323649a663aec825b5c3d8d067409/anchors": [
+      {
+        "address": "0xB6c2e6cC74df5a7a9710235C61bB2C86A54Fa66a",
+        "chain": "eip155:11155111",
+        "namespace": "test",
+        "validFrom": "2026-09-25T00:00:00Z",
+        "validUntil": "2026-09-26T05:00:00Z"
+      }
+    ],
+    "test.tzun.ai/336df397128ba351bef0d4e15168a93d/anchors": [
+      {
+        "address": "0xB6c2e6cC74df5a7a9710235C61bB2C86A54Fa66a",
+        "chain": "eip155:11155111",
+        "namespace": "test",
+        "validFrom": "2026-09-25T00:00:00Z",
+        "validUntil": "2026-09-26T05:00:00Z"
+      }
+    ],
+    "test.tzun.ai/47025cd5e15dc7a1919a784855eff6c5/anchors": [
+      {
+        "address": "0xB6c2e6cC74df5a7a9710235C61bB2C86A54Fa66a",
+        "chain": "eip155:11155111",
+        "namespace": "test",
+        "validFrom": "2026-09-27T06:00:00Z",
+        "validUntil": "2026-09-27T07:00:00Z"
+      }
+    ]
+  }
+}

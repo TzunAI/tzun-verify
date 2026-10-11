@@ -170,13 +170,78 @@ anchor (`--require anchor.newer` when the record's envelope does not hold
 its artifact yet), and `--require ts.record.trust` when it needs the
 record's own timestamp trusted.
 
+## Install
+
+A GitHub release holds tzun-verify's binary for Linux x86_64 and arm64,
+macOS on Intel and Apple silicon, and Windows x86_64, each built
+reproducibly and attested (below). Packages for npm (#2), PyPI (#3) and
+Homebrew (#4) are planned; none is published yet.
+
+The macOS binaries are not notarized. A file downloaded with a web browser
+is quarantined by Gatekeeper and will not open until the quarantine is
+removed (`xattr -d com.apple.quarantine tzun-verify`); curl does not
+quarantine what it downloads.
+
+### From a GitHub release
+
+Each release is a `v<version>` tag, and its GitHub release holds, for
+linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64:
+
+- the binary, `tzun-verify_<version>_<os>_<arch>` (`.exe` on Windows);
+- an archive holding it, named `tzun-verify`, with this README, `LICENSE`,
+  `NOTICE` and `LICENSE-THIRD-PARTY`: `tzun-verify_<version>_<os>_<arch>.tar.gz`
+  (`.zip` on Windows);
+
+and `LICENSE-THIRD-PARTY` on its own, one `SHA256SUMS` over every file, and
+a build provenance attestation (GitHub artifact attestations) for every
+file. RELEASING.md lists the names. A release's notes list the
+specification versions it implements and the SHA-256 of the publisher
+manifest it pins.
+
+Download the archive for your platform and `SHA256SUMS`, check the archive
+against `SHA256SUMS` and against its attestation, then unpack it:
+
+```
+v=0.1.0 p=linux_amd64      # or linux_arm64, darwin_amd64, darwin_arm64
+base=https://github.com/TzunAI/tzun-verify/releases/download/v$v
+curl -fsSLO "$base/tzun-verify_${v}_$p.tar.gz"
+curl -fsSLO "$base/SHA256SUMS"
+grep " tzun-verify_${v}_$p.tar.gz\$" SHA256SUMS | sha256sum --check   # macOS: shasum -a 256 --check
+gh attestation verify "tzun-verify_${v}_$p.tar.gz" --repo TzunAI/tzun-verify \
+  --signer-workflow TzunAI/tzun-verify/.github/workflows/release.yml \
+  --source-ref "refs/tags/v$v" --deny-self-hosted-runners
+tar -xzf "tzun-verify_${v}_$p.tar.gz" tzun-verify
+./tzun-verify --version
+```
+
+- `sha256sum --check` prints `OK` when the file is the one `SHA256SUMS`
+  names. On Windows, compare `(Get-FileHash tzun-verify_<version>_windows_amd64.zip).Hash`
+  in PowerShell with its line in `SHA256SUMS`, ignoring case.
+- `gh attestation verify` (the GitHub CLI, logged in) checks that GitHub
+  signed a provenance attestation for exactly these bytes, made by this
+  repository's release workflow from the tag `v<version>` on a
+  GitHub-hosted runner. It reads the attestation from GitHub; `SHA256SUMS`
+  alone only shows the download matches the release page.
+- The bare binaries check the same way; they need `chmod +x` before they
+  run.
+
+Every file can also be rebuilt: on a clean checkout of the tag, with the
+pinned toolchain, GNU tar, gzip and zip, `scripts/release-artifacts.sh
+"$(mktemp -d)/dist" v<version>` writes the release's files and a
+`SHA256SUMS` that must equal the release's, line for line.
+
 ## How to run it
 
-Build it with the pinned toolchain (go.mod: Go 1.27.1) and the release flags:
+To build it yourself instead, use the pinned toolchain (go.mod: Go 1.27.1) and
+the release flags:
 
 ```
 CGO_ENABLED=0 go build -trimpath -buildvcs=false -tags purego -o tzun-verify ./cmd/tzun-verify
 ```
+
+`go install github.com/TzunAI/tzun-verify/cmd/tzun-verify@v<version>` builds
+the same code with your toolchain's default flags, so its bytes are not a
+release binary's.
 
 Then:
 
@@ -208,8 +273,20 @@ A switch (`--json`, `--allow-unchecked`, `--accept-non-final`,
 `--allow-unchecked=false` is a usage error (exit 64), so a wrapper that
 passes `--allow-unchecked=${ALLOW:-false}` stops instead of failing open.
 
-**The manifest pinned in this build is empty.** Every EVM publication reads
-NOT CHECKED, `no_expectation:publisher`, unless you pass `--publishers`.
+**The manifest pinned in this build** is a byte-for-byte copy of
+https://tzun.ai/anchors/publishers.json, as each release pins one
+(Anchor §9): the file as served on 11 October 2026, SHA-256
+`7503124b866821417009bead4ff0f31eb98ba9ccdc7cc6fc92dd38eab9c9347b`.
+It names the `production` publisher of the origin
+`demo.tzun.ai/972309676bfd886c408f9e1a3cbf8501/anchors` and the `test`
+publishers of four earlier origins, each within its validity window, all on
+Ethereum Sepolia (`eip155:11155111`). A publication from any other origin
+reads NOT CHECKED, `no_expectation:publisher`, unless you pass
+`--publishers`. A key rotation closes the old key's entry in the live
+manifest and the next release pins the result (Anchor §9); a binary built
+before that cannot learn of it, so before you rely on a result, compare the
+SHA-256 `--version` prints with the live file's, and pass the live file with
+`--publishers` when they differ.
 
 ## What it prints
 
@@ -219,7 +296,7 @@ public node knows its transaction; long values shortened):
 
 ```
 $ tzun-verify --publishers publishers.json record.json
-tzun-verify 0.1.0-dev · publisher list sha256 1cf3…c9d2 (from --publishers)
+tzun-verify 0.1.0 · publisher list sha256 1cf3…c9d2 (from --publishers)
 Record 7, chain "beta" · digest 3ab2…0003 · bundle b1
   OK          bundle
   OK          subject
@@ -403,7 +480,14 @@ Its correctness does not rest on reading the Go:
    `scripts/third-party-licenses.sh --check` fails it if
    `third_party/LICENSE-THIRD-PARTY` no longer holds the licences of the
    modules a release links (License, below).
-10. **Planned:** signed release provenance and an external security review.
+10. **Release provenance.** `.github/workflows/release.yml` makes every
+   release file on two machines, from two clean checkouts of the tag, and
+   stops the release unless every file, binaries and archives, is identical
+   byte for byte across the two. On each machine
+   `scripts/reproducible-build.sh` builds every binary twice and requires
+   the two builds to agree. Every file is listed in `SHA256SUMS` and has a
+   GitHub build provenance attestation ("Install"; RELEASING.md).
+11. **Planned:** an external security review.
 
 ## Choices this build makes
 
@@ -525,7 +609,7 @@ internal/report     outcomes, the report, the text output and exit codes
 internal/corpus     the conformance vector runner and spec-derived cases (tests only)
 internal/testpki    a throwaway RFC 3161 PKI and token builder (tests only)
 publishers          the pinned publisher manifest
-scripts             CI, release-gate, licence and public-hygiene scripts
+scripts             CI, release-gate, release, licence and public-hygiene scripts
 .githooks           the commit-message hook of the public-hygiene check
 testdata/vectors    the pinned copy of the conformance vectors (Specs §5)
 LICENSES            the licence texts: BSD-3-Clause-Clear, CC0-1.0 for the vectors, and the note on the timestamp authorities' test files
