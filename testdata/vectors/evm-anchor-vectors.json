@@ -1,5 +1,5 @@
 {
-  "description": "The publisher-manifest validity cases of tzun-anchor/1 \u00a79 and \u00a713: a manifest entry for the real publisher whose validFrom or validUntil sits at, just inside or just outside the time of the block that holds the publication, the leap days the format allows and the leap second it refuses, and the verdict of tzun-anchor/1 \u00a710.4 for each, presented three ways. Both ends of a window are inclusive and compared at full precision: a block time is a whole second, so a validFrom with any non-zero fraction admits only a block at a later second, and a validUntil with one still admits a block at its own second. This file holds only these cases; the transaction and header-source cases \u00a713 also lists for it are not in it.",
+  "description": "The publisher-manifest validity cases of tzun-anchor/1 \u00a79: a manifest entry for the real publisher whose validFrom or validUntil sits at, just inside or just outside the time of the block that holds the publication, the leap days the format allows and the leap second it refuses, and the verdict of tzun-anchor/1 \u00a710.4 for each, presented three ways. Both ends of a window are inclusive and compared at full precision: a block time is a whole second, so a validFrom with any non-zero fraction admits only a block at a later second, and a validUntil with one still admits a block at its own second. This file holds only these cases; the transaction and header-source cases of \u00a710.4 are in bundle-b1/ (\u00a713).",
   "source": "Computed by a script that reads each bound by its own transcription of Anchor \u00a79 (full precision, the fraction kept as digits) and states each verdict from Anchor \u00a710.4. The publication, its block and the publisher are epoch 0 of anchor-e2e-vectors.json, byte for byte: signed and mined on anvil.",
   "format": {
     "publication": "The evm-calldata/1 publication with its heavy material, as anchor-e2e-vectors.json epochs[0].publication; p is its P, sender the address its signature recovers to, blockTime the unix seconds of its block (headerSource.blocks[0].timestamp).",
@@ -176,7 +176,7 @@
       }
     },
     {
-      "name": "validFrom half a millisecond after the block time (\u00a79, \u00a713)",
+      "name": "validFrom half a millisecond after the block time (\u00a79)",
       "bounds": {
         "validFrom": "2026-10-01T17:40:30.0005Z"
       },
@@ -441,7 +441,7 @@
       }
     },
     {
-      "name": "validFrom half a millisecond into the second before the block (\u00a713: a block at the next second holds)",
+      "name": "validFrom half a millisecond into the second before the block (\u00a79: a block at the next second holds)",
       "bounds": {
         "validFrom": "2026-10-01T17:40:29.0005Z"
       },
@@ -686,7 +686,7 @@
       }
     },
     {
-      "name": "validUntil exactly at the block time (\u00a713: the window's end at the block time holds)",
+      "name": "validUntil exactly at the block time (\u00a79: the window's end at the block time holds)",
       "bounds": {
         "validUntil": "2026-10-01T17:40:30Z"
       },
@@ -936,7 +936,7 @@
       }
     },
     {
-      "name": "validUntil a second before the block time (\u00a713: a sender outside its window)",
+      "name": "validUntil a second before the block time (\u00a79: a sender outside its window)",
       "bounds": {
         "validUntil": "2026-10-01T17:40:29Z"
       },
