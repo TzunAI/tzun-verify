@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+name: Result differs from the specification
+description: tzun-verify gives a result that the specification or a conformance vector says it must not give.
+labels: ["conformance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Where tzun-verify and the specification differ, the specification governs and the difference is a defect here. If you think the specification's text is itself wrong or unclear, [start a discussion](https://github.com/TzunAI/tzun-verify/discussions) instead.
+
+        If the difference lets a forged, altered or unanchored record pass as verified, report it privately through the [security policy](https://github.com/TzunAI/tzun-verify/security/policy) instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The first line `tzun-verify --version` prints, or the commit you built.
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Section of the specification
+      description: Cited as the README does, with its address.
+      placeholder: Record §3.2, https://spec.tzun.ai/record/1.0/#s3-2
+    validations:
+      required: true
+  - type: input
+    id: vector
+    attributes:
+      label: Conformance vector case
+      description: The file and case name, if a vector shows the difference.
+  - type: textarea
+    id: actual
+    attributes:
+      label: What tzun-verify reports
+      description: The check, its outcome and reason, and the exit status. `--json` output is welcome.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: required
+    attributes:
+      label: What the section requires
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: Input
+      description: A minimal bundle or case that shows the difference.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Personal data
+      options:
+        - label: Nothing I attach holds personal data.
+          required: true

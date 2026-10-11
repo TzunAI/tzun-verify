@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/TzunAI/tzun-verify/security/advisories/new
+    about: Privately, through GitHub. Please do not open a public issue for a security problem.
+  - name: Ask a question or suggest an idea
+    url: https://github.com/TzunAI/tzun-verify/discussions
+    about: Using tzun-verify, reading the specification, or a change that is not yet concrete.
+  - name: Read the specification
+    url: https://spec.tzun.ai/
+    about: The DEO verification specification that tzun-verify implements.

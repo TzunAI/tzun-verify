@@ -1,7 +1,8 @@
 # Copyright and licence of the files that cannot carry, or do not carry, a
 # notice of their own (https://reuse.software/). Each Go file names its
 # licence in its first line and takes its copyright from here; the scripts,
-# the commit hook and the workflows carry both in their own header comment.
+# the commit hook, the workflows, the issue forms and CITATION.cff carry both
+# in their own header comment.
 # Every other file is listed below by path, so a file added later is
 # covered only once it is listed or carries its own notice. The licence
 # texts (LICENSE, LICENSES/ and third_party/LICENSE-THIRD-PARTY) are not
@@ -18,8 +19,11 @@ SPDX-FileCopyrightText = "2026 Tzun, Inc."
 
 [[annotations]]
 path = [
+  "CONTRIBUTING.md",
   "NOTICE",
   "README.md",
+  "SECURITY.md",
+  ".github/pull_request_template.md",
   "go.mod",
   "go.sum",
   "publishers/publishers.json",

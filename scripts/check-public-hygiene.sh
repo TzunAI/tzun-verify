@@ -75,10 +75,9 @@ import unicodedata
 # tzun-assertion-v1 and tzun-decider-cmt-v1 digest domains and the
 # tzun-cmt-salt-v1 derived salt of Record, the tzun-merkle-vector- leaf
 # label of the tree vectors, the tzun-spec repository that builds
-# spec.tzun.ai, scripts/check-no-tzun-imports.sh, and a CI variable of the
-# workflows.
+# spec.tzun.ai, and scripts/check-no-tzun-imports.sh.
 PUBLIC_WORDS = {"anchor", "verify", "spec", "signoff", "decision", "confirm", "mandate", "agent", "assertion",
-                "decider", "cmt", "merkle", "imports", "runner"}
+                "decider", "cmt", "merkle", "imports"}
 
 # Domains reserved for examples and tests (RFC 2606, RFC 6761): an address
 # there belongs to no one.
