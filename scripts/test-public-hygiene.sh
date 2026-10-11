@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#
 # Self-tests for scripts/check-public-hygiene.sh and .githooks/commit-msg:
 # text each rule must catch, text no rule may catch, and each of the three
 # modes and the hook run against a scratch repository.

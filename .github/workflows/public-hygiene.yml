@@ -1,11 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
 name: Public hygiene
 
 # scripts/check-public-hygiene.sh on the tracked files, on the message of every
-# commit a push or pull request adds, and on a pull request's title and body.
-# It is a workflow of its own rather than a job of ci.yml for two reasons:
-# ci.yml skips changes that touch only Markdown, which are the likeliest to
-# need this check, and a pull request's title and body change without a push
-# (the edited event), which must not re-run or cancel the build and tests.
+# commit a push or pull request adds, and on a pull request's title and body;
+# and `reuse lint`, which requires every file's copyright and licence
+# (REUSE.toml). It is a workflow of its own rather than a job of ci.yml for
+# two reasons: ci.yml skips changes that touch only Markdown, which are the
+# likeliest to need these checks, and a pull request's title and body change
+# without a push (the edited event), which must not re-run or cancel the
+# build and tests.
 on:
   push:
     branches: [main, 'release/**']
@@ -43,6 +48,16 @@ jobs:
       - name: Tracked files
         if: ${{ !cancelled() }}
         run: scripts/check-public-hygiene.sh tree
+
+      - name: Copyright and licence of every file (REUSE)
+        if: ${{ !cancelled() }}
+        # A file REUSE.toml does not list and that carries no notice of its
+        # own fails here: a new non-Go file is listed there, and a new Go
+        # file begins with its licence line. The tool is pinned by version.
+        run: |
+          python3 -m venv "$RUNNER_TEMP/reuse"
+          "$RUNNER_TEMP/reuse/bin/pip" install --quiet --disable-pip-version-check reuse==6.2.0
+          "$RUNNER_TEMP/reuse/bin/reuse" lint
 
       - name: Commit messages
         if: ${{ !cancelled() }}

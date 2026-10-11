@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#
 # Mutation testing: each mutation below removes or weakens one check of the
 # verifier, and the test suite must then fail. A mutation the suite does not
 # notice ("survived") is a check nothing tests, and fails this script.

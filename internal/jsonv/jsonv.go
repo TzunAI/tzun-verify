@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package jsonv reads JSON (RFC 8259) into a tree that keeps what a verifier
 // needs and encoding/json loses:
 //

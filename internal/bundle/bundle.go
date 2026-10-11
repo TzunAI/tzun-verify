@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package bundle verifies a b1 record bundle, as Bundle specifies it, and
 // builds its tzun-verify-report/1 report (Verification §6).
 //

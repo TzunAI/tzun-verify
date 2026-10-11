@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package anchor is the anchor verification of Anchor §10.3 to
 // §10.7: the record artifact nonRepudiation.anchor, checked in six steps,
 // with the anchor fields of §10.6 and the check catalogue of §10.7. A bare

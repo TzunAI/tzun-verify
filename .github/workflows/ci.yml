@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
 name: CI
 
 # Push CI runs on main and release/** only; a working branch costs nothing
@@ -86,6 +89,14 @@ jobs:
 
       - name: No Tzun imports
         run: scripts/check-no-tzun-imports.sh
+
+      - name: Licence line in every Go file
+        run: scripts/check-spdx-headers.sh
+
+      - name: Third-party licences are current
+        # third_party/LICENSE-THIRD-PARTY holds the licence of every module
+        # a release binary links; a release publishes it beside the binaries.
+        run: scripts/third-party-licenses.sh --check
 
       - name: Reproducible build
         # Two clean builds of one target, each with its own tree path, build

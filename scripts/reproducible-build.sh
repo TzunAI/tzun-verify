@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#
 # Builds tzun-verify twice and requires byte-identical binaries. The two
 # builds differ in everything a second machine would: the path of the tree,
 # the build cache, and the module cache (GOMODCACHE), each fresh. They share

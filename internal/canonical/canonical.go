@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package canonical is the DEO canonical serializer (schema v1.0), the part
 // of it a verifier needs to recompute a record's integrity.canonicalDigest
 // and the digests taken over parts of a record (Record §3).

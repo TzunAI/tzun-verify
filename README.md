@@ -385,14 +385,21 @@ Its correctness does not rest on reading the Go:
    trie walk) and requires the test suite to fail.
 7. **The release gate.** `scripts/release-gate.sh` runs on every `v*` tag,
    and anyone can run it on a clone: the reproducible build for every target
-   a release publishes, and every mutation killed.
+   a release publishes, every mutation killed, and the third-party licences
+   current for those targets (License, below).
 8. **Public hygiene.** `scripts/check-public-hygiene.sh` checks that the
    tree, every commit message and every pull request's title and body refer
    only to this repository and to public places, the specification at
    spec.tzun.ai among them (`.github/workflows/public-hygiene.yml`; `scripts/test-public-hygiene.sh`
    tests the check itself). `git config core.hooksPath .githooks` runs it on
    each commit message before the commit is made.
-9. **Planned:** signed release provenance and an external security review.
+9. **Licences.** `scripts/check-spdx-headers.sh` fails CI if a Go file, a
+   test included, does not begin with its SPDX licence line; `reuse lint`
+   fails it if any file lacks its copyright or its licence; and
+   `scripts/third-party-licenses.sh --check` fails it if
+   `third_party/LICENSE-THIRD-PARTY` no longer holds the licences of the
+   modules a release links (License, below).
+10. **Planned:** signed release provenance and an external security review.
 
 ## Choices this build makes
 
@@ -514,7 +521,40 @@ internal/report     outcomes, the report, the text output and exit codes
 internal/corpus     the conformance vector runner and spec-derived cases (tests only)
 internal/testpki    a throwaway RFC 3161 PKI and token builder (tests only)
 publishers          the pinned publisher manifest
-scripts             CI, release-gate and public-hygiene scripts
+scripts             CI, release-gate, licence and public-hygiene scripts
 .githooks           the commit-message hook of the public-hygiene check
 testdata/vectors    the pinned copy of the conformance vectors (Specs §5)
+LICENSES            the licence texts: BSD-3-Clause-Clear, CC0-1.0 for the vectors, and the note on the timestamp authorities' test files
+third_party         the licences of the third-party code in a release binary (scripts/third-party-licenses.sh writes them)
 ```
+
+## License
+
+tzun-verify is licensed under the BSD 3-Clause Clear License (`LICENSE`).
+Every Go file says so in its first line, as an SPDX licence identifier
+(`BSD-3-Clause-Clear`). No patent licence, express or implied, is granted
+by the licence; its text says so.
+
+The conformance vectors in `testdata/vectors` are licensed under CC0-1.0
+(`LICENSES/CC0-1.0.txt`).
+
+Four test files in `internal/rfc3161/testdata` are not Tzun's and are under
+neither licence: the root certificates of the public timestamp authorities
+Free TSA and Sectigo, and a timestamp response from each, kept as published
+(the Sectigo root re-encoded as PEM) and as received.
+`LICENSES/LicenseRef-Timestamp-Authority-Material.txt` says what each file
+is and where it came from. No release binary contains them.
+
+A release binary also contains the Go standard library and runtime and the
+modules the build links, each under its own licence: go-ethereum's library
+under the GNU Lesser General Public License, version 3 or later, and the
+others under the BSD, MIT, ISC and Apache licences.
+`third_party/LICENSE-THIRD-PARTY` holds each of those licences as its module
+ships it, and a release publishes it beside the binaries;
+`scripts/third-party-licenses.sh` writes it, and CI fails when it is not
+current.
+
+`NOTICE` holds the copyright notice. The repository follows the REUSE
+specification (https://reuse.software/): each file's copyright and licence
+are in its own header or in `REUSE.toml`, and `reuse lint`, which CI runs,
+checks that every file has both.

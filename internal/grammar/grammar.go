@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package grammar holds the value rules the record members share
 // (Record §1.2): bare and prefixed digests, printable and visible ASCII,
 // lengths in UTF-16 code units, sets, integers and booleans, and objects

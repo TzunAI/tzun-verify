@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 // Package testpki builds a throwaway RFC 3161 PKI and tokens for tests: a
 // root, a timestamping intermediate CA, a timestamping signer, and
 // certificates for other purposes under the same root. Only tests import it.
