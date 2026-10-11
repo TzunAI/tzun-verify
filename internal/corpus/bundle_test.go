@@ -25,7 +25,8 @@ import (
 //	{ "publisherManifest": <manifest> | null,        --publishers <file> | --no-publishers
 //	  "headerSources": { "<eip155 chain>": <source> }, --evm-header-file <chain>=<file>
 //	  "trustAnchorsPem": ["<PEM>"],                    --tsa-roots <file>
-//	  "regime": { "require": [], "requireRung": [], "allowUnchecked": bool } }
+//	  "regime": { "require": [], "requireRung": [],    --require, --require-rung
+//	              "allowUnchecked": bool | [<reason>] } } --allow-unchecked | --allow-unchecked-reason
 //
 // Any member this runner does not know fails the case, so a change to the
 // corpus's input format is noticed.
@@ -140,8 +141,19 @@ func args(t *testing.T, in *jsonv.Value, tmp string) []string {
 	for _, r := range get(t, regime, "requireRung").A {
 		out = append(out, "--require-rung", r.S)
 	}
-	if get(t, regime, "allowUnchecked").B {
-		out = append(out, "--allow-unchecked")
+	// allowUnchecked is a switch, or the list of reasons of the scoped
+	// allowance (Verification §6.6).
+	switch au := get(t, regime, "allowUnchecked"); au.Kind {
+	case jsonv.Bool:
+		if au.B {
+			out = append(out, "--allow-unchecked")
+		}
+	case jsonv.Array:
+		for _, r := range au.A {
+			out = append(out, "--allow-unchecked-reason", r.S)
+		}
+	default:
+		t.Fatalf("regime.allowUnchecked is neither a boolean nor a list of reasons")
 	}
 	return out
 }

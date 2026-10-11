@@ -31,44 +31,35 @@ versions:
 | Name | Document | Version | What it specifies | URL |
 |---|---|---|---|---|
 | Specs | The DEO verification specification | none (the index) | The documents and their versions, the conventions (the RFC 2119 keywords among them), the conformance vectors, what conformance means, and how the pages are addressed and cited | https://spec.tzun.ai/ |
-| Record | DEO Record Format 1.0 | 1.0 | Envelope and payload, the hashed field set (`payload.signoffExpectation` included), canonical serialization, `canonicalDigest`, the chain link, and the record's own RFC 3161 token | https://spec.tzun.ai/record/1.0/ |
-| Verification | DEO Verification 1.0 | 1.0 | The four row outcomes, the check catalogue (row ids and reasons), the report JSON and the exit codes | https://spec.tzun.ai/verification/1.0/ |
+| Record | DEO Record Format 1.0 | 1.0 | Envelope and payload, the hashed field set of eleven names, canonical serialization, `canonicalDigest`, the chain link, the decider and agent descriptors, contributions, links to other records, the signature expectation and the mandate form, the record's own RFC 3161 token, and size limits | https://spec.tzun.ai/record/1.0/ |
+| Verification | DEO Verification 1.0 | 1.0 | The four row outcomes, the check catalogue (row ids and reasons, the decider, contribution, link and mandate rows included), the report JSON and the exit codes | https://spec.tzun.ai/verification/1.0/ |
 | Bundle | DEO Proof Bundle b1 | b1 | The `b1` bundle, how a verifier reads it, and the layout of its conformance corpus | https://spec.tzun.ai/bundle/b1/ |
 | Anchor | tzun-anchor/1 | 1 | Checkpoint bodies and origins, the published value P, the publication kinds, the record artifact, the publisher manifest, and the verification steps, the RFC 3161 token checks included | https://spec.tzun.ai/anchor/1/ |
 | Tree | RFC 6962 tree profile, revision 2 | 2 | The tree math, the proofs and the hash encoding | https://spec.tzun.ai/tree/2/ |
 | Vectors | DEO conformance vectors 1.0 | 1.0 | The conformance vectors, as one archive with its SHA-256 | https://spec.tzun.ai/vectors/1.0/ |
 
 A version's address is permanent, and each page states its version's status
-(Specs §8.4). Every version above is Frozen: its text, and the vectors
-archive, never change at that address. A correction is published as a new
-version at a new address, or as a dated errata note shown with the page. The
-SHA-256 below pins the vectors this copy matches.
+(Specs §8.4). Record 1.0 and Verification 1.0 are Drafts, revised in place
+while they are: this build follows their revision of 1 October 2026, under
+which the hashed field set of `v1.0` has eleven names (Record §4.1). A record
+hashed under an earlier draft's set does not verify under it: its digest is a
+mismatch, and `record.digest` names the set it recomputes under
+(Verification §4.3).
 
 ### The conformance vectors
 
-`testdata/vectors` is the pinned copy of the conformance vectors 1.0
-published at https://spec.tzun.ai/vectors/1.0/. The archive published there,
-`deo-vectors-1.0.tar.gz`, has the SHA-256
-
-```
-9a9cfad0684f6be5c0789006ac1830faffed7983a6ea3708bfb9d5002a8d2170
-```
-
-and `SHA256SUMS` beside it states the same. The archive holds every file of
-`testdata/vectors` but `SOURCE.json`, under one directory, `deo-vectors-1.0/`.
-To check this copy against it, from the root of a clone:
-
-```
-d="$(mktemp -d)"
-curl -fsSL -o "$d/deo-vectors-1.0.tar.gz" https://spec.tzun.ai/vectors/1.0/deo-vectors-1.0.tar.gz
-sha256sum "$d/deo-vectors-1.0.tar.gz"      # prints the SHA-256 above
-tar -xzf "$d/deo-vectors-1.0.tar.gz" -C "$d"
-diff -r -x SOURCE.json "$d/deo-vectors-1.0" testdata/vectors   # prints nothing
-```
+`testdata/vectors` is the pinned copy of the conformance vectors that hold
+under the revised text. The archive at https://spec.tzun.ai/vectors/1.0/
+predates the revision, and Specs §5 names the parts of it the revision
+supersedes; it is rebuilt from vectors written under the revised text, and
+until then this copy is the one this build is held to.
 
 `testdata/vectors/SOURCE.json` is this repository's own record: the SHA-256
-of every file of the copy. The tests fail on a file that differs from it, and
-on a file it does not list (How it is held to account, below).
+of every file of the copy, and where the files come from. The tests fail on a
+file that differs from it, and on a file it does not list (How it is held to
+account, below). The copy leaves out, as the published archive does, the
+cases of material this version does not verify: custody material, model
+descriptors, and the rule a store applies to records captured before 0.7.0.
 
 ## What it checks
 
@@ -77,14 +68,18 @@ reasons are the check catalogue of Verification §4 and Anchor §10.7.
 
 | Row | What it decides |
 |---|---|
-| `bundle` | The file is JSON, `bundleVersion` is `b1`, `profile` is `record`, and every b1 slot is there (null when empty) with the type Bundle §3.1 gives it; every carried checkpoint body parses and names the origin it sits under, so checkpoints of two logs are never compared; a record bundle carries at most two checkpoints per log; no member name a row id would carry (of the bundle, `extensions`, `nonRepudiation` or `anchoring`) holds a lone surrogate, so every report can be written (Bundle §4 step 9). An absent or unknown version or profile abstains on the whole bundle; anything else wrong is `malformed_bundle`. When this row fails it is the report's only row, and the exit code is 2. |
+| `bundle` | The file is JSON, `bundleVersion` is `b1`, `profile` is `record`, and every b1 slot is there (null when empty) with the type Bundle §3.1 gives it; every carried checkpoint body parses and names the origin it sits under, so checkpoints of two logs are never compared; a record bundle carries at most two checkpoints per log; no member name a row id would carry (of the bundle, `extensions`, `envelope.payload`, `nonRepudiation` or `anchoring`) holds a lone surrogate, so every report can be written (Bundle §4 step 9). An absent or unknown version or profile abstains on the whole bundle; anything else wrong is `malformed_bundle`. When this row fails it is the report's only row, and the exit code is 2. |
 | `subject` | The bundle's `subject` names the envelope's evidence id and its stored digest. |
-| `record.digest` | `integrity.canonicalDigest`, recomputed from the payload by the DEO v1.0 canonical serializer (Record §3, §4). `signoffExpectation` is one of the nine hashed v1.0 fields, and an absent key is hashed as null, so a record whose digest was computed without the field reads `digest_mismatch`. An envelope version other than `e1` abstains (`unsupported_envelope_version`), and so does a schema other than `v1.0`. |
+| `record.digest` | `integrity.canonicalDigest`, recomputed from the payload by the DEO v1.0 canonical serializer over the eleven names of Record §4.1: `action`, `aiOutput`, `aiSystemId`, `capturedAt`, `contributions`, `decider`, `evidenceId`, `links`, `reason`, `sequenceNumber` and `signoffExpectation`. An absent key is hashed as null. A digest computed over any other set reads `digest_mismatch`; when an earlier draft's set (`0.7`, `before-0.7`) reproduces it, the fact `fieldSet` names that set, which explains the mismatch and never excuses it. An envelope version other than `e1` abstains (`unsupported_envelope_version`), and so does a schema other than `v1.0`. |
 | `record.chainLink` | `integrity.chainLink` against `chain.predecessor`: the predecessor is the record numbered one below, and the link is SHA-256 over the two stored digests as hex text. A chain's first record has no link. |
-| `custody.ledger` | Never `checked-correct`: this version does not verify custody material. `not_applicable` when the bundle carries none (a null `custody` slot, or one whose `entries` is an empty array); otherwise the row abstains, `unsupported_artifact`, rather than passing custody material unexamined (Verification §4.3). |
+| `custody.ledger` | Never `checked-correct`: this version does not verify custody material. `not_applicable` when the bundle carries none: a null `custody` slot, or one whose `entries` is an empty array, and no hashed entry (one with an `entryHash`) in the envelope's `custodyChain`. Otherwise the row abstains, `unsupported_artifact`, rather than passing custody material unexamined (Verification §4.3, Bundle §6). A hashed `custodyChain` entry mirrors a ledger row: beside a slot with no rows, it names a row the bundle left out. |
 | `ts.record.token` / `ts.record.trust` | The record's own RFC 3161 token over its digest, by the steps of Anchor §10.5, then its path to a root the auditor supplied. A key or an algorithm this build does not implement (Libraries, below) makes the check whose step needs it `not-checked`, `missing_dependency`, never `checked-wrong`; a valid path decides the trust row first. `authority` is the first common name of the signer's subject as it stands, or the empty string. |
-| `signoff.expectation` | The record's hashed `signoffExpectation` against the sign-off material it carries, by the table of Verification §5, the first matching rule deciding. It needs no key and no signature: it reads which challenge an assertion presented and a batch's inclusion proof. A session sign-off (a `signoff` block whose statement's mode is `session`, or that carries `sessionSeq`, with or without an assertion) on a record whose expectation is null or the policy form is `session_signoff_not_expected`; a sign-off that binds nothing, `signoff_unbound`; a session record's sign-off removed, `signoff_stripped`; another session's statement, `statement_digest_mismatch`; another slot, `session_seq_mismatch`; a value outside the grammar of Record §6.2, `malformed_signoff_expectation`. Under the policy form, when no carried assertion binds the record, the row is `not-checked`, `signature_missing`: that signature may still come. `blocked_by:record.digest` unless the digest holds: the expectation is authenticated by the digest alone. |
+| `signoff.expectation` | The record's hashed `signoffExpectation` against the sign-off material it carries, by the table of Verification §5, the first matching rule deciding. It needs no key and no signature: it reads which challenge an assertion presented and a batch's inclusion proof. A session sign-off (a `signoff` block whose statement's mode is `session`, or that carries `sessionSeq`, with or without an assertion) on a record whose expectation is null or the policy form is `session_signoff_not_expected`; a sign-off that binds nothing, `signoff_unbound`; a session record's sign-off removed, `signoff_stripped`; another session's statement, `statement_digest_mismatch`; another slot, `session_seq_mismatch`; a value outside the grammar of Record §9.2, `malformed_signoff_expectation`. Under the policy form, when no carried assertion binds the record, the row is `not-checked`, `signature_missing`: that signature may still come. Under the mandate form (rows 17 to 24), the record's `mandate` block: its statement, an assertion whose digest is the record's `mandateAssertion` and that presents the statement's challenge, and a document the statement names; `confirmation_missing` (not checked) while a confirmation is owed. A mandate block on a record of another form is `mandate_not_expected` (row 1a). `blocked_by:record.digest` unless the digest holds: the expectation is authenticated by the digest alone. |
 | `signoff.key` | If `signoff.expectation` failed, `blocked_by:signoff.expectation`; `signature_missing` when `signoff.expectation` reads `signature_missing` and the record carries no assertion; an abstention when the `credentials` slot is filled, since this build verifies no WebAuthn signature; `absent` when no assertion is carried; otherwise `not_in_bundle:credential`, because no b1 slot carries the key (Verification §4.5). |
+| `decider`, `decider.freshness` | Who decided (Record §6, Verification §4.9): the member's grammar, its kind (an unknown one abstains), the consistency of kind, agent reference and scheme, agreement with the expectation's form, the scheme (an unknown one abstains), and human decision material bound to an agent kind (`material_unverified`). Facts: `kind`, `scheme`, `level` (`human-asserted` or `agent-asserted`: no signature proves it in this version), `levelUndetermined` and `committed`. The finalized-block reference is asked of the auditor's header source for its chain, under the shared deadline: the block at that height must be canonical, final and have that hash. Facts `blockTime`, `captureLag`, `finality`. |
+| `contributions`, `contributions.binding`, `contributions.pipeline` | The steps that led to the decision (Record §7, Verification §4.10): the grammar, the step chain, the decider as the deciding actor and the decision as its output; then the process: every input declared, each review bound to the proposal it covers, the decision bound to the last proposal. A named pipeline abstains. |
+| `links`, `links[<i>]`, `links[<i>].edge` | The record's relations to other records (Record §8, Verification §4.11): the grammar, the order, the list-level rules, each relation's attribute profile and record-local rules. A bundle carries no target, so a relation with a target rule reads `not_in_bundle:link_target`; a relation this build does not register abstains; and every edge abstains, `unsupported_link_edge`, since no edge proof exists in this version. A record with links therefore exits 4 unless the auditor allows it (below). |
+| `mandate.issuance`, `mandate.scope`, `mandate.limits`, `mandate.key`, `mandate.assertionTimestamp` | Mandates (Record §9.6 to §9.9, Verification §4.12): an issuance record's material holds together; a record decided under a mandate lies within its document's scope (agents, systems, actions, models, predicates, confirmation) and limits (`slot`, `totals`); the principal's key, which no b1 slot carries, is never decided; a timestamp over the assertion abstains. |
 | `anchor` | The anchor as a whole: `anchorValid` of Anchor §10.6. |
 | `anchor.spec` | Step 1: `anchorSpec` is `tzun-anchor/1` and `merkleSpec` is `rfc6962`. Anything else abstains. |
 | `anchor.checkpoint` | Step 2: the artifact's shape, both checkpoint bodies (by the grammar of Anchor §4.2 and by the stock C2SP parser), both proofs. |
@@ -101,16 +96,21 @@ reasons are the check catalogue of Verification §4 and Anchor §10.7.
 | `anchor.pending` | The bundle's `anchorPending` slot: not anchored yet. |
 | `extension[<key>]` | An extension with a value, such as a `witness/1` cosignature: abstains, on that key only. |
 | `relatedRecords`, `policy` | A reserved slot this build does not read, filled (any value but null): abstains, `unsupported_slot`. |
+| `payload.<name>` | A payload member outside the twelve of Record §2.2, whatever its value: it is not hashed, so it abstains, `unsupported_member` (Verification §4.7). A payload that still carries `aiBom`, `humanAction` or `humanReason` is reported this way. |
 | `member[<key>]` | Any top-level member outside the b1 slots, `bundleVersion` and `profile`: abstains, `unsupported_member` (Bundle §3.3). |
-| `ts.assertion.token`, `nonRepudiation.<member>` | Envelope material present that no row above verifies (an assertion timestamp, an unknown artifact, a legacy `blockchainAnchor` beside an anchor): abstains (Verification §4.7). |
+| `ts.assertion.token`, `nonRepudiation.<member>` | Envelope material present that no row above verifies (an assertion timestamp, an unknown artifact, a legacy `blockchainAnchor` beside an anchor, a `confirmation` the record does not owe): abstains (Verification §4.7). |
 
 **Not verified by this build** (Specs §4): custody material, WebAuthn
 signatures and every sign-off row other than `signoff.expectation` and
 `signoff.key`, the reserved slots `credentials`, `relatedRecords` and
-`policy`, extensions, and chain-profile bundles. Each one a bundle carries is
+`policy`, extensions, chain-profile bundles, who a decider is beyond what the
+record states, agent descriptors, pipeline definitions, link targets and
+edges and the rules of relations it does not know, who signed a mandate and
+whether it was in force (Verification §4.8). Each one a bundle carries is
 reported, as an abstention or a NOT CHECKED line, and unless it reads
-`not_applicable` (a custody slot with no entries) it holds the exit code at
-4 or above (Verification §4.8, §6.6). Stored summaries are never an input:
+`not_applicable` (a custody slot with no entries, beside a `custodyChain`
+that mirrors no ledger row) it holds the exit code at 4 or above
+(Verification §4.8, §6.6). Stored summaries are never an input:
 `exporter`, the envelope's `attestationStatus` and
 `nonRepudiation.rfc3161Metadata` are not read, and every fact is re-derived
 (Verification §1).
@@ -145,7 +145,7 @@ Verification §6.6:
 | 1 | At least one row is wrong |
 | 2 | The bundle could not be read, the `bundle` row is not correct (the bundle was abstained on as a whole, is `malformed_bundle`, or met `bundle_verifier_error`), or the report could not be written |
 | 3 | A `--require`d row is not correct, or a `--require-rung` is not met |
-| 4 | Something present in the bundle was abstained on or not checked, and `--allow-unchecked` was not passed |
+| 4 | Something present in the bundle was abstained on or not checked, and `--allow-unchecked` was not passed (or, under `--allow-unchecked-reason`, its reason is not one of those listed) |
 
 Precedence: 2, then 1, then 3, then 4, then 0. `absent`, `not_applicable`
 and a row blocked by a wrong row never trigger 4 (the wrong row gives 1
@@ -180,6 +180,7 @@ tzun-verify --evm-rpc eip155:11155111=https://… record-42.json # a node for on
 tzun-verify --evm-header-file eip155:11155111=headers.json record-42.json  # headers you exported
 tzun-verify --json record-42.json                             # the tzun-verify-report/1 JSON
 tzun-verify --allow-unchecked record-42.json                  # exit 0 despite NOT CHECKED lines
+tzun-verify --allow-unchecked-reason unsupported_link_edge record-42.json  # only those may stay unchecked
 tzun-verify --require 'anchor,anchor.evm.canonical[*]' record-42.json
 ```
 
@@ -193,6 +194,7 @@ tzun-verify --require 'anchor,anchor.evm.canonical[*]' record-42.json
 | `--no-publishers` | Trust no publisher manifest: every EVM publication is then NOT CHECKED, `no_expectation:publisher`. |
 | `--tsa-roots <file.pem>`, `--tsa-intermediates <file.pem>` | RFC 3161 trust roots and intermediates. A certificate this build cannot read in full, its key included, is refused with exit 64, never dropped (Verification §3.1). |
 | `--timeout <ms>` | One deadline shared by every call to your node (default 30000). |
+| `--allow-unchecked-reason <reason>[,<reason>…]` | The scoped allowance: a row left unchecked for one of these reasons does not lead to exit 4, and any other unchecked row still does (repeatable). `--allow-unchecked-reason unsupported_link_edge` accepts a record whose links are all in order but whose edges this version cannot prove, and still exits 4 on a confirmation owed or a stray payload member. |
 
 A switch (`--json`, `--allow-unchecked`, `--accept-non-final`,
 `--no-publishers`, `--no-tx-lookup`, `--version`) takes no value:
@@ -204,23 +206,36 @@ NOT CHECKED, `no_expectation:publisher`, unless you pass `--publishers`.
 
 ## What it prints
 
-This build, offline, on a record anchored on a local test chain in the
-conformance vectors (no public node knows its transaction; long values
-shortened):
+This build, offline, on corpus case `links-derived-from`: a record anchored
+on a local test chain, whose two links name the record it derives from (no
+public node knows its transaction; long values shortened):
 
 ```
-$ tzun-verify --publishers publishers.json alpha1.json
-tzun-verify 0.1.0-dev · publisher list sha256 3556…e417 (from --publishers)
-Record 1, chain "alpha" · digest 76c5…519d · bundle b1
+$ tzun-verify --publishers publishers.json record.json
+tzun-verify 0.1.0-dev · publisher list sha256 1cf3…c9d2 (from --publishers)
+Record 7, chain "beta" · digest 3ab2…0003 · bundle b1
   OK          bundle
   OK          subject
   OK          record.digest
   OK          record.chainLink
   NOT CHECKED custody.ledger           not_applicable
-  NOT CHECKED ts.record.token          absent
-  NOT CHECKED ts.record.trust          absent
+  OK          ts.record.token
+  NOT CHECKED ts.record.trust          no_matching_trust_anchor
   OK          signoff.expectation
   NOT CHECKED signoff.key              absent
+  OK          decider
+                kind=human level=human-asserted scheme=acct
+  NOT CHECKED decider.freshness        absent
+  NOT CHECKED contributions            absent
+  NOT CHECKED contributions.binding    absent
+  OK          links
+                count=2 extensions=0 relations=["derivedFrom","root"]
+  OK          links[0]
+                targetHeld=false
+  ABSTAIN     links[0].edge            unsupported_link_edge
+  OK          links[1]
+                targetHeld=false
+  ABSTAIN     links[1].edge            unsupported_link_edge
   NOT CHECKED anchor                   publication_not_checked
   OK          anchor.spec
   OK          anchor.checkpoint
@@ -232,15 +247,15 @@ Record 1, chain "alpha" · digest 76c5…519d · bundle b1
   OK          anchor.anchorInclusion
   OK          anchor.publication[0]
   OK          anchor.evm.tx[0]
-                sender=0x9965…a4dc signedChainId=31337 transactionId=0xfbd6…e7f7 txType=2
+                sender=0x9965…a4dc signedChainId=31337 transactionId=0x5a83…b9a9 txType=2
   NOT CHECKED anchor.evm.canonical[0]  input_not_supplied:evm_header_source
   NOT CHECKED anchor.newer             publication_not_checked
-  NOT CHECKED anchor.consistency[test.vectors.tzun/655a…1811/anchors]  blocked_by:anchor
-  NOT CHECKED anchor.consistency[test.vectors.tzun/655a…1811/evidence/616c706861]  blocked_by:anchor
-  P = ce160e90…c8b5f7d  (compare: the publication's Input Data)
+  NOT CHECKED anchor.consistency[test.bundle-b1.tzun/514d…d8bc/anchors]  blocked_by:anchor
+  NOT CHECKED anchor.consistency[test.bundle-b1.tzun/514d…d8bc/evidence/62657461]  blocked_by:anchor
+  P = 40041f0f…2ea9ed  (compare: the publication's Input Data)
 Existed by  not proven by this verification
 Anchor      not decided: publication_not_checked · test
-Result      13 correct · 0 wrong · 9 not checked · 0 abstained        exit 4
+Result      18 correct · 0 wrong · 11 not checked · 2 abstained        exit 4
 ```
 
 With a header source (`--evm-rpc`) the publication, `anchor`, `anchor.newer`
@@ -296,10 +311,23 @@ Its correctness does not rest on reading the Go:
      `checkpoint-vectors.json` and `evidence-log-origin-vectors.json`.
    - Output of Tzun's reference implementation, with the expected results
      stated from the specification: `v1.0-canonical-vectors.json`,
-     `v1.0-integrity-vectors.json`, `anchor-e2e-vectors.json`,
-     `signoff-expectation-vectors.json` and the b1 bundle corpus
-     `bundle-b1/`. These show that implementations agree; where one differs
-     from the text, the text decides (Specs §7).
+     `v1.0-integrity-vectors.json`, `v1.0-worked-example-vectors.json`,
+     `anchor-e2e-vectors.json`, `evm-anchor-vectors.json`,
+     `signoff-expectation-vectors.json`, `decider-vectors.json`,
+     `contributions-vectors.json`, `links-vectors.json`,
+     `mandate-vectors.json`, `agent-descriptor-vectors.json`,
+     `store-generation-vectors.json`, `cross-sdk-parity-vectors.json` and the
+     b1 bundle corpus `bundle-b1/`. These show that implementations agree;
+     where one differs from the text, the text decides (Specs §7), and the
+     differences found so far are listed below.
+   - The record-rule files are replayed as a verifier of one record reads
+     them: the decider, contributions and links rows on each stated payload
+     (the links cases that name the records a verifier holds, through a
+     resolver), the mandate document, statement, assertion digest,
+     predicates, scope, limits and issuance row, and the cross-implementation
+     cases through the command. The parts that state a writer's own refusals,
+     or what a store does across records, are named in the runner and left
+     out.
    - `checkpoint-vectors.json`'s artifact cases are compared check by check
      (Anchor §10.7: ids, order, reasons and facts), and
      `signoff-expectation-vectors.json`'s envelopes run through the command,
@@ -328,8 +356,9 @@ Its correctness does not rest on reading the Go:
    `internal/corpus/signoff_test.go` (`signoff.key`, and binding rules the
    vectors do not separate), `internal/corpus/anchoring_test.go`
    (Anchor §10.8 without a composed anchor, an unauthenticated body,
-   carried bodies that do not parse, the predecessor), and each package's
-   own tests.
+   carried bodies that do not parse, the predecessor),
+   `internal/corpus/custody_test.go` (a hashed `custodyChain` entry whose
+   ledger row the bundle leaves out), and each package's own tests.
 4. **No Tzun imports.** `scripts/check-no-tzun-imports.sh` fails CI if any
    package the build or the tests link, or any module in the build list,
    comes from the TzunAI organisation. CI also refuses a `go.mod` that
@@ -345,10 +374,12 @@ Its correctness does not rest on reading the Go:
    any path. Anyone can rebuild a release and compare its SHA-256.
 6. **Mutation testing.** `scripts/mutation-test.sh` removes or weakens one
    check at a time in a copy of the tree (each proof step, each item of
-   Anchor §10.4, each rule of Anchor §10.5, the canonical form, the grammar of
-   Record §6.2, the table of Verification §5, `signoff.key`, the exit codes,
-   the bundle frame, join and composition, the authentication rule of
-   Anchor §10.8, the trie walk) and requires the test suite to fail.
+   Anchor §10.4, each rule of Anchor §10.5, the canonical form and the hashed
+   field set, the grammar of Record §9.2, the table of Verification §5,
+   `signoff.key`, each rule of the decider, contribution, link and mandate
+   rows, the payload rows, the exit codes and the scoped allowance, the bundle
+   frame, join and composition, the authentication rule of Anchor §10.8, the
+   trie walk) and requires the test suite to fail.
 7. **The release gate.** `scripts/release-gate.sh` runs on every `v*` tag,
    and anyone can run it on a clone: the reproducible build for every target
    a release publishes, and every mutation killed.
@@ -374,7 +405,87 @@ choice to the verifier, this build makes these:
   `no_matching_trust_anchor`;
 - exit code 64 for an error in the invocation (Verification §6.6);
 - a pinned default publisher manifest, which `--publishers` replaces and
-  `--no-publishers` removes (Verification §3.1).
+  `--no-publishers` removes (Verification §3.1);
+- `--allow-unchecked-reason` as the flag of the regime's scoped allowance.
+
+## Where the vectors and the text differ
+
+The revised text and the vectors written with it were drafted together, and
+in these places they still name a thing differently. This build gives the
+vectors' answer, so that its reports equal those of the reference
+implementation, until the text is revised:
+
+- the facts of a failed row: `failedStep` and `failedDigest` on
+  `contributions` and `contributions.binding` (the text names `step` and
+  `digest`), `rule` and `failedLink` on `malformed_links` (the text names
+  `index`), `kind` and `scheme` on a `decider` row that fails or abstains,
+  `slot` and `totals` on a failed `mandate.limits`, and no `rel` on a link
+  of an unknown relation;
+- the rule names of the target and record-local rules (Record §8.3):
+  `ratifies_decider_human`, `ratifies_target_not_human`,
+  `reviews_distinct_decider` and `supersedes_same_system`, and the rule of a
+  link record, which the `links` row reports as `subject_link`;
+- every `links[<i>].edge` row abstains, also when `links` does not hold;
+- `mandate.issuance` names the link `signer` on its own, after `statement`;
+- an approval counts only from a review bound to the proposal it covers, and
+  the fact `models` lists model digests in the order the steps name them;
+- an ES256 assertion signature in non-minimal DER is read for its value; a
+  reader of a mandate document does not apply the writer's rules on
+  delegation and on the order of the validity window;
+- when the digest does not hold, `decider.freshness` and
+  `contributions.binding` are blocked by `record.digest`;
+- in a link record, the fact `missing` on a link row that reads a record
+  the bundle does not hold names the subject before the target.
+
+Anchor §10.4 item 13 is one place this build keeps the text: a window that
+excludes the sender at the block time a source confirms fails
+`anchor.evm.tx`, and `anchor.evm.canonical` stays correct, where
+`evm-anchor-vectors.json` blocks it.
+
+`custody.ledger` is one place this build reads Verification §4.3 together
+with Bundle §6 and Specs §4, which say custody material is never passed
+over and never counts as a pass, rather than by its first rule alone. That
+rule names only the `custody` slot, so a bundle whose custody row was
+removed, while the envelope's `custodyChain` still carries the row's hashed
+mirror entry, would read `not_applicable` and exit 0. This build abstains
+on it, `unsupported_artifact`, exit 4 (`internal/corpus/custody_test.go`).
+The reference implementation, which verifies custody material, reports that
+bundle `checked-wrong` and exits 1, with a reason Verification §2.3 does not
+list; the vectors pinned here leave its custody cases out.
+
+Where the vectors state no answer, this build keeps the text too, and its
+report can differ from the reference implementation's, in some cases in its
+exit code:
+
+- `mandate.key` is reported for a record that carries an issuance block,
+  blocked by `mandate.issuance` when that row fails, and blocked by
+  `signoff.expectation` when the expectation of the mandate form fails
+  (Verification §4.12);
+- a confirmation the record does not owe has the row
+  `nonRepudiation.confirmation` (Verification §4.7);
+- a step `aiBom` that is neither null nor an object makes the contributions
+  malformed (Record §7.1);
+- assertion text is decoded as Record §9.3 decodes it: trailing `=`
+  removed, CR and LF skipped, and any other character outside the alphabet
+  refused;
+- the `mandate.scope` fact `failed` lists the failed constraints as names;
+- when the digest does not hold, `mandate.scope` and `mandate.limits` are
+  blocked by `signoff.expectation`, and a links list of 1 to 256 elements
+  still has its `links[<i>]` rows, blocked by `links`; a list longer than
+  256 has no per-link rows;
+- when both `decision_unbound` and `decided_output_differs` hold,
+  `decision_unbound` is reported, as the text orders them, and the fact
+  `approvals` is carried whenever the record is decided, also when
+  `contributions.binding` fails;
+- an issuance block of the wrong type fails the link `document`, the first
+  link that needs it;
+- a decider object without a `freshness` member is not one whose freshness
+  is null, so `decider.freshness` is blocked by `decider`;
+- a sign-off block of any JSON type is a block, so a per-record assertion
+  beside a block that is not an object binds nothing, and the `decider` row
+  has no `levelUndetermined`;
+- a payload member name holding a lone surrogate makes the bundle
+  unreadable (Bundle §4 step 9).
 
 ## Layout
 
@@ -382,19 +493,25 @@ choice to the verifier, this build makes these:
 cmd/tzun-verify      the command's entry point
 internal/cli        the flags, the inputs they build and the text report
 internal/jsonv      strict JSON reading
-internal/canonical  the DEO v1.0 canonical serializer, record digest, chain link
+internal/canonical  the DEO v1.0 canonical serializer, the hashed field sets, record digest, chain link
+internal/grammar    the value rules the record members share (Record §1.2)
+internal/decider    the decider and a step's actor, and the decider row
+internal/contrib    contributions, output and step digests, and their rows
+internal/links      links, the relation registry, and their rows
+internal/mandate    the mandate document, statement, assertion digest, predicates, scope, limits, issuance
+internal/agent      the agent descriptor tzun-agent/1 and its digest
 internal/merkle     RFC 6962 proofs through transparency-dev/merkle
 internal/checkpoint checkpoint bodies, origins and origin binding
 internal/manifest   the publisher manifest
 internal/evm        evm-calldata/1, the ordered trie-proof walk, the JSON-RPC header source
 internal/rfc3161    rfc3161/1, and the record's own token
 internal/anchor     the anchor verification of Anchor §10.3 to §10.8
-internal/bundle     the b1 bundle: its frame, record, sign-off, anchoring and summary rows
+internal/bundle     the b1 bundle: its frame, record, sign-off, record-rule, anchoring and summary rows
 internal/report     outcomes, the report, the text output and exit codes
 internal/corpus     the conformance vector runner and spec-derived cases (tests only)
 internal/testpki    a throwaway RFC 3161 PKI and token builder (tests only)
 publishers          the pinned publisher manifest
 scripts             CI, release-gate and public-hygiene scripts
 .githooks           the commit-message hook of the public-hygiene check
-testdata/vectors    the pinned copy of the conformance vectors 1.0 (Specs §5)
+testdata/vectors    the pinned copy of the conformance vectors (Specs §5)
 ```

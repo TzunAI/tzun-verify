@@ -132,6 +132,27 @@ type ExistedBy struct {
 	Source string
 }
 
+// boundAt is a bound's instant as a report writes it, to the millisecond
+// with the digits beyond dropped (Verification §6.5). A block time is a
+// whole second already; a genTime may carry a finer fraction.
+func boundAt(t time.Time) time.Time {
+	return t.UTC().Truncate(time.Millisecond)
+}
+
+// replacesBound reports whether a true publication's bound at `at`, from
+// source, replaces cur, the bound kept from the publications before it in
+// array order (§10.6): it is earlier, or it is at the same instant from an
+// EVM publication, which also authenticates the origin, and cur is not.
+// Otherwise the first in array order stays. Bounds are instants to the
+// millisecond (boundAt), so two that differ only below it are the same
+// instant.
+func replacesBound(cur *ExistedBy, at time.Time, source string) bool {
+	if cur == nil || at.Before(cur.At) {
+		return true
+	}
+	return at.Equal(cur.At) && source == "evm-calldata" && cur.Source != "evm-calldata"
+}
+
 // Verdict is the result of the anchor verification: the checks and the
 // §10.6 fields.
 type Verdict struct {
@@ -308,7 +329,7 @@ func verify(in Input) Verdict {
 	b.add(report.Check{ID: IDCheckpoint, Outcome: report.Correct})
 
 	// Step 2b.
-	bind := checkpoint.Bind(anchorBody.Origin, logBody.Origin, in.ChainID, in.ChainOK)
+	bind := checkpoint.BindRecord(anchorBody.Origin, logBody.Origin, in.ChainID, in.ChainOK)
 	if bind.Result != checkpoint.BindOK {
 		v.Valid, v.Reason = boolp(false), bind.Result
 		c := report.Check{ID: IDOrigin, Outcome: report.Wrong, Reason: bind.Result}
@@ -469,16 +490,16 @@ func verify(in Input) Verdict {
 				} else if !samePtr(namespace, r.evm.Namespace) {
 					nsAgree = false
 				}
-				at := time.Unix(int64(r.evm.BlockTime), 0).UTC()
-				if v.ExistedBy == nil || at.Before(v.ExistedBy.At) {
+				at := boundAt(time.Unix(int64(r.evm.BlockTime), 0))
+				if replacesBound(v.ExistedBy, at, "evm-calldata") {
 					v.ExistedBy = &ExistedBy{At: at, Source: "evm-calldata"}
 				}
 			case rfc3161.Kind:
 				if v.Publication == "" {
 					v.Publication = "rfc3161"
 				}
-				at := r.tsa.GenTime.UTC()
-				if v.ExistedBy == nil || at.Before(v.ExistedBy.At) {
+				at := boundAt(r.tsa.GenTime)
+				if replacesBound(v.ExistedBy, at, "rfc3161") {
 					v.ExistedBy = &ExistedBy{At: at, Source: "rfc3161"}
 				}
 			}

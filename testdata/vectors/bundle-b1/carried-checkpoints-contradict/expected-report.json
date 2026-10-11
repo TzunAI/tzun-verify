@@ -2,12 +2,12 @@
   "reportVersion": "tzun-verify-report/1",
   "bundleVersion": "b1",
   "subject": {
-    "evidenceId": "0a352141-f5e0-489b-b86f-14db20b90628",
-    "canonicalDigest": "f218b5009b7b71ce75f43a581719fb199f3f554bb7b6e1b376fe8ab5de229669"
+    "evidenceId": "edf91ec7-ba45-4da5-8030-20526e7d2426",
+    "canonicalDigest": "212ce10edfcc65d965834752c001c42493c27927fd8fdbe925dc6fa263285be6"
   },
   "inputs": {
     "trustAnchors": [
-      "ff7a3693418d56cd8bcb35756c75dc0d380e7fc9f37390297142a7bdcdfc5860"
+      "535be65e39de04f2848dfaf528d3ad5710e401ccc0e502aaa102c5d421c77e37"
     ],
     "evmHeaderSources": [
       {
@@ -15,7 +15,7 @@
         "finality": "finalized"
       }
     ],
-    "publisherManifest": "f9a030928f1426a2b8a36ed313d32f2109157a285176b4bdd603bee5a9d316e2",
+    "publisherManifest": "1599b8db9254d270b390bd0e704ed2ed3b41e048d3397838bb2866f24fce998b",
     "frameOrigins": null,
     "vkeys": null,
     "mdsRoots": null
@@ -50,7 +50,7 @@
       "id": "ts.record.trust",
       "outcome": "checked-correct",
       "facts": {
-        "genTime": "2026-09-27T14:09:41.602Z",
+        "genTime": "2026-10-01T17:40:35.580Z",
         "authority": "Tzun Corpus Timestamping Authority"
       }
     },
@@ -60,6 +60,35 @@
     },
     {
       "id": "signoff.key",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "decider",
+      "outcome": "checked-correct",
+      "facts": {
+        "kind": "human",
+        "scheme": "acct",
+        "level": "human-asserted"
+      }
+    },
+    {
+      "id": "decider.freshness",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "contributions",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "contributions.binding",
+      "outcome": "not-checked",
+      "reason": "absent"
+    },
+    {
+      "id": "links",
       "outcome": "not-checked",
       "reason": "absent"
     },
@@ -107,7 +136,7 @@
       "id": "anchor.evm.tx[0]",
       "outcome": "checked-correct",
       "facts": {
-        "transactionId": "0x6615d98c29a1b819cfed3070e78ef601033ee70a0cb89c8ad5889c56a9a813c6",
+        "transactionId": "0x03da400cb91ce638b49049fb63a3f10972ddabdc7463150405e6c608157fed7c",
         "txType": 2,
         "sender": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
         "signedChainId": "31337"
@@ -120,18 +149,18 @@
         "chain": "eip155:31337",
         "namespace": "test",
         "network": null,
-        "blockTime": "2026-09-27T13:09:41.000Z",
+        "blockTime": "2026-10-01T16:40:35.000Z",
         "inclusion": "tx_proof",
         "finality": "finalized"
       }
     },
     {
-      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors]",
+      "id": "anchor.consistency[test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors]",
       "outcome": "not-checked",
       "reason": "blocked_by:anchor.newer"
     },
     {
-      "id": "anchor.consistency[test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861]",
+      "id": "anchor.consistency[test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/evidence/616c706861]",
       "outcome": "not-checked",
       "reason": "blocked_by:anchor.newer"
     }
@@ -146,7 +175,7 @@
     "uv": null,
     "actorBound": null,
     "existedBy": {
-      "at": "2026-09-27T13:09:41.000Z",
+      "at": "2026-10-01T16:40:35.000Z",
       "source": "evm-calldata",
       "check": "anchor"
     },
@@ -154,9 +183,9 @@
     "anchorNamespace": "test",
     "anchorOriginAuthenticated": true,
     "outcomes": {
-      "checked-correct": 17,
+      "checked-correct": 18,
       "checked-wrong": 0,
-      "not-checked": 4,
+      "not-checked": 8,
       "abstain": 0
     }
   }

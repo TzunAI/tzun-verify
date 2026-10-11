@@ -1,7 +1,7 @@
 {
   "publisherManifest": {
     "publishers": {
-      "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors": [
+      "test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors": [
         {
           "address": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
           "chain": "eip155:1",
@@ -18,24 +18,24 @@
       "blocks": [
         {
           "number": 1,
-          "hash": "0x5f7b1dbb3dab2df3aaa9cd1948905cb8f7c34d87ae271460bee11ef2d45c4db9",
-          "timestamp": 1790514581
+          "hash": "0xe5bda5214c8bbe280e0c0368bc616459e31dcaf4659973f7d92e4760e88d6cdb",
+          "timestamp": 1790872835
         },
         {
           "number": 5,
-          "hash": "0xc4d3ef2b9e43f37d71fab50fd89eb97f65009a440ca27b578255be9f7db901be",
-          "timestamp": 1790514581
+          "hash": "0x24c44fe7559e7e8e3e81944ad7944687d5b261c54d44fb03edd6cd07e14a5d64",
+          "timestamp": 1790872835
         },
         {
           "number": 11,
-          "hash": "0xa6c7feed181199de683cb4a6ebe3ee82330038ed1f310ff2783da010d838e100",
-          "timestamp": 1790514581
+          "hash": "0x4b514266c983ed654305958b8547c793d5f482ac686370406691db3e7f223315",
+          "timestamp": 1790872835
         }
       ]
     }
   },
   "trustAnchorsPem": [
-    "-----BEGIN CERTIFICATE-----\nMIIBWDCB/qADAgECAgEBMAoGCCqGSM49BAMCMCMxITAfBgNVBAMTGFR6dW4gQ29y\ncHVzIFRlc3QgUm9vdCBDQTAeFw0yMDAxMDEwMDAwMDBaFw00MDAxMDEwMDAwMDBa\nMCMxITAfBgNVBAMTGFR6dW4gQ29ycHVzIFRlc3QgUm9vdCBDQTBZMBMGByqGSM49\nAgEGCCqGSM49AwEHA0IABMRyFBwIuBQ9QxW6QanIcItBMIFe9OFzCKcx7sOS32pj\nKQofYrqdqjNJo+KICwu0yN6SRw3GzzMhIhOUr0X+3gOjIzAhMA8GA1UdEwEB/wQF\nMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMCA0kAMEYCIQCADfyhZOP1\n7EFfTHqmwGvL7Wc1oTpe2sTHiCa9Bo7mqgIhAM5HOipUGhAA1d+eGXEcl0FGMKEn\n/prMWj6dzAtd9r+a\n-----END CERTIFICATE-----"
+    "-----BEGIN CERTIFICATE-----\nMIIBVzCB/qADAgECAgEBMAoGCCqGSM49BAMCMCMxITAfBgNVBAMTGFR6dW4gQ29y\ncHVzIFRlc3QgUm9vdCBDQTAeFw0yMDAxMDEwMDAwMDBaFw00MDAxMDEwMDAwMDBa\nMCMxITAfBgNVBAMTGFR6dW4gQ29ycHVzIFRlc3QgUm9vdCBDQTBZMBMGByqGSM49\nAgEGCCqGSM49AwEHA0IABNl2xkaA8GH28HD4hQk37q8hA6wCSLWO4Xwt08Az8YdV\nraLAR6WjfcnjfI9+KZbU54CMYwYdJrrMdN0bJwzr2NOjIzAhMA8GA1UdEwEB/wQF\nMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMCA0gAMEUCIQC+RupKzRk3\nwQnzK42J96fSzkKnEQiyIv1VR+aNTqWYLAIgC1ldBp3zQs9idhg+1eSvABpXdwmL\ntnBqq3It7CJPbGk=\n-----END CERTIFICATE-----"
   ],
   "regime": {
     "require": [],

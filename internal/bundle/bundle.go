@@ -9,12 +9,15 @@
 //   - ts.record.token, ts.record.trust: the record's own RFC 3161 token,
 //     under Anchor §10.5 with the digest as the imprint;
 //   - signoff.expectation and signoff.key (signoff.go);
+//   - the record rules (rules.go): decider and decider.freshness;
+//     contributions, contributions.binding and contributions.pipeline;
+//     links, links[<i>] and links[<i>].edge; and the mandate rows;
 //   - anchor and its steps (Anchor §10.3 to §10.7), then
 //     anchor.newer and anchor.consistency[<origin>] (Bundle §7.5 and
 //     §7.6), from the bundle's anchoring slot (anchoring.go);
 //   - anchor.pending, extension[<key>], the filled relatedRecords and
-//     policy slots, member[<key>], and a row for every other artifact
-//     present that this build does not verify.
+//     policy slots, payload.<name>, member[<key>], and a row for every other
+//     artifact present that this build does not verify.
 //
 // It is written from Verification, Bundle and Anchor §10, and held to the
 // expected reports of the b1 conformance corpus (Bundle §13).
@@ -26,6 +29,7 @@ import (
 	"time"
 
 	"github.com/TzunAI/tzun-verify/internal/anchor"
+	"github.com/TzunAI/tzun-verify/internal/canonical"
 	"github.com/TzunAI/tzun-verify/internal/checkpoint"
 	"github.com/TzunAI/tzun-verify/internal/evm"
 	"github.com/TzunAI/tzun-verify/internal/jsonv"
@@ -131,6 +135,7 @@ func Verify(data []byte, opts Options) (res *Result) {
 	v.add(report.Check{ID: IDBundle, Outcome: report.Correct})
 	v.recordRows()
 	v.signoffRows()
+	v.ruleRows()
 	v.anchorRows()
 	v.trailingRows()
 	res.Report.Checks = v.checks
@@ -156,6 +161,14 @@ type verification struct {
 	digest []byte
 	// recordTS is the record timestamp's result when both its rows hold.
 	recordTS *rfc3161.Result
+
+	// material is the sign-off and mandate material the record carries;
+	// expectation is the signoff.expectation row, and exp the expectation
+	// it read, nil unless the digest holds and the expectation is well
+	// formed.
+	material    signoffMaterial
+	expectation report.Check
+	exp         *expectation
 }
 
 func (v *verification) add(cs ...report.Check) { v.checks = append(v.checks, cs...) }
@@ -241,7 +254,7 @@ func (v *verification) readFrame(data []byte) report.Check {
 	v.anchoring = member(root, "anchoring")
 	// Step 9: no name a row id can carry holds a lone surrogate, so every
 	// row can be written (Verification §4.1).
-	for _, obj := range []*jsonv.Value{root, member(root, "extensions"), v.nr, v.anchoring} {
+	for _, obj := range []*jsonv.Value{root, member(root, "extensions"), v.payload, v.nr, v.anchoring} {
 		if loneKey(obj) {
 			return wrong
 		}
@@ -345,6 +358,13 @@ func (v *verification) trailingRows() {
 			v.add(report.Check{ID: slot, Outcome: report.Abstain, Reason: ReasonUnsupportedSlot})
 		}
 	}
+	// A payload member outside the twelve of Record §2.2, whatever its
+	// value: not hashed, so nothing vouches for it (Verification §4.7).
+	for _, m := range sortedMembers(v.payload) {
+		if !canonical.PayloadMembers[m.Key] {
+			v.add(report.Check{ID: "payload." + m.Key, Outcome: report.Abstain, Reason: ReasonUnsupportedMember})
+		}
+	}
 	for _, m := range sortedMembers(v.root) {
 		if !recordMembers[m.Key] {
 			v.add(report.Check{ID: "member[" + m.Key + "]", Outcome: report.Abstain, Reason: ReasonUnsupportedMember})
@@ -363,8 +383,14 @@ func (v *verification) unreadRows() []report.Check {
 			continue
 		}
 		switch m.Key {
-		case "anchor", "rfc3161Token", "webauthnAssertion", "signoff":
+		case "anchor", "rfc3161Token", "webauthnAssertion", "signoff", "mandate", "mandateIssuance":
 			// Rows of their own.
+		case "confirmation":
+			// Read by signoff.expectation when the record owes one;
+			// otherwise material no row reads.
+			if !v.confirmationRead() {
+				out = append(out, report.Check{ID: "nonRepudiation.confirmation", Outcome: report.Abstain, Reason: ReasonUnsupported})
+			}
 		case "rfc3161Metadata":
 			// A copy of the token's own fields for display; never an input.
 		case "blockchainAnchor":

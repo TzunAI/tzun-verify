@@ -2,35 +2,43 @@
   "bundleVersion": "b1",
   "profile": "record",
   "subject": {
-    "evidenceId": "0a352141-f5e0-489b-b86f-14db20b90628",
-    "canonicalDigest": "f218b5009b7b71ce75f43a581719fb199f3f554bb7b6e1b376fe8ab5de229669"
+    "evidenceId": "edf91ec7-ba45-4da5-8030-20526e7d2426",
+    "canonicalDigest": "212ce10edfcc65d965834752c001c42493c27927fd8fdbe925dc6fa263285be6"
   },
   "envelope": {
     "envelopeVersion": "e1",
     "payload": {
-      "evidenceId": "0a352141-f5e0-489b-b86f-14db20b90628",
+      "evidenceId": "edf91ec7-ba45-4da5-8030-20526e7d2426",
       "schemaVersion": "v1.0",
       "aiSystemId": "bundle-b1-corpus",
       "aiOutput": {
         "recommendation": "approve",
         "chain": "alpha",
-        "i": 7
+        "i": 11
       },
-      "humanAction": "approved",
-      "humanReason": "bundle corpus: alpha #7",
-      "capturedAt": "2026-09-27T14:09:41.597Z",
+      "action": "approved",
+      "reason": "bundle corpus: alpha #11",
+      "capturedAt": "2026-10-01T17:40:35.577Z",
       "sequenceNumber": 3,
-      "aiBom": null,
+      "decider": {
+        "kind": "human",
+        "id": "acct:u-bundle-corpus",
+        "agent": null,
+        "credential": null,
+        "freshness": null
+      },
+      "contributions": null,
+      "links": null,
       "signoffExpectation": null
     },
     "integrity": {
-      "canonicalDigest": "f218b5009b7b71ce75f43a581719fb199f3f554bb7b6e1b376fe8ab5de229669",
-      "chainLink": "3e9c210f9cd6bd9cf18ff2d4d435e275af0cbe367be63eea60fe021d74432ef7"
+      "canonicalDigest": "212ce10edfcc65d965834752c001c42493c27927fd8fdbe925dc6fa263285be6",
+      "chainLink": "be1c24e45062220ab87bbc2b9ab760d948de4e50d2c667cffc4e5df1a8b5d021"
     },
     "nonRepudiation": {
-      "rfc3161Token": "MIIDazADAgEAMIIDYgYJKoZIhvcNAQcCoIIDUzCCA08CAQMxDzANBglghkgBZQMEAgEFADB4BgsqhkiG9w0BCRABBKBpBGcwZQIBAQYKKwYBBAGGjR8BATAxMA0GCWCGSAFlAwQCAQUABCDyGLUAm3txznX0OlgXGfsZnz9VS7e24bN2/oq13iKWaQIBahgTMjAyNjA5MjcxNDA5NDEuNjAyWgIJAKr70qweYT94oIIBbTCCAWkwggEPoAMCAQICAQMwCgYIKoZIzj0EAwIwIzEhMB8GA1UEAxMYVHp1biBDb3JwdXMgVGVzdCBSb290IENBMB4XDTIwMDEwMTAwMDAwMFoXDTQwMDEwMTAwMDAwMFowLTErMCkGA1UEAxMiVHp1biBDb3JwdXMgVGltZXN0YW1waW5nIEF1dGhvcml0eTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABGbnvmjE/7es/wjtakgUfY9yxauBIQoTQGcEIIAtxHZL74KAEDr4aPZIEEAOFZkO+BIZ2nb8XjXuMoaUMCN3XbSjKjAoMA4GA1UdDwEB/wQEAwIHgDAWBgNVHSUBAf8EDDAKBggrBgEFBQcDCDAKBggqhkjOPQQDAgNIADBFAiBtKpVCaBUnROFOFg57Q5LUoM21wzq6afdV6vwC54F10gIhAMCCFn72J/MtkD1d3WkcYDo9GBDbXzQlugFeVVqAU2Q5MYIBTDCCAUgCAQEwKDAjMSEwHwYDVQQDExhUenVuIENvcnB1cyBUZXN0IFJvb3QgQ0ECAQMwDQYJYIZIAWUDBAIBBQCggbQwGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMC8GCSqGSIb3DQEJBDEiBCA/fNnWgyelT1pvpCu4/SeMZI1UnsJdKjs+pMzP8PdFhDBlBgsqhkiG9w0BCRACLzFWMFQwUjBQBCDD1ZPeYkclq7lWxxBR//5FnPxWR65uKU9yQ8iqK8WPjzAsMCekJTAjMSEwHwYDVQQDExhUenVuIENvcnB1cyBUZXN0IFJvb3QgQ0ECAQMwCgYIKoZIzj0EAwIERzBFAiEAyU9SKoRSglAReVxaytR197av8nZ2VRU/d0qBLU35bfcCIAyv84bkZ7FloyVBRid3ld78lHAYWbZMeTSVvEkmq1x8",
+      "rfc3161Token": "MIIDajADAgEAMIIDYQYJKoZIhvcNAQcCoIIDUjCCA04CAQMxDzANBglghkgBZQMEAgEFADB3BgsqhkiG9w0BCRABBKBoBGYwZAIBAQYKKwYBBAGGjR8BATAxMA0GCWCGSAFlAwQCAQUABCAhLOEO38xl2WWDR1LAAcQkk8J5J/2P2+kl3G+iYyhb5gIBbxgSMjAyNjEwMDExNzQwMzUuNThaAgkA9+F3uT5Sx4agggFtMIIBaTCCAQ+gAwIBAgIBAzAKBggqhkjOPQQDAjAjMSEwHwYDVQQDExhUenVuIENvcnB1cyBUZXN0IFJvb3QgQ0EwHhcNMjAwMTAxMDAwMDAwWhcNNDAwMTAxMDAwMDAwWjAtMSswKQYDVQQDEyJUenVuIENvcnB1cyBUaW1lc3RhbXBpbmcgQXV0aG9yaXR5MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEREb9HECBj+cpzsZQgyYs++R72PVZYjUUZielwcieK3fCLkHd4Wem03wUY6/PM4N8BCYT4q3slqGrNGNw0e1rgKMqMCgwDgYDVR0PAQH/BAQDAgeAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMAoGCCqGSM49BAMCA0gAMEUCIDxpfO/KDjgkVJcijs+dGhbQADUsRPqRsmWIlze9kGzrAiEAx71m0ceqQ0h1Tnt1y8OmkL8DSixHTGNalzEtLrHxegIxggFMMIIBSAIBATAoMCMxITAfBgNVBAMTGFR6dW4gQ29ycHVzIFRlc3QgUm9vdCBDQQIBAzANBglghkgBZQMEAgEFAKCBtDAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQwLwYJKoZIhvcNAQkEMSIEINp01k+jwvCT5NThVfDT5tLERpGQIA4VYkNbfUsDGd9HMGUGCyqGSIb3DQEJEAIvMVYwVDBSMFAEIL01spUqLttxUOIl36eEliLqEm19xbrBus5nPJjrjAD2MCwwJ6QlMCMxITAfBgNVBAMTGFR6dW4gQ29ycHVzIFRlc3QgUm9vdCBDQQIBAzAKBggqhkjOPQQDAgRHMEUCIEGhmz8A9gATLCcluqR9/BG0H7R8aNJFvmWoJJYJcGzAAiEAvzdEJDkoC2xDT0HoH/Eadkypskt95aDYRVuTn4Agt88=",
       "rfc3161Metadata": {
-        "genTime": "2026-09-27T14:09:41.602Z",
+        "genTime": "2026-10-01T17:40:35.580Z",
         "tsaName": "Tzun Corpus Timestamping Authority",
         "policyOid": "1.3.6.1.4.1.99999.1.1",
         "status": "granted"
@@ -39,22 +47,22 @@
         "anchorSpec": "tzun-anchor/1",
         "merkleSpec": "rfc6962",
         "leafIndex": 2,
-        "logCheckpoint": "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861\n3\nnWNj0b42GcNmHRjE9vM6aLb5v8UuqekAp06JmKgdpu0=\n",
+        "logCheckpoint": "test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/evidence/616c706861\n3\nXUp5PARqIPq6Jp07Mxwox96+IzB2JLLTG7TG8TAnHg8=\n",
         "logPath": [
-          "66760baac354cb283e0b1a8f20b41ad6b043f4c567afac0e879afe43ace5831e"
+          "5b3c0a760d5a12135389572d599280698d04b8633a9b10bc8f3fa8bad28db4cb"
         ],
         "anchorLeafIndex": 2,
-        "anchorCheckpoint": "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors\n3\n5yZKgXZFizJ6mC874MjotzDNKR/6dZdFKhY3YSj+ees=\n",
+        "anchorCheckpoint": "test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors\n3\npY5wcsiKLdwe6qOhm7f1DPKzcZ8vIOHNiKOz8H+xLpc=\n",
         "anchorPath": [
-          "1873089008f5c3e9b2fb81603217905e4bbc0733ce2e68bf631c05164bbaf5ef"
+          "9bb828407548603fd177bb2b1538426c91d79868f68dc3594b6176ce36e343f7"
         ],
         "publications": [
           {
             "kind": "evm-calldata/1",
             "chain": "eip155:31337",
-            "transactionId": "0x6615d98c29a1b819cfed3070e78ef601033ee70a0cb89c8ad5889c56a9a813c6",
+            "transactionId": "0x03da400cb91ce638b49049fb63a3f10972ddabdc7463150405e6c608157fed7c",
             "blockNumber": 5,
-            "blockHash": "0xc4d3ef2b9e43f37d71fab50fd89eb97f65009a440ca27b578255be9f7db901be",
+            "blockHash": "0x24c44fe7559e7e8e3e81944ad7944687d5b261c54d44fb03edd6cd07e14a5d64",
             "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc"
           }
         ]
@@ -62,8 +70,8 @@
     },
     "custodyChain": [
       {
-        "timestamp": "2026-09-27T14:09:41.597Z",
-        "actor": "unknown",
+        "timestamp": "2026-10-01T17:40:35.577Z",
+        "actor": "acct:u-bundle-corpus",
         "action": "decision_captured",
         "systemId": "bundle-b1-corpus"
       }
@@ -73,9 +81,9 @@
   "chain": {
     "chainId": "alpha",
     "predecessor": {
-      "evidenceId": "83ba9826-f728-4429-9525-68aa41714294",
+      "evidenceId": "530c5afb-f202-464f-ae24-e342b4562546",
       "sequenceNumber": 2,
-      "canonicalDigest": "0c3e8fb12b25841a81cb8f7180fa286e7a976b6b10cf4a6266d71a973a987706"
+      "canonicalDigest": "9626352f551cc11b79caff219cd2a19151c4c8d3b3c42617a4c2a43e31ff36c0"
     }
   },
   "custody": {
@@ -84,35 +92,35 @@
   "credentials": null,
   "relatedRecords": null,
   "anchoring": {
-    "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861": {
+    "test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/evidence/616c706861": {
       "checkpoints": [
         {
-          "body": "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/evidence/616c706861\n3\ntlt1xmQ/mgvckbzhWMRUIcQFhCEiYl7ZkpkZ0o0VOGo=\n",
+          "body": "test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/evidence/616c706861\n3\nUGo/l1vG4KgsgB+3I9WltFmSFXJq5im4KvCNJSOHzSU=\n",
           "signatures": []
         }
       ],
       "consistency": []
     },
-    "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors": {
+    "test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors": {
       "checkpoints": [
         {
-          "body": "test.bundle-b1.tzun/9029134276e6ed9c2815ff9b190a410a/anchors\n3\n/wtjzetHX6fMT3hL6Hfh9t8ePvnfhj58gd9aqMMTBBU=\n",
+          "body": "test.bundle-b1.tzun/514db935932b4483edc610595839d8bc/anchors\n3\nyUVAj1ofPFaIrEgjzhltz8VNNFXGdqLBcL4OydU6K5s=\n",
           "signatures": [],
           "publications": [
             {
               "kind": "evm-calldata/1",
               "chain": "eip155:31337",
-              "transactionId": "0x6615d98c29a1b819cfed3070e78ef601033ee70a0cb89c8ad5889c56a9a813c6",
+              "transactionId": "0x03da400cb91ce638b49049fb63a3f10972ddabdc7463150405e6c608157fed7c",
               "blockNumber": 5,
-              "blockHash": "0xc4d3ef2b9e43f37d71fab50fd89eb97f65009a440ca27b578255be9f7db901be",
+              "blockHash": "0x24c44fe7559e7e8e3e81944ad7944687d5b261c54d44fb03edd6cd07e14a5d64",
               "publisher": "0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc",
-              "rawTransaction": "0x02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a03108bcaaf98e468715d18c3324c60b0562024369bd2e146a80705edc3cbcff93c001a0d6662c44e2fa08b3da90dbff99ff24f45db16a1e04468ea820f68683a200deb2a03f02bd6618707c2837e65f72d6f16c491c793bd781cd5d821f7414e77d0cdf9e",
-              "blockHeader": "0xf90262a0072620f279024554bd8ca6265403459ef6bfbeb667b34ce84163389219acc1c5a01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a07cb671f485ed2cdab6770d532a37ffd08c1ffc502b26d76c9f8fd725605c5d63a0f0b1dc4b1d8f4186072e6d79614acfcec9be1ce6608d051393f8a185c84bcf1da05be60f9fdbb5d82e12151e054c240b05ac06ea414f9465ffcb55c6eb86edc190b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080058401c9c38083014d20846ab9159580a0042be89d673c96ce1fdcedc741d697395081d903c185d57d05a632586a64447388000000000000000084231618ffa056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "rawTransaction": "0x02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a0c452f1292b865b434648729b0f84a10a47c980550474e60e52989ae754824aefc080a06794ded5aae263e2e3a0614c074afba83c0f7ef7e5b57c26ceb79fd91cddd425a01644d446565aab023f1b499f10fb1a831ec9a5a6b236d741ab081628be493672",
+              "blockHeader": "0xf90262a0433c4d0e26169f6e14a5de0b7b390a98292af739906e86f9e311be25bba4d1dda01dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000a07cb671f485ed2cdab6770d532a37ffd08c1ffc502b26d76c9f8fd725605c5d63a0c1fed076405f2e2a6b3d909a76d970e22febf05b687b15408dd1f1a8e500f11da05be60f9fdbb5d82e12151e054c240b05ac06ea414f9465ffcb55c6eb86edc190b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080058401c9c38083014d20846abe8d0380a037328f0ea20b0e6da2d2260e6e0e85f38dba860a992f933a8cd8326ccbb94fbf88000000000000000084231618ffa056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b4218080a00000000000000000000000000000000000000000000000000000000000000000a0e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
               "txIndex": 2,
               "txProof": [
-                "0xf851a0171bd549c2696ffae8c4ded543c68d5ec4634d1ee0f3fae7d9e6ee4f28dcbdfd80808080808080a0d49f9481c280239e1ee0279e25b6d96c39496e43f0fadccf916696619aad46d18080808080808080",
-                "0xf87180a0fd08b33f18c2b9724304985053723b062cdfe5fe922911704830e0e7303c8dbba07eaa07f65171a8613170541f8da77200148c080d63a7cff4de51381b484e492da0fc40860d6b5be083e48bdb0bd7af96d02db0dad925bf9b1e702b68ca10979ab380808080808080808080808080",
-                "0xf89220b88f02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a03108bcaaf98e468715d18c3324c60b0562024369bd2e146a80705edc3cbcff93c001a0d6662c44e2fa08b3da90dbff99ff24f45db16a1e04468ea820f68683a200deb2a03f02bd6618707c2837e65f72d6f16c491c793bd781cd5d821f7414e77d0cdf9e"
+                "0xf851a08601a40885c344f73cc8892ee7fee2dadf0076299e75417a83d0b8f49098a15a80808080808080a0d49f9481c280239e1ee0279e25b6d96c39496e43f0fadccf916696619aad46d18080808080808080",
+                "0xf87180a0fd08b33f18c2b9724304985053723b062cdfe5fe922911704830e0e7303c8dbba098d70b1bedecfe9b12f12a448f8d51cbe5e85c3c0c67c3acfd3e8e84d8b91786a0fc40860d6b5be083e48bdb0bd7af96d02db0dad925bf9b1e702b68ca10979ab380808080808080808080808080",
+                "0xf89220b88f02f88c827a6901843b9aca00848bcd4c46827530949965507d1a55bcc2695c58ba16fb37d819b0a4dc80a0c452f1292b865b434648729b0f84a10a47c980550474e60e52989ae754824aefc080a06794ded5aae263e2e3a0614c074afba83c0f7ef7e5b57c26ceb79fd91cddd425a01644d446565aab023f1b499f10fb1a831ec9a5a6b236d741ab081628be493672"
               ]
             }
           ]
@@ -127,23 +135,23 @@
     "witness/1": null
   },
   "exporter": {
-    "exportedAt": "2026-09-27T14:09:41.769Z",
+    "exportedAt": "2026-10-01T17:40:35.741Z",
     "exportedBy": "Tzun reference implementation",
     "verdict": {
       "status": "valid",
       "digest": {
         "status": "valid",
-        "stored": "f218b5009b7b71ce75f43a581719fb199f3f554bb7b6e1b376fe8ab5de229669",
-        "recomputed": "f218b5009b7b71ce75f43a581719fb199f3f554bb7b6e1b376fe8ab5de229669"
+        "stored": "212ce10edfcc65d965834752c001c42493c27927fd8fdbe925dc6fa263285be6",
+        "recomputed": "212ce10edfcc65d965834752c001c42493c27927fd8fdbe925dc6fa263285be6"
       },
       "chainLink": {
         "status": "valid",
-        "predecessorDigest": "0c3e8fb12b25841a81cb8f7180fa286e7a976b6b10cf4a6266d71a973a987706"
+        "predecessorDigest": "9626352f551cc11b79caff219cd2a19151c4c8d3b3c42617a4c2a43e31ff36c0"
       },
       "signoffExpectation": {
         "valid": true
       },
-      "checkedAt": "2026-09-27T14:09:41.770Z"
+      "checkedAt": "2026-10-01T17:40:35.742Z"
     }
   }
 }

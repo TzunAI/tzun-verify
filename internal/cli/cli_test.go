@@ -299,6 +299,20 @@ func (o outcome) check(t *testing.T, id string) (string, string) {
 	return "", ""
 }
 
+// row returns a report's row with the given id, an empty object for none.
+func row(t *testing.T, o outcome, id string) *jsonv.Value {
+	t.Helper()
+	if o.report == nil {
+		t.Fatalf("no report")
+	}
+	for _, c := range g(o.report, "checks").A {
+		if g(c, "id").S == id {
+			return c
+		}
+	}
+	return &jsonv.Value{Kind: jsonv.Object}
+}
+
 func expect(t *testing.T, o outcome, id, outcome, reason string) {
 	t.Helper()
 	got, why := o.check(t, id)
@@ -445,7 +459,7 @@ func TestTamperAndForgery(t *testing.T) {
 	// An insider changes the decision and does not re-seal the digest. The
 	// failure is reported once: the subject still names the stored digest,
 	// and every check that takes the digest as input is blocked by it.
-	tampered := with(base, "envelope", with(env, "payload", with(payload, "humanAction", report.S("rejected"))))
+	tampered := with(base, "envelope", with(env, "payload", with(payload, "action", report.S("rejected"))))
 	o := verify(t, "--publishers", manifest, "--evm-rpc", node.URL, write(t, dir, "t1.json", tampered))
 	if o.exit != 1 {
 		t.Errorf("unsealed tamper: exit %d", o.exit)
@@ -461,7 +475,7 @@ func TestTamperAndForgery(t *testing.T) {
 	}
 
 	// Re-sealed: the digest matches its payload, and is not the anchored leaf.
-	newPayload := with(payload, "humanAction", report.S("rejected"))
+	newPayload := with(payload, "action", report.S("rejected"))
 	digest, err := canonical.RecordDigest(newPayload)
 	if err != nil {
 		t.Fatal(err)
@@ -586,8 +600,15 @@ func TestNothingPresentPassesSilently(t *testing.T) {
 		t.Fatalf("base: exit %d\n%s", o.exit, o.text)
 	}
 	clientData := base64.RawURLEncoding.EncodeToString([]byte(`{"type":"webauthn.get","challenge":"x","origin":"https://example.test"}`))
-	// A batch statement with the members Record §6.4 reads.
+	// A batch statement with the members Record §9.4 reads.
 	statement := report.Obj("mode", report.S("batch"), "root", report.S(strings.Repeat("cd", 32)), "treeSize", report.N(2))
+	// custodyChain entries: the capture's own, which mirrors no ledger row,
+	// and a hashed one, the mirror of a row.
+	captureEntry := report.Obj("timestamp", report.S("2026-01-01T00:00:00.000Z"), "actor", report.S("acct:u-1"),
+		"action", report.S("decision_captured"), "systemId", report.S("sys-1"))
+	mirrorEntry := report.Obj("timestamp", report.S("2026-01-01T00:01:00.000Z"), "actor", report.S("ops@example.com"),
+		"action", report.S("reviewed"), "systemId", report.S("sys-1"), "entryHash", report.S(strings.Repeat("ab", 32)),
+		"prevEntryHash", report.Null())
 	for _, c := range []struct {
 		name     string
 		bundle   *jsonv.Value
@@ -607,6 +628,21 @@ func TestNothingPresentPassesSilently(t *testing.T) {
 		{"an empty custody slot", with(base, "custody", report.Obj("entries", report.Arr())),
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"a null custody slot", with(base, "custody", report.Null()),
+			"custody.ledger", "not-checked", "not_applicable", 0},
+		// A hashed custodyChain entry mirrors a ledger row: beside a slot
+		// that holds no rows, the row it names was left out, and custody
+		// material is present that this build does not verify (Bundle §6).
+		{"a hashed mirror entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
+			"envelope", with(env, "custodyChain", report.Arr(captureEntry, mirrorEntry))),
+			"custody.ledger", "abstain", "unsupported_artifact", 4},
+		{"a hashed mirror entry beside a null custody slot", with(with(base, "custody", report.Null()),
+			"envelope", with(env, "custodyChain", report.Arr(mirrorEntry))),
+			"custody.ledger", "abstain", "unsupported_artifact", 4},
+		{"an unhashed custodyChain entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
+			"envelope", with(env, "custodyChain", report.Arr(captureEntry))),
+			"custody.ledger", "not-checked", "not_applicable", 0},
+		{"a custodyChain entry whose entryHash is null", with(with(base, "custody", report.Null()),
+			"envelope", with(env, "custodyChain", report.Arr(with(mirrorEntry, "entryHash", report.Null())))),
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"related records", with(base, "relatedRecords", report.Obj("x", report.Obj("role", report.S("credential-registration")))),
 			"relatedRecords", "abstain", "unsupported_slot", 4},
@@ -758,7 +794,7 @@ func TestSignoffExpectationHashed(t *testing.T) {
 	// A digest over another set of names, here the hashed set less
 	// signoffExpectation, does not recompute under v1.0: a digest mismatch,
 	// never another form of record (Record §4.2).
-	others := []string{"aiBom", "aiOutput", "aiSystemId", "capturedAt", "evidenceId", "humanAction", "humanReason", "sequenceNumber"}
+	others := []string{"action", "aiOutput", "aiSystemId", "capturedAt", "contributions", "decider", "evidenceId", "links", "reason", "sequenceNumber"}
 	other, err := canonical.DigestOver(payload, others)
 	if err != nil {
 		t.Fatal(err)
@@ -771,6 +807,32 @@ func TestSignoffExpectationHashed(t *testing.T) {
 	}
 	expect(t, o, "record.digest", "checked-wrong", "digest_mismatch")
 	expect(t, o, "anchor", "not-checked", "blocked_by:record.digest")
+	if _, ok := row(t, o, "record.digest").Get("facts"); ok {
+		t.Error("a digest over a set no earlier draft names carries a fieldSet fact")
+	}
+
+	// A record rewritten into an earlier field set, its digest recomputed:
+	// still a mismatch, and the fact names the set (Verification §4.3).
+	for _, fs := range []struct {
+		name   string
+		fields []string
+	}{{"0.7", canonical.FieldSet07}, {"before-0.7", canonical.FieldSetBefore07}} {
+		old := with(with(payload, "humanAction", g(payload, "action")), "humanReason", g(payload, "reason"))
+		digest, err := canonical.DigestOver(old, fs.fields)
+		if err != nil {
+			t.Fatal(err)
+		}
+		oldEnv := with(with(env, "payload", old), "integrity", with(g(env, "integrity"), "canonicalDigest", report.S(digest)))
+		oldBundle := with(with(base, "envelope", oldEnv), "subject", report.Obj("evidenceId", g(payload, "evidenceId"), "canonicalDigest", report.S(digest)))
+		o := verify(t, write(t, dir, "fieldset-"+fs.name+".json", oldBundle))
+		expect(t, o, "record.digest", "checked-wrong", "digest_mismatch")
+		if got := g(row(t, o, "record.digest"), "facts", "fieldSet"); got.S != fs.name {
+			t.Errorf("a record of the field set %s: fieldSet %q", fs.name, got.S)
+		}
+		if o.exit != 1 {
+			t.Errorf("a record of the field set %s: exit %d, want 1", fs.name, o.exit)
+		}
+	}
 
 	// A null key removed from a current record: an absent key hashes as
 	// null, so the digest still holds.
@@ -878,6 +940,8 @@ func TestFlags(t *testing.T) {
 		{"--confirmations", "10", "--accept-non-final=false", "--evm-rpc", "https://example.invalid", "x.json"},
 		{"--no-publishers=0", "x.json"}, {"--no-tx-lookup=no", "x.json"}, {"--json=false", "x.json"},
 		{"--version=1"}, {"--help=yes"},
+		// The scoped allowance needs its reasons.
+		{"x.json", "--allow-unchecked-reason"},
 	} {
 		out.Reset()
 		errb.Reset()
@@ -893,6 +957,19 @@ func TestFlags(t *testing.T) {
 	}
 	if code := Run([]string{"missing.json"}, &out, &errb); code != report.ExitBundle {
 		t.Errorf("missing file: %d", code)
+	}
+}
+
+// TestAllowUncheckedReason: the scoped allowance takes a comma-separated
+// list of reasons, repeatable, and leaves the switch --allow-unchecked off.
+func TestAllowUncheckedReason(t *testing.T) {
+	c, err := parseArgs([]string{"--allow-unchecked-reason=unsupported_link_edge, confirmation_missing", "x.json",
+		"--allow-unchecked-reason", "unsupported_member,"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(c.policy.AllowReasons, " "); got != "unsupported_link_edge confirmation_missing unsupported_member" || c.policy.AllowUnchecked {
+		t.Errorf("reasons %q, allowUnchecked %v", got, c.policy.AllowUnchecked)
 	}
 }
 

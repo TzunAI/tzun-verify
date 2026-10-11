@@ -53,6 +53,10 @@ bundle path.
                                  (default 30000)
   --json                         print the tzun-verify-report/1 JSON report
   --allow-unchecked              exit 0 even when something present was not checked
+  --allow-unchecked-reason <reason>[,<reason>...]
+                                 exit 0 even when a row was left unchecked for one
+                                 of these reasons; any other unchecked row still
+                                 exits 4 (repeatable; e.g. unsupported_link_edge)
   --require <id>[,<id>...]       checks that must be checked-correct (exit 3
                                  otherwise); "anchor.evm.canonical[*]" matches every
                                  index (repeatable)
@@ -176,6 +180,14 @@ func parseArgs(args []string) (*config, error) {
 			c.json = true
 		case "--allow-unchecked":
 			c.policy.AllowUnchecked = true
+		case "--allow-unchecked-reason":
+			if v, err = value(); err == nil {
+				for _, r := range strings.Split(v, ",") {
+					if r = strings.TrimSpace(r); r != "" {
+						c.policy.AllowReasons = append(c.policy.AllowReasons, r)
+					}
+				}
+			}
 		case "--require":
 			if v, err = value(); err == nil {
 				for _, id := range strings.Split(v, ",") {

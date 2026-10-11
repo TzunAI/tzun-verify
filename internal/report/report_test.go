@@ -25,6 +25,20 @@ func TestExitCode(t *testing.T) {
 		{"require names nothing", []Check{c("a", Correct, "")}, Policy{Require: []string{"anchor.evm.canonical[*]"}}, 3},
 		{"require-rung with no sign-off", []Check{c("a", Correct, "")}, Policy{RequireRungs: []string{"per_record"}}, 3},
 		{"wrong beats require", []Check{c("a", Wrong, "x")}, Policy{Require: []string{"b"}}, 1},
+		{"scoped allowance of the one reason left", []Check{c("a", Abstain, "unsupported_link_edge"), c("b", Abstain, "unsupported_link_edge")},
+			Policy{AllowReasons: []string{"unsupported_link_edge"}}, 0},
+		{"scoped allowance of another reason", []Check{c("a", Abstain, "unsupported_link_edge"), c("b", NotChecked, "confirmation_missing")},
+			Policy{AllowReasons: []string{"unsupported_link_edge"}}, 4},
+		{"scoped allowance of both reasons", []Check{c("a", Abstain, "unsupported_link_edge"), c("b", NotChecked, "confirmation_missing")},
+			Policy{AllowReasons: []string{"confirmation_missing", "unsupported_link_edge"}}, 0},
+		{"scoped allowance never hides a failure", []Check{c("a", Wrong, "link_rule_violated")},
+			Policy{AllowReasons: []string{"link_rule_violated"}}, 1},
+		{"scoped allowance of a blocked row names its reason", []Check{c("a", NotChecked, "blocked_by:links")},
+			Policy{AllowReasons: []string{"blocked_by:links"}}, 0},
+		{"scoped allowance and require", []Check{c("a", Abstain, "unsupported_link_edge")},
+			Policy{AllowReasons: []string{"unsupported_link_edge"}, Require: []string{"a"}}, 3},
+		{"an empty scoped allowance allows nothing", []Check{c("a", Abstain, "unsupported_link_edge")},
+			Policy{AllowReasons: []string{}}, 4},
 	}
 	for _, tc := range cases {
 		checks := tc.checks
