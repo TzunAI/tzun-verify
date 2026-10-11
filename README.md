@@ -273,8 +273,20 @@ A switch (`--json`, `--allow-unchecked`, `--accept-non-final`,
 `--allow-unchecked=false` is a usage error (exit 64), so a wrapper that
 passes `--allow-unchecked=${ALLOW:-false}` stops instead of failing open.
 
-**The manifest pinned in this build is empty.** Every EVM publication reads
-NOT CHECKED, `no_expectation:publisher`, unless you pass `--publishers`.
+**The manifest pinned in this build** is a byte-for-byte copy of
+https://tzun.ai/anchors/publishers.json, as each release pins one
+(Anchor §9): the file as served on 11 October 2026, SHA-256
+`7503124b866821417009bead4ff0f31eb98ba9ccdc7cc6fc92dd38eab9c9347b`.
+It names the `production` publisher of the origin
+`demo.tzun.ai/972309676bfd886c408f9e1a3cbf8501/anchors` and the `test`
+publishers of four earlier origins, each within its validity window, all on
+Ethereum Sepolia (`eip155:11155111`). A publication from any other origin
+reads NOT CHECKED, `no_expectation:publisher`, unless you pass
+`--publishers`. A key rotation closes the old key's entry in the live
+manifest and the next release pins the result (Anchor §9); a binary built
+before that cannot learn of it, so before you rely on a result, compare the
+SHA-256 `--version` prints with the live file's, and pass the live file with
+`--publishers` when they differ.
 
 ## What it prints
 
