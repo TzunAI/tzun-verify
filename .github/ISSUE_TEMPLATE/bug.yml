@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+name: Bug report
+description: tzun-verify crashes, hangs, or misbehaves in a way the specification does not decide.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If tzun-verify gives a result the specification or a conformance vector says it must not give, use the conformance form instead. A security problem goes to the [security policy](https://github.com/TzunAI/tzun-verify/security/policy), never to a public issue.
+
+        Proof bundles can hold personal data. Do not attach one that does; build a minimal case that shows the same thing.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The first line `tzun-verify --version` prints, or the commit you built.
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and architecture
+      placeholder: linux/amd64
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The command you ran, with its flags.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: What it printed, and its exit status (`echo $?`).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce it
+      description: A minimal bundle or steps, without personal data.

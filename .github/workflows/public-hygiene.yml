@@ -30,8 +30,7 @@ concurrency:
 jobs:
   hygiene:
     name: public hygiene
-    # The same runner choice as ci.yml's check job.
-    runs-on: ${{ github.event.repository.private && fromJSON(vars.TZUN_RUNNER_LABELS || '"ubuntu-latest"') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout code

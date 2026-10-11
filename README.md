@@ -1,5 +1,9 @@
 # tzun-verify
 
+[![CI](https://github.com/TzunAI/tzun-verify/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TzunAI/tzun-verify/actions/workflows/ci.yml?query=branch%3Amain)
+[![public hygiene](https://github.com/TzunAI/tzun-verify/actions/workflows/public-hygiene.yml/badge.svg?branch=main)](https://github.com/TzunAI/tzun-verify/actions/workflows/public-hygiene.yml?query=branch%3Amain)
+[![Licence: BSD-3-Clause-Clear](https://img.shields.io/badge/licence-BSD--3--Clause--Clear-blue)](LICENSE)
+
 The standalone verifier for Decision Evidence Object (DEO) proof bundles. It
 checks a Tzun evidence record without any Tzun code and without asking Tzun:
 it recomputes the record's digest, checks its inclusion in the anchored log,
@@ -527,6 +531,15 @@ testdata/vectors    the pinned copy of the conformance vectors (Specs §5)
 LICENSES            the licence texts: BSD-3-Clause-Clear, CC0-1.0 for the vectors, and the note on the timestamp authorities' test files
 third_party         the licences of the third-party code in a release binary (scripts/third-party-licenses.sh writes them)
 ```
+
+## Questions, problems and contributions
+
+Questions and ideas go to
+[Discussions](https://github.com/TzunAI/tzun-verify/discussions), and a
+wrong result or a crash to an [issue](https://github.com/TzunAI/tzun-verify/issues/new/choose).
+A security problem is reported privately, as [`SECURITY.md`](SECURITY.md)
+says. [`CONTRIBUTING.md`](CONTRIBUTING.md) lists the checks a change must
+pass.
 
 ## License
 

@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+cff-version: 1.2.0
+message: If you use tzun-verify in your work, please cite it as below.
+type: software
+title: tzun-verify
+abstract: >-
+  The standalone verifier for Decision Evidence Object (DEO) proof bundles.
+  It checks a Tzun evidence record without any Tzun code: it recomputes the
+  record's digest, checks its inclusion in the anchored log, recomputes the
+  value published on chain, and compares it with the public ledger through
+  any Ethereum node the auditor chooses.
+authors:
+  - name: Tzun, Inc.
+repository-code: https://github.com/TzunAI/tzun-verify
+url: https://spec.tzun.ai/
+license: BSD-3-Clause-Clear
+keywords:
+  - verification
+  - transparency log
+  - Merkle tree
+  - RFC 3161
+  - Ethereum
+  - audit trail
+  - human-in-the-loop

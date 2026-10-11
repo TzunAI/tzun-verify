@@ -34,13 +34,7 @@ concurrency:
 jobs:
   check:
     name: gofmt, vet, tests, no Tzun imports, reproducible build
-    # While the repository is not public, the runner comes from the
-    # organisation's runner variable when it is set; once it is public,
-    # GitHub-hosted always. Keeping self-hosted runners away from public
-    # repositories is an organisation setting (runner groups), not something
-    # this file can enforce. `a && b || c` yields b when a is true and b is
-    # truthy (a label list or a runner name always is), and c otherwise.
-    runs-on: ${{ github.event.repository.private && fromJSON(vars.TZUN_RUNNER_LABELS || '"ubuntu-latest"') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     if: ${{ !github.event.pull_request.draft }}
     steps:
