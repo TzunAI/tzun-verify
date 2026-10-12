@@ -5,10 +5,14 @@ name: CI
 
 # Push CI runs on main and release/** only; a working branch costs nothing
 # until it opens a pull request, which runs the same job on the same SHA.
-# workflow_dispatch runs it on demand for any branch. A change that touches
-# only Markdown runs nothing here, except Markdown under testdata/, which the
-# tests pin; public-hygiene.yml checks every change, Markdown included. In
-# `paths` a later pattern overrides an earlier one.
+# workflow_dispatch runs it on demand for any branch. A push that touches only
+# Markdown runs nothing here, except Markdown under testdata/, which the tests
+# pin; in `paths` a later pattern overrides an earlier one. A pull request
+# always runs this workflow, so the check job, which branch protection
+# requires, always reports: the changes job applies the same rule to the pull
+# request's files, and the check job is skipped when only Markdown outside
+# testdata/ changed. GitHub reports a skipped job as successful.
+# public-hygiene.yml checks every change, Markdown included.
 on:
   push:
     branches: [main, 'release/**']
@@ -17,7 +21,6 @@ on:
     paths: ['**', '!**/*.md', 'testdata/**']
   pull_request:
     branches: [main]
-    paths: ['**', '!**/*.md', 'testdata/**']
     # ready_for_review starts CI when a draft is marked ready; the check job
     # skips while the PR is a draft.
     types: [opened, synchronize, reopened, ready_for_review]
@@ -32,11 +35,59 @@ concurrency:
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
+  changes:
+    # Whether a pull request changes only Markdown outside testdata/, by the
+    # push filter's rule. Any other event counts as changing code. It reads
+    # nothing from the event but the two commit ids.
+    name: what the pull request changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      docs_only: ${{ steps.diff.outputs.docs_only }}
+    steps:
+      - name: Checkout code
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, so the base and head commits are both here.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The files it changes
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        # A failed git diff fails this step and sets no output, and the check
+        # job then runs in full.
+        run: |
+          docs_only=false
+          if [ "$EVENT" = pull_request ]; then
+            files="$(git diff --name-only --no-renames "$BASE...$HEAD")"
+            docs_only=true
+            while IFS= read -r f; do
+              case "$f" in
+                '') ;;
+                testdata/*) docs_only=false ;;
+                *.md) ;;
+                *) docs_only=false ;;
+              esac
+            done <<<"$files"
+          fi
+          echo "only Markdown outside testdata/: $docs_only"
+          echo "docs_only=$docs_only" >>"$GITHUB_OUTPUT"
+
   check:
     name: gofmt, vet, tests, no Tzun imports, reproducible build
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    if: ${{ !github.event.pull_request.draft }}
+    # Skipped while the pull request is a draft, and when it changes only
+    # Markdown outside testdata/. !cancelled() runs it in full when the
+    # changes job failed, since a job skipped for a failed dependency would
+    # also report success.
+    if: ${{ !cancelled() && !github.event.pull_request.draft && needs.changes.outputs.docs_only != 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
