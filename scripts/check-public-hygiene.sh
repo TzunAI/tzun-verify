@@ -36,7 +36,9 @@
 #                  directory, on any operating system.
 #   email          an email address, except a noreply address, one at a
 #                  domain reserved for examples, or a role address in
-#                  PUBLIC_EMAILS below.
+#                  PUBLIC_EMAILS below. In commits mode, a commit whose
+#                  author is Dependabot may also hold the line Dependabot
+#                  signs off with (DEPENDABOT_SIGNOFF below), exactly.
 #   host           a subdomain of tzun.ai other than the ones in PUBLIC_HOSTS
 #                  below.
 #   requirement    a requirement id (REQ-...). The specification states none.
@@ -94,6 +96,15 @@ PUBLIC_HOSTS = {"www", "demo", "spec", "log", "test", "xlog"}
 # in CODE_OF_CONDUCT.md and security in SECURITY.md.
 PUBLIC_EMAILS = {"conduct@tzun.ai", "security@tzun.ai"}
 
+# Dependabot signs off every commit it makes with GitHub's support address.
+# That one line, exactly, is allowed in a commit whose author is Dependabot,
+# by name and address, and refused everywhere else: in any other commit, in
+# text mode, which the commit hook and the pull request check use, and in
+# the tree. The address is written in two pieces so that this file passes
+# tree mode.
+DEPENDABOT_AUTHOR = ("dependabot[bot]", "49699333+dependabot[bot]@users.noreply.github.com")
+DEPENDABOT_SIGNOFF = "Signed-off-by: dependabot[bot] <support" + "@github.com>"
+
 SELF_REPO = "tzun-verify"
 SPEC_REPO = "tzun-spec"
 
@@ -101,7 +112,7 @@ SPEC_REPO = "tzun-spec"
 MERGE_LINE = re.compile(r"^Merge pull request #[0-9]+ from ")
 
 
-def allow_org_repo(m, line):
+def allow_org_repo(m, line, author):
     name = m.group(1).lower()
     if name in (SELF_REPO, SELF_REPO + ".git", SPEC_REPO, SPEC_REPO + ".git"):
         return True
@@ -110,16 +121,18 @@ def allow_org_repo(m, line):
     return bool(lead) and m.start() == lead.end()
 
 
-def allow_prefixed_name(m, line):
+def allow_prefixed_name(m, line, author):
     return m.group(1).lower() in PUBLIC_WORDS
 
 
-def allow_cross_ref(m, line):
+def allow_cross_ref(m, line, author):
     return m.group(1).lower() == SELF_REPO
 
 
-def allow_email(m, line):
+def allow_email(m, line, author):
     if m.group(0).lower() in PUBLIC_EMAILS:
+        return True
+    if author == DEPENDABOT_AUTHOR and line == DEPENDABOT_SIGNOFF:
         return True
     local, _, domain = m.group(0).lower().partition("@")
     if local in ("noreply", "no-reply") or domain.endswith("users.noreply.github.com"):
@@ -129,7 +142,7 @@ def allow_email(m, line):
     return m.group(0).lower() == "git@github.com"
 
 
-def allow_host(m, line):
+def allow_host(m, line, author):
     return m.group("label").lower() in PUBLIC_HOSTS
 
 
@@ -156,12 +169,14 @@ def found(where, n, rule, text, out):
     out.append(f"{where}:{n}: {rule}: {text}")
 
 
-def scan(where, text, out):
+# author is the (name, address) of the commit whose message text is, in
+# commits mode, and None in the other modes.
+def scan(where, text, out, author=None):
     lines = unicodedata.normalize("NFKC", text).splitlines()
     for n, line in enumerate(lines, 1):
         for rule, rx, allow in RULES:
             for m in rx.finditer(line):
-                if allow is None or not allow(m, line):
+                if allow is None or not allow(m, line, author):
                     found(where, n, rule, m.group(0), out)
     # Each paragraph again, its lines folded into one; a match is reported
     # here only when it spans a line break, since the pass above found the
@@ -186,7 +201,7 @@ def scan(where, text, out):
                     first = max(k for k, s in enumerate(starts) if s <= m.start())
                     if m.end() <= starts[first] + len(pieces[first]):
                         continue
-                    if allow is None or not allow(m, joined):
+                    if allow is None or not allow(m, joined, author):
                         found(where, i + first + 1, rule, m.group(0), out)
         i = j
 
@@ -211,8 +226,9 @@ def main():
     elif mode == "commits":
         shas = git("rev-list", sys.argv[2], "--").decode().split()
         for sha in shas:
-            msg = git("show", "-s", "--format=%B", sha).decode("utf-8", errors="replace")
-            scan(f"commit {sha[:12]}", msg, out)
+            name, email, msg = git("show", "-s", "--format=%an%x00%ae%x00%B", sha).decode(
+                "utf-8", errors="replace").split("\0", 2)
+            scan(f"commit {sha[:12]}", msg, out, author=(name, email))
         what = f"{len(shas)} commit message(s)"
     else:
         label = sys.argv[2] if len(sys.argv) > 2 else "stdin"
