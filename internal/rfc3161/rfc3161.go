@@ -10,9 +10,11 @@
 //  1. parse: the DER of a granted TimeStampResp, every element of it DER,
 //     that wraps a CMS SignedData over a TSTInfo, each structure with its
 //     members and nothing else (der.go); the SignedData has a single
-//     SignerInfo, and the token itself holds that signer's certificate
-//     (malformed_publication). A certificate whose key uses an algorithm or
-//     curve this build does not implement is read with its key left unread;
+//     SignerInfo, and the token itself holds that signer's certificate;
+//     every certificate it carries has the members of an RFC 5280
+//     certificate and decodes (malformed_publication). A certificate whose
+//     key uses an algorithm or curve this build does not implement is read
+//     with its key left unread;
 //  2. imprint: SHA-256 and P (imprint_mismatch);
 //  3. signature and signer: the stock digitorus/timestamp and
 //     digitorus/pkcs7 libraries verify the CMS signature; the signed
@@ -115,6 +117,7 @@ var (
 	}
 	nullParams           = []byte{0x05, 0x00}
 	errUnsupportedDigest = errors.New("rfc3161: unsupported certHash algorithm")
+	errNotCertificate    = errors.New("rfc3161: not an RFC 5280 certificate")
 )
 
 // RFC 3161 §2.4.2 and RFC 5652, transcribed.
@@ -299,6 +302,9 @@ func keyNotImplemented(spki []byte) bool {
 // and readable is false. Every other certificate the stock parser refuses
 // is not a certificate.
 func parseCertificate(der []byte) (c *x509.Certificate, readable bool, err error) {
+	if !certificateShape(der) {
+		return nil, false, errNotCertificate
+	}
 	c, err = x509.ParseCertificate(der)
 	if err == nil {
 		return c, true, nil

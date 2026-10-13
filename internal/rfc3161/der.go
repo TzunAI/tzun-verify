@@ -5,15 +5,18 @@ package rfc3161
 import "encoding/asn1"
 
 // Step 1 reads a token as the DER of a TimeStampResp that is a CMS
-// SignedData (§10.5 step 1). The decoders it uses check less than that:
-// encoding/asn1 accepts members after the last field of a SEQUENCE and does
-// not check the tag of a RawValue, and the CMS library converts BER to DER
-// before it decodes. The checks of this file cover the difference, each
-// before a decoder reads what it checks:
+// SignedData, every one of whose certificates decodes as an X.509 certificate
+// (§10.5 step 1). The decoders it uses check less than that: encoding/asn1
+// accepts members after the last field of a SEQUENCE and does not check the
+// tag of a RawValue, crypto/x509 skips parts of a certificate, and the CMS
+// library converts BER to DER before it decodes. The checks of this file
+// cover the difference, each before a decoder reads what it checks:
 //
 //   - isDER: the whole response is DER (X.690 §10, §11), every element of it;
 //   - tokenShape: each CMS structure step 1 reads has its members, in order,
-//     and nothing else (RFC 3161 §2.4.2, RFC 5652 §5).
+//     and nothing else (RFC 3161 §2.4.2, RFC 5652 §5);
+//   - certificateShape: each carried certificate has the members of RFC 5280
+//     §4.1, in order, and nothing else.
 //
 // None of them reads what a value means. A SIZE constraint is not checked
 // here, nor are the two rules of DER that need the schema: a DEFAULT value
@@ -257,7 +260,7 @@ func algorithmIdentifier(e element) bool {
 //     unsignedAttrs [1] when present;
 //   - each signed and unsigned attribute: an OBJECT IDENTIFIER and a SET.
 //
-// The elements of certificates are left to parseCertificate.
+// Each element of certificates is held to certificateShape where it is read.
 func tokenShape(der []byte) bool {
 	resp, _, ok := readElement(der)
 	if !ok {
@@ -360,6 +363,120 @@ func attributesShape(e element) bool {
 	for _, a := range attrs {
 		m, ok := members(a)
 		if !ok || !isSequence(a) || len(m) != 2 || !isPrimitive(m[0], asn1.TagOID) || !isSet(m[1]) {
+			return false
+		}
+	}
+	return true
+}
+
+// certificateShape reports whether der is one Certificate with the members
+// RFC 5280 §4.1 gives it, in order, and nothing else: tbsCertificate,
+// signatureAlgorithm and signatureValue; in tbsCertificate, version [0]
+// (holding one INTEGER) when present, serialNumber, signature, issuer,
+// validity (two times), subject, subjectPublicKeyInfo (an
+// AlgorithmIdentifier and a BIT STRING), then issuerUniqueID [1] and
+// subjectUniqueID [2] when present, each a primitive BIT STRING, and
+// extensions [3] when present, holding one SEQUENCE of Extension (extnID,
+// critical when present, extnValue). A Name is a SEQUENCE of SETs of
+// AttributeTypeAndValue, each a type and one value.
+func certificateShape(der []byte) bool {
+	c, rest, ok := readElement(der)
+	if !ok || len(rest) != 0 {
+		return false
+	}
+	m, ok := members(c)
+	if !ok || !isSequence(c) || len(m) != 3 || !isSequence(m[0]) || !algorithmIdentifier(m[1]) ||
+		!isPrimitive(m[2], asn1.TagBitString) {
+		return false
+	}
+	f, ok := members(m[0])
+	if !ok {
+		return false
+	}
+	i := 0
+	if i < len(f) && isContext(f[i], 0, true) {
+		if v, ok := members(f[i]); !ok || len(v) != 1 || !isPrimitive(v[0], asn1.TagInteger) {
+			return false
+		}
+		i++
+	}
+	if len(f) < i+6 || !isPrimitive(f[i], asn1.TagInteger) || !algorithmIdentifier(f[i+1]) || !nameShape(f[i+2]) ||
+		!validityShape(f[i+3]) || !nameShape(f[i+4]) || !spkiShape(f[i+5]) {
+		return false
+	}
+	i += 6
+	if i < len(f) && isContext(f[i], 1, false) {
+		i++
+	}
+	if i < len(f) && isContext(f[i], 2, false) {
+		i++
+	}
+	if i < len(f) && isContext(f[i], 3, true) {
+		if !extensionsShape(f[i]) {
+			return false
+		}
+		i++
+	}
+	return i == len(f)
+}
+
+func nameShape(e element) bool {
+	rdns, ok := members(e)
+	if !ok || !isSequence(e) {
+		return false
+	}
+	for _, rdn := range rdns {
+		atvs, ok := members(rdn)
+		if !ok || !isSet(rdn) {
+			return false
+		}
+		for _, atv := range atvs {
+			m, ok := members(atv)
+			if !ok || !isSequence(atv) || len(m) != 2 || !isPrimitive(m[0], asn1.TagOID) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func validityShape(e element) bool {
+	m, ok := members(e)
+	if !ok || !isSequence(e) || len(m) != 2 {
+		return false
+	}
+	for _, t := range m {
+		if !isPrimitive(t, asn1.TagUTCTime) && !isPrimitive(t, asn1.TagGeneralizedTime) {
+			return false
+		}
+	}
+	return true
+}
+
+func spkiShape(e element) bool {
+	m, ok := members(e)
+	return ok && isSequence(e) && len(m) == 2 && algorithmIdentifier(m[0]) && isPrimitive(m[1], asn1.TagBitString)
+}
+
+func extensionsShape(e element) bool {
+	inner, ok := members(e)
+	if !ok || len(inner) != 1 || !isSequence(inner[0]) {
+		return false
+	}
+	exts, ok := members(inner[0])
+	if !ok {
+		return false
+	}
+	for _, ext := range exts {
+		m, ok := members(ext)
+		if !ok || !isSequence(ext) || len(m) < 2 || !isPrimitive(m[0], asn1.TagOID) {
+			return false
+		}
+		i := 1
+		if isPrimitive(m[i], asn1.TagBoolean) {
+			i++
+		}
+		if i != len(m)-1 || !isPrimitive(m[i], asn1.TagOctetString) {
 			return false
 		}
 	}

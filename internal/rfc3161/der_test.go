@@ -3,6 +3,7 @@
 package rfc3161
 
 import (
+	"bytes"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
@@ -205,10 +206,11 @@ func attributeOf(t *testing.T, attrs *node, oid asn1.ObjectIdentifier) *node {
 }
 
 // TestStepOneStrictness: §10.5 step 1 reads the token as the DER of a
-// TimeStampResp that is a CMS SignedData. Every element of the response is
-// DER, wherever it sits; each CMS structure has its members and nothing else.
-// A token that breaks either is malformed at step 1, before a later step looks
-// at it, and whether or not the signature covers the element.
+// TimeStampResp that is a CMS SignedData, every one of whose certificates
+// decodes as an X.509 certificate. Every element of the response is DER,
+// wherever it sits; each structure has its members and nothing else. A token
+// that breaks either is malformed at step 1, before a later step looks at it,
+// and whether or not the signature covers the element.
 func TestStepOneStrictness(t *testing.T) {
 	root := testpki.Root("Root")
 	signer := testpki.TSASigner("TSA", root)
@@ -317,8 +319,9 @@ func TestStepOneStrictness(t *testing.T) {
 		verify(name, cms(edit), mf)
 	}
 
-	// The signer's key: a BOOLEAN of length 6 is not DER, whatever the
-	// algorithm.
+	// The certificates, each an RFC 5280 certificate. The signer's key: a
+	// BOOLEAN of length 6 is not DER, whatever the algorithm, and an
+	// AlgorithmIdentifier has at most one parameters element.
 	reissued := func(spki func(s *testpki.Cert) []byte) string {
 		s := testpki.TSASigner("TSA", root)
 		s.Cert = testpki.Reissue(s, root, spki(s), nil)
@@ -336,11 +339,69 @@ func TestStepOneStrictness(t *testing.T) {
 	unknownKey := asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 0, 1}
 	verify("the signer's key: P-256, then a BOOLEAN of length 6",
 		reissued(func(s *testpki.Cert) []byte { return testpki.ECKey(s, append(append([]byte{}, p256...), boolean6...)) }), mf)
+	verify("the signer's key: P-256, then a NULL",
+		reissued(func(s *testpki.Cert) []byte { return testpki.ECKey(s, append(append([]byte{}, p256...), 0x05, 0x00)) }), mf)
 	verify("the signer's key: an algorithm this build does not know, a BOOLEAN of length 6 as its parameters",
 		reissued(func(s *testpki.Cert) []byte { return testpki.SPKI(unknownKey, boolean6, point(s)) }), mf)
 	// Read with its key left unread, as step 1 has it.
 	verify("the signer's key: an algorithm this build does not know, NULL as its parameters",
 		reissued(func(s *testpki.Cert) []byte { return testpki.SPKI(unknownKey, []byte{0x05, 0x00}, point(s)) }), tokenMissing)
+
+	// The signer's tbsCertificate after its subjectPublicKeyInfo:
+	// issuerUniqueID [1] and subjectUniqueID [2], each a primitive BIT
+	// STRING, then extensions [3], then nothing.
+	rebuilt := func(edit func(f [][]byte) [][]byte) string {
+		s := testpki.TSASigner("TSA", root)
+		s.Cert = testpki.Rebuild(s, root, edit)
+		return build(testpki.TokenOptions{Signer: s})
+	}
+	const exts = 7 // version, serialNumber, signature, issuer, validity, subject, subjectPublicKeyInfo, extensions
+	uniqueIDs := func(ids ...string) func(f [][]byte) [][]byte {
+		return func(f [][]byte) [][]byte {
+			var out [][]byte
+			out = append(out, f[:exts]...)
+			for _, id := range ids {
+				out = append(out, unhex(t, id))
+			}
+			return append(out, f[exts:]...)
+		}
+	}
+	verify("the signer with issuerUniqueID and subjectUniqueID", rebuilt(uniqueIDs("81020001", "82020001")), okw)
+	verify("the signer's extensions under [2]", rebuilt(func(f [][]byte) [][]byte {
+		f[exts] = append([]byte{0xa2}, f[exts][1:]...)
+		return f
+	}), mf)
+	verify("the signer's issuerUniqueID constructed", rebuilt(uniqueIDs("a1020500")), mf)
+	verify("the signer's tbsCertificate, a member after extensions", rebuilt(func(f [][]byte) [][]byte {
+		return append(f, []byte{0x05, 0x00})
+	}), mf)
+
+	// A certificate no step needs: step 1 reads it, and no later step does.
+	extra := testpki.Root("Extra")
+	carried := func(edit func(c, tbs *node)) string {
+		c := tree(t, extra.Cert.Raw)
+		edit(c, c.at(0))
+		return build(testpki.TokenOptions{Certs: []*x509.Certificate{{Raw: c.der()}}})
+	}
+	verify("an extra certificate as issued", carried(func(c, _ *node) {
+		if !bytes.Equal(c.der(), extra.Cert.Raw) {
+			t.Fatal("the tree does not encode the certificate again")
+		}
+	}), okw)
+	// tbsCertificate: version [0], serialNumber, signature, issuer, validity,
+	// subject, subjectPublicKeyInfo, extensions [3].
+	for name, edit := range map[string]func(c, tbs *node){
+		"a member after signatureValue":                         func(c, _ *node) { c.add(null()) },
+		"a member after extensions":                             func(_, tbs *node) { tbs.add(null()) },
+		"extensions [3] holding a second element":               func(_, tbs *node) { tbs.at(7).add(null()) },
+		"an extension with a member after its value":            func(_, tbs *node) { tbs.at(7, 0, 0).add(null()) },
+		"a validity of three times":                             func(_, tbs *node) { v := tbs.at(4); v.add(&node{tag: v.kids[1].tag, body: v.kids[1].body}) },
+		"an issuer attribute with a second value":               func(_, tbs *node) { tbs.at(3, 0, 0).add(raw(t, "0c0141")) },
+		"subjectPublicKeyInfo, a member after subjectPublicKey": func(_, tbs *node) { tbs.at(6).add(null()) },
+		"both signature AlgorithmIdentifiers of three members":  func(c, tbs *node) { twoMore(c.at(1)); twoMore(tbs.at(2)) },
+	} {
+		verify("an extra certificate, "+name, carried(edit), mf)
+	}
 
 	// A signer named by subjectKeyIdentifier is this build's abstention
 	// (step 5) only for a token that step 1 otherwise reads.
