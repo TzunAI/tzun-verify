@@ -7,11 +7,12 @@
 //
 // The steps run in order and the first that does not hold decides:
 //
-//  1. parse: a granted TimeStampResp that wraps a CMS SignedData over a
-//     TSTInfo; the SignedData has a single SignerInfo, and the token itself
-//     holds that signer's certificate (malformed_publication). A
-//     certificate whose key uses an algorithm or curve this build does not
-//     implement is read with its key left unread;
+//  1. parse: the DER of a granted TimeStampResp, every element of it DER
+//     (der.go), that wraps a CMS SignedData over a TSTInfo; the SignedData
+//     has a single SignerInfo, and the token itself holds that signer's
+//     certificate (malformed_publication). A certificate whose key uses an
+//     algorithm or curve this build does not implement is read with its key
+//     left unread;
 //  2. imprint: SHA-256 and P (imprint_mismatch);
 //  3. signature and signer: the stock digitorus/timestamp and
 //     digitorus/pkcs7 libraries verify the CMS signature; the signed
@@ -421,11 +422,15 @@ func parse(s string) (*token, string) {
 }
 
 func parseToken(s string) (*token, bool, string) {
-	t, ok := parseStrict(s)
+	der, ok := strictBase64(s)
+	if !ok || !isDER(der) {
+		return nil, false, ""
+	}
+	t, ok := parseStrict(der)
 	if ok {
 		return t, true, ""
 	}
-	if skiSigner(s) {
+	if skiSigner(der) {
 		// A signer named by subjectKeyIdentifier is legal CMS (RFC 5652
 		// §5.3); the linked library finds a signer only by issuer and
 		// serial number. That is a gap in this verifier, not in the token
@@ -437,11 +442,7 @@ func parseToken(s string) (*token, bool, string) {
 
 // skiSigner reports whether a token otherwise well-formed names its signer
 // by subjectKeyIdentifier ([0]), and carries the certificate it names.
-func skiSigner(s string) bool {
-	der, ok := strictBase64(s)
-	if !ok {
-		return false
-	}
+func skiSigner(der []byte) bool {
 	var resp timeStampResp
 	if rest, err := asn1.Unmarshal(der, &resp); err != nil || len(rest) != 0 || len(resp.TimeStampToken.FullBytes) == 0 {
 		return false
@@ -473,11 +474,8 @@ func skiSigner(s string) bool {
 	return false
 }
 
-func parseStrict(s string) (*token, bool) {
-	der, ok := strictBase64(s)
-	if !ok {
-		return nil, false
-	}
+// parseStrict decodes a token that isDER has checked.
+func parseStrict(der []byte) (*token, bool) {
 	var resp timeStampResp
 	rest, err := asn1.Unmarshal(der, &resp)
 	if err != nil || len(rest) != 0 {
