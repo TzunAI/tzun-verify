@@ -7,7 +7,7 @@ toolchain go1.27.1
 require (
 	github.com/digitorus/pkcs7 v0.0.0-20260914070511-d678ea5ea03f
 	github.com/digitorus/timestamp v0.0.0-20260914073129-b4b58b92aa51
-	github.com/ethereum/go-ethereum v1.17.6
+	github.com/ethereum/go-ethereum v1.17.8
 	github.com/transparency-dev/formats v0.1.1
 	github.com/transparency-dev/merkle v0.0.3-0.20260921095310-fbbcd741c3d1
 )

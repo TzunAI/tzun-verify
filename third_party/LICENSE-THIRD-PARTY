@@ -585,7 +585,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ==============================================================================
-github.com/ethereum/go-ethereum v1.17.6
+github.com/ethereum/go-ethereum v1.17.8
 COPYING
 ==============================================================================
 
@@ -1265,7 +1265,7 @@ Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
 
 ==============================================================================
-github.com/ethereum/go-ethereum v1.17.6
+github.com/ethereum/go-ethereum v1.17.8
 COPYING.LESSER
 ==============================================================================
 
@@ -1436,7 +1436,7 @@ permanent authorization for you to choose that version for the
 Library.
 
 ==============================================================================
-github.com/ethereum/go-ethereum v1.17.6
+github.com/ethereum/go-ethereum v1.17.8
 crypto/keccak/LICENSE
 ==============================================================================
 
