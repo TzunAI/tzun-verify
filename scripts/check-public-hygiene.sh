@@ -38,7 +38,8 @@
 #                  domain reserved for examples, or a role address in
 #                  PUBLIC_EMAILS below. In commits mode, a commit whose
 #                  author is Dependabot may also hold the line Dependabot
-#                  signs off with (DEPENDABOT_SIGNOFF below), exactly.
+#                  signs off with (DEPENDABOT_SIGNOFF below), exactly. The
+#                  author is as the commit states it, not verified.
 #   host           a subdomain of tzun.ai other than the ones in PUBLIC_HOSTS
 #                  below.
 #   requirement    a requirement id (REQ-...). The specification states none.
@@ -100,8 +101,12 @@ PUBLIC_EMAILS = {"conduct@tzun.ai", "security@tzun.ai"}
 # That one line, exactly, is allowed in a commit whose author is Dependabot,
 # by name and address, and refused everywhere else: in any other commit, in
 # text mode, which the commit hook and the pull request check use, and in
-# the tree. The address is written in two pieces so that this file passes
-# tree mode.
+# the tree. A commit's author fields are whatever the commit states, so any
+# commit can claim to be Dependabot's; the condition only narrows where the
+# line is accepted. What makes the allowance safe is what it admits: one
+# fixed line holding GitHub's public support address, with every other rule
+# still applied to the rest of the message. The address is written in two
+# pieces so that this file passes tree mode.
 DEPENDABOT_AUTHOR = ("dependabot[bot]", "49699333+dependabot[bot]@users.noreply.github.com")
 DEPENDABOT_SIGNOFF = "Signed-off-by: dependabot[bot] <support" + "@github.com>"
 

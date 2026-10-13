@@ -170,6 +170,12 @@ g add leak.txt
 expect 1 "tree mode, a tracked file with a local path" "$repo/scripts/check-public-hygiene.sh" tree
 rm "$repo/leak.txt"
 g rm -q --cached leak.txt
+# Tree mode allows Dependabot's sign-off line nowhere.
+printf '%s\n' "$signoff" > "$repo/signoff.txt"
+g add signoff.txt
+expect 1 "tree mode, Dependabot's sign-off in a tracked file" "$repo/scripts/check-public-hygiene.sh" tree
+rm "$repo/signoff.txt"
+g rm -q --cached signoff.txt
 
 # Dependabot's sign-off line, in commits mode: allowed, exactly, in a commit
 # Dependabot authored, and refused anywhere else.
@@ -193,6 +199,8 @@ c="$(commit_as "test <test@example.com>" "$bot_body" "$signoff")"
 expect 1 "commits mode, Dependabot's sign-off in a commit someone else authored" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
 c="$(commit_as "dependabot[bot] <test@example.com>" "$bot_body" "$signoff")"
 expect 1 "commits mode, Dependabot's sign-off with Dependabot's name but another address" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
+c="$(commit_as "someone <49699333+dependabot[bot]@users.noreply.github.com>" "$bot_body" "$signoff")"
+expect 1 "commits mode, Dependabot's sign-off with Dependabot's address but another name" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
 c="$(commit_as "$dependabot" "Questions go to $support." "$signoff")"
 expect 1 "commits mode, GitHub's support address outside the sign-off, Dependabot the author" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
 c="$(commit_as "$dependabot" "$bot_body" "$signoff and more")"
