@@ -15,8 +15,8 @@ import "encoding/asn1"
 //   - isDER: the whole response is DER (X.690 §10, §11), every element of it;
 //   - tokenShape: the TimeStampResp, ContentInfo, SignedData,
 //     EncapsulatedContentInfo and SignerInfo, and the AlgorithmIdentifiers
-//     and attributes the last two hold, have their members, in order, and
-//     nothing else (RFC 3161 §2.4.2, RFC 5652 §5);
+//     and attributes the SignedData and SignerInfo hold, have their members,
+//     in order, and nothing else (RFC 3161 §2.4.2, RFC 5652 §5);
 //   - certificateShape: each carried certificate has the members of RFC 5280
 //     §4.1, in order, and nothing else.
 //

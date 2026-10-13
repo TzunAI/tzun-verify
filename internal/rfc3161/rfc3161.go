@@ -10,15 +10,15 @@
 //  1. parse: the DER of a granted TimeStampResp, every element of it DER,
 //     that wraps a CMS SignedData over a TSTInfo; the TimeStampResp,
 //     ContentInfo, SignedData, EncapsulatedContentInfo and SignerInfo, and
-//     the AlgorithmIdentifiers and attributes the last two hold, have their
-//     members and nothing else (der.go), while inside the PKIStatusInfo, an
-//     attribute's values, a CRL and the TSTInfo, members are checked only
-//     as far as their decoders read them; the SignedData has a single
-//     SignerInfo, and the token itself holds that signer's certificate;
-//     every certificate it carries has the members of an RFC 5280
-//     certificate and decodes (malformed_publication). A certificate whose
-//     key uses an algorithm or curve this build does not implement is read
-//     with its key left unread;
+//     the AlgorithmIdentifiers and attributes the SignedData and SignerInfo
+//     hold, have their members and nothing else (der.go), while inside the
+//     PKIStatusInfo, an attribute's values, a CRL and the TSTInfo, members
+//     are checked only as far as their decoders read them; the SignedData
+//     has a single SignerInfo, and the token itself holds that signer's
+//     certificate; every certificate it carries has the members of an
+//     RFC 5280 certificate and decodes (malformed_publication). A
+//     certificate whose key uses an algorithm or curve this build does not
+//     implement is read with its key left unread;
 //  2. imprint: SHA-256 and P (imprint_mismatch);
 //  3. signature and signer: the stock digitorus/timestamp and
 //     digitorus/pkcs7 libraries verify the CMS signature; the signed
