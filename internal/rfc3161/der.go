@@ -4,17 +4,22 @@ package rfc3161
 
 import "encoding/asn1"
 
-// Step 1 reads a token as the DER of a TimeStampResp (§10.5 step 1). The
-// decoders it uses check less than that: encoding/asn1 does not check the
-// tag or the contents of a RawValue, and the CMS library converts BER to DER
-// before it decodes. isDER checks that the whole response is DER (X.690 §10,
-// §11), every element of it, before any of them reads the token.
+// Step 1 reads a token as the DER of a TimeStampResp that is a CMS
+// SignedData (§10.5 step 1). The decoders it uses check less than that:
+// encoding/asn1 accepts members after the last field of a SEQUENCE and does
+// not check the tag of a RawValue, and the CMS library converts BER to DER
+// before it decodes. The checks of this file cover the difference, each
+// before a decoder reads what it checks:
 //
-// It does not read what a value means: the two rules of DER that need the
-// schema, a DEFAULT value left out and the elements of a SET OF in order, are
-// not checked here. Nor are the contents of an OCTET STRING or a BIT STRING
-// (a TSTInfo, an extension's value, a key), which are encodings of their own,
-// read by the step that needs them.
+//   - isDER: the whole response is DER (X.690 §10, §11), every element of it;
+//   - tokenShape: each CMS structure step 1 reads has its members, in order,
+//     and nothing else (RFC 3161 §2.4.2, RFC 5652 §5).
+//
+// None of them reads what a value means. A SIZE constraint is not checked
+// here, nor are the two rules of DER that need the schema: a DEFAULT value
+// left out, and the elements of a SET OF in order. Nor are the contents of an
+// OCTET STRING or a BIT STRING (a TSTInfo, an extension's value, a key),
+// which are encodings of their own, read by the step that needs them.
 
 // element is one DER element: its class, tag number and form, its whole
 // encoding and its contents.
@@ -85,6 +90,20 @@ func readElement(b []byte) (element, []byte, bool) {
 	}
 	e.full, e.body = b[:i+n], b[i:i+n]
 	return e, b[i+n:], true
+}
+
+// elementsOf splits the contents of a constructed element into its elements.
+func elementsOf(body []byte) ([]element, bool) {
+	var out []element
+	for len(body) > 0 {
+		e, rest, ok := readElement(body)
+		if !ok {
+			return nil, false
+		}
+		out = append(out, e)
+		body = rest
+	}
+	return out, true
 }
 
 // Universal tag numbers encoding/asn1 does not name: EXTERNAL, EMBEDDED PDV,
@@ -186,6 +205,162 @@ func isDER(b []byte) bool {
 		stack[top] = rest
 		if e.compound {
 			stack = append(stack, e.body)
+		}
+	}
+	return true
+}
+
+func is(e element, class, tag int, compound bool) bool {
+	return e.class == class && e.tag == tag && e.compound == compound
+}
+
+func isSequence(e element) bool { return is(e, asn1.ClassUniversal, asn1.TagSequence, true) }
+
+func isSet(e element) bool { return is(e, asn1.ClassUniversal, asn1.TagSet, true) }
+
+func isPrimitive(e element, tag int) bool { return is(e, asn1.ClassUniversal, tag, false) }
+
+func isContext(e element, tag int, compound bool) bool {
+	return is(e, asn1.ClassContextSpecific, tag, compound)
+}
+
+// members returns the elements of a SEQUENCE or SET.
+func members(e element) ([]element, bool) {
+	if !isSequence(e) && !isSet(e) && !isContext(e, e.tag, true) {
+		return nil, false
+	}
+	return elementsOf(e.body)
+}
+
+// algorithmIdentifier reports whether e is an AlgorithmIdentifier: an
+// OBJECT IDENTIFIER and at most one parameters element (RFC 5280 §4.1.1.2,
+// RFC 5652 §10.1).
+func algorithmIdentifier(e element) bool {
+	m, ok := members(e)
+	return ok && isSequence(e) && (len(m) == 1 || len(m) == 2) && isPrimitive(m[0], asn1.TagOID)
+}
+
+// tokenShape reports whether the structures of a TimeStampResp (one DER
+// element) that step 1 reads have the members RFC 3161 §2.4.2 and RFC 5652
+// §5 give them, in order, and nothing else:
+//
+//   - TimeStampResp: status and timeStampToken;
+//   - ContentInfo: contentType, and content [0] holding one element;
+//   - SignedData: version, digestAlgorithms (a SET of AlgorithmIdentifier),
+//     encapContentInfo, certificates [0] and crls [1] when present, and
+//     signerInfos (a SET);
+//   - EncapsulatedContentInfo: eContentType, and eContent [0] holding one
+//     OCTET STRING;
+//   - each SignerInfo: version, sid (an IssuerAndSerialNumber, or a
+//     subjectKeyIdentifier [0]), digestAlgorithm, signedAttrs [0] when
+//     present, signatureAlgorithm, signature (an OCTET STRING), and
+//     unsignedAttrs [1] when present;
+//   - each signed and unsigned attribute: an OBJECT IDENTIFIER and a SET.
+//
+// The elements of certificates are left to parseCertificate.
+func tokenShape(der []byte) bool {
+	resp, _, ok := readElement(der)
+	if !ok {
+		return false
+	}
+	m, ok := members(resp)
+	if !ok || !isSequence(resp) || len(m) != 2 || !isSequence(m[0]) || !isSequence(m[1]) {
+		return false
+	}
+	ci, ok := members(m[1])
+	if !ok || len(ci) != 2 || !isPrimitive(ci[0], asn1.TagOID) || !isContext(ci[1], 0, true) {
+		return false
+	}
+	content, ok := members(ci[1])
+	if !ok || len(content) != 1 || !isSequence(content[0]) {
+		return false
+	}
+	sd, ok := members(content[0])
+	if !ok || len(sd) < 4 || !isPrimitive(sd[0], asn1.TagInteger) || !isSet(sd[1]) || !isSequence(sd[2]) {
+		return false
+	}
+	algs, ok := members(sd[1])
+	if !ok {
+		return false
+	}
+	for _, a := range algs {
+		if !algorithmIdentifier(a) {
+			return false
+		}
+	}
+	encap, ok := members(sd[2])
+	if !ok || len(encap) != 2 || !isPrimitive(encap[0], asn1.TagOID) || !isContext(encap[1], 0, true) {
+		return false
+	}
+	if e, ok := members(encap[1]); !ok || len(e) != 1 || !isPrimitive(e[0], asn1.TagOctetString) {
+		return false
+	}
+	i := 3
+	if i < len(sd) && isContext(sd[i], 0, true) {
+		i++
+	}
+	if i < len(sd) && isContext(sd[i], 1, true) {
+		i++
+	}
+	if i != len(sd)-1 || !isSet(sd[i]) {
+		return false
+	}
+	infos, ok := members(sd[i])
+	if !ok {
+		return false
+	}
+	for _, si := range infos {
+		if !signerInfoShape(si) {
+			return false
+		}
+	}
+	return true
+}
+
+func signerInfoShape(e element) bool {
+	m, ok := members(e)
+	if !ok || !isSequence(e) || len(m) < 5 || !isPrimitive(m[0], asn1.TagInteger) || !algorithmIdentifier(m[2]) {
+		return false
+	}
+	if isSequence(m[1]) {
+		ias, ok := members(m[1])
+		if !ok || len(ias) != 2 || !isSequence(ias[0]) || !isPrimitive(ias[1], asn1.TagInteger) {
+			return false
+		}
+	} else if !isContext(m[1], 0, false) {
+		return false
+	}
+	i := 3
+	if isContext(m[i], 0, true) {
+		if !attributesShape(m[i]) {
+			return false
+		}
+		i++
+	}
+	if i+1 >= len(m) || !algorithmIdentifier(m[i]) || !isPrimitive(m[i+1], asn1.TagOctetString) {
+		return false
+	}
+	i += 2
+	if i < len(m) && isContext(m[i], 1, true) {
+		if !attributesShape(m[i]) {
+			return false
+		}
+		i++
+	}
+	return i == len(m)
+}
+
+// attributesShape reports whether each element of signedAttrs or
+// unsignedAttrs is an Attribute: an OBJECT IDENTIFIER and a SET of values.
+func attributesShape(e element) bool {
+	attrs, ok := members(e)
+	if !ok {
+		return false
+	}
+	for _, a := range attrs {
+		m, ok := members(a)
+		if !ok || !isSequence(a) || len(m) != 2 || !isPrimitive(m[0], asn1.TagOID) || !isSet(m[1]) {
+			return false
 		}
 	}
 	return true

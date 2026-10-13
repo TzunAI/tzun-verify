@@ -205,9 +205,10 @@ func attributeOf(t *testing.T, attrs *node, oid asn1.ObjectIdentifier) *node {
 }
 
 // TestStepOneStrictness: §10.5 step 1 reads the token as the DER of a
-// TimeStampResp. Every element of the response is DER, wherever it sits. A
-// token with one that is not is malformed at step 1, before a later step
-// looks at it, and whether or not the signature covers the element.
+// TimeStampResp that is a CMS SignedData. Every element of the response is
+// DER, wherever it sits; each CMS structure has its members and nothing else.
+// A token that breaks either is malformed at step 1, before a later step looks
+// at it, and whether or not the signature covers the element.
 func TestStepOneStrictness(t *testing.T) {
 	root := testpki.Root("Root")
 	signer := testpki.TSASigner("TSA", root)
@@ -257,6 +258,8 @@ func TestStepOneStrictness(t *testing.T) {
 		{"an indefinite length inside attrValues", "300c 0603 2a0304 3180 040141 0000", mf},
 		{"a NULL with content inside attrValues", "300a 0603 2a0304 3103 050100", mf},
 		{"a non-minimal length on the attribute's SEQUENCE", "30810a 0603 2a0304 3103 040141", mf},
+		{"attrValues a SEQUENCE", "300a 0603 2a0304 3003 040141", mf},
+		{"a member after attrValues", "300c 0603 2a0304 3103 040141 0500", mf},
 	} {
 		verify("unsigned attribute: "+c.name, unsigned(good, c.attr), c.w)
 	}
@@ -274,7 +277,9 @@ func TestStepOneStrictness(t *testing.T) {
 		edit(attributeOf(t, si.kids[3], oid))
 		return encode(resp)
 	}
+	verify("message-digest attrValues a SEQUENCE", signed(oidMessageDigest, func(a *node) { a.kids[1].tag = asn1.TagSequence }), mf)
 	verify("message-digest value a NULL with content", signed(oidMessageDigest, func(a *node) { a.at(1, 0).tag = asn1.TagNull }), mf)
+	verify("content-type with a member after attrValues", signed(oidContentType, func(a *node) { a.add(null()) }), mf)
 	// SigningCertificateV2 { certs { ESSCertIDv2 { certHash, issuerSerial { issuer, serialNumber } } } }
 	certID := func(a *node) *node { return a.at(1, 0, 0, 0) }
 	verify("certHash a NULL with content", signed(oidSigningCertV2, func(a *node) { certID(a).kids[0].tag = asn1.TagNull }), mf)
@@ -288,6 +293,29 @@ func TestStepOneStrictness(t *testing.T) {
 		s := certID(a).at(1, 1)
 		s.tag, s.body = asn1.TagBitString, []byte{0x00, 0x01}
 	}), vf)
+
+	// The members of each CMS structure, and nothing after them.
+	cms := func(edit func(resp, sd, si *node)) string {
+		resp, sd, si := tokenParts(t, good)
+		edit(resp, sd, si)
+		return encode(resp)
+	}
+	twoMore := func(n *node) { n.add(null(), null()) } // an AlgorithmIdentifier's third and fourth members
+	for name, edit := range map[string]func(resp, sd, si *node){
+		"TimeStampResp, a member after timeStampToken":        func(resp, _, _ *node) { resp.add(null()) },
+		"ContentInfo, a member after content":                 func(resp, _, _ *node) { resp.at(1).add(null()) },
+		"SignedData, a member after signerInfos":              func(_, sd, _ *node) { sd.add(null()) },
+		"digestAlgorithms, an AlgorithmIdentifier of three":   func(_, sd, _ *node) { twoMore(sd.at(1, 0)) },
+		"EncapsulatedContentInfo, a member after eContent":    func(_, sd, _ *node) { sd.at(2).add(null()) },
+		"SignerInfo, a member after signature":                func(_, _, si *node) { si.add(null()) },
+		"sid, a member after serialNumber":                    func(_, _, si *node) { si.at(1).add(null()) },
+		"SignerInfo, a digestAlgorithm of three members":      func(_, _, si *node) { twoMore(si.at(2)) },
+		"SignerInfo, a signatureAlgorithm of three members":   func(_, _, si *node) { twoMore(si.at(4)) },
+		"SignerInfo, a SEQUENCE where unsignedAttrs [1] sits": func(_, _, si *node) { si.add(&node{tag: asn1.TagSequence, compound: true}) },
+		"SignerInfo, signedAttrs [0] holding a non-attribute": func(_, _, si *node) { si.at(3).add(null()) },
+	} {
+		verify(name, cms(edit), mf)
+	}
 
 	// The signer's key: a BOOLEAN of length 6 is not DER, whatever the
 	// algorithm.
@@ -322,4 +350,5 @@ func TestStepOneStrictness(t *testing.T) {
 	ski := build(testpki.TokenOptions{Signer: skiSigner, SKISid: true})
 	verify("signer named by subjectKeyIdentifier", ski, tokenMissing)
 	verify("signer named by subjectKeyIdentifier, an unsigned attribute not DER", unsigned(ski, "300a 0603 2a0304 3103 050100"), mf)
+	verify("signer named by subjectKeyIdentifier, attrValues a SEQUENCE", unsigned(ski, "300a 0603 2a0304 3003 040141"), mf)
 }

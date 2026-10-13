@@ -7,12 +7,12 @@
 //
 // The steps run in order and the first that does not hold decides:
 //
-//  1. parse: the DER of a granted TimeStampResp, every element of it DER
-//     (der.go), that wraps a CMS SignedData over a TSTInfo; the SignedData
-//     has a single SignerInfo, and the token itself holds that signer's
-//     certificate (malformed_publication). A certificate whose key uses an
-//     algorithm or curve this build does not implement is read with its key
-//     left unread;
+//  1. parse: the DER of a granted TimeStampResp, every element of it DER,
+//     that wraps a CMS SignedData over a TSTInfo, each structure with its
+//     members and nothing else (der.go); the SignedData has a single
+//     SignerInfo, and the token itself holds that signer's certificate
+//     (malformed_publication). A certificate whose key uses an algorithm or
+//     curve this build does not implement is read with its key left unread;
 //  2. imprint: SHA-256 and P (imprint_mismatch);
 //  3. signature and signer: the stock digitorus/timestamp and
 //     digitorus/pkcs7 libraries verify the CMS signature; the signed
@@ -158,9 +158,11 @@ type signerInfo struct {
 	UnsignedAttrs      asn1.RawValue `asn1:"optional,tag:1"`
 }
 
+// attribute is one signed or unsigned attribute. encoding/asn1 does not
+// check the tag of a RawValue: tokenShape has checked that Values is a SET.
 type attribute struct {
 	Type   asn1.ObjectIdentifier
-	Values asn1.RawValue `asn1:"set"`
+	Values asn1.RawValue
 }
 
 type messageImprint struct {
@@ -423,7 +425,7 @@ func parse(s string) (*token, string) {
 
 func parseToken(s string) (*token, bool, string) {
 	der, ok := strictBase64(s)
-	if !ok || !isDER(der) {
+	if !ok || !isDER(der) || !tokenShape(der) {
 		return nil, false, ""
 	}
 	t, ok := parseStrict(der)
@@ -474,7 +476,7 @@ func skiSigner(der []byte) bool {
 	return false
 }
 
-// parseStrict decodes a token that isDER has checked.
+// parseStrict decodes a token that isDER and tokenShape have checked.
 func parseStrict(der []byte) (*token, bool) {
 	var resp timeStampResp
 	rest, err := asn1.Unmarshal(der, &resp)
