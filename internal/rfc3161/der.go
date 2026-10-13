@@ -13,8 +13,10 @@ import "encoding/asn1"
 // cover the difference, each before a decoder reads what it checks:
 //
 //   - isDER: the whole response is DER (X.690 §10, §11), every element of it;
-//   - tokenShape: each CMS structure step 1 reads has its members, in order,
-//     and nothing else (RFC 3161 §2.4.2, RFC 5652 §5);
+//   - tokenShape: the TimeStampResp, ContentInfo, SignedData,
+//     EncapsulatedContentInfo and SignerInfo, and the AlgorithmIdentifiers
+//     and attributes the last two hold, have their members, in order, and
+//     nothing else (RFC 3161 §2.4.2, RFC 5652 §5);
 //   - certificateShape: each carried certificate has the members of RFC 5280
 //     §4.1, in order, and nothing else.
 //
@@ -22,7 +24,9 @@ import "encoding/asn1"
 // here, nor are the two rules of DER that need the schema: a DEFAULT value
 // left out, and the elements of a SET OF in order. Nor are the contents of an
 // OCTET STRING or a BIT STRING (a TSTInfo, an extension's value, a key),
-// which are encodings of their own, read by the step that needs them.
+// which are encodings of their own, read by the step that needs them, nor
+// the members of the PKIStatusInfo, of an attribute's values or of a CRL,
+// which only their decoders read.
 
 // element is one DER element: its class, tag number and form, its whole
 // encoding and its contents.
@@ -243,9 +247,9 @@ func algorithmIdentifier(e element) bool {
 	return ok && isSequence(e) && (len(m) == 1 || len(m) == 2) && isPrimitive(m[0], asn1.TagOID)
 }
 
-// tokenShape reports whether the structures of a TimeStampResp (one DER
-// element) that step 1 reads have the members RFC 3161 §2.4.2 and RFC 5652
-// §5 give them, in order, and nothing else:
+// tokenShape reports whether these structures of a TimeStampResp (one DER
+// element) have the members RFC 3161 §2.4.2 and RFC 5652 §5 give them, in
+// order, and nothing else:
 //
 //   - TimeStampResp: status and timeStampToken;
 //   - ContentInfo: contentType, and content [0] holding one element;

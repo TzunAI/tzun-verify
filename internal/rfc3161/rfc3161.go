@@ -8,8 +8,12 @@
 // The steps run in order and the first that does not hold decides:
 //
 //  1. parse: the DER of a granted TimeStampResp, every element of it DER,
-//     that wraps a CMS SignedData over a TSTInfo, each structure with its
-//     members and nothing else (der.go); the SignedData has a single
+//     that wraps a CMS SignedData over a TSTInfo; the TimeStampResp,
+//     ContentInfo, SignedData, EncapsulatedContentInfo and SignerInfo, and
+//     the AlgorithmIdentifiers and attributes the last two hold, have their
+//     members and nothing else (der.go), while inside the PKIStatusInfo, an
+//     attribute's values, a CRL and the TSTInfo, members are checked only
+//     as far as their decoders read them; the SignedData has a single
 //     SignerInfo, and the token itself holds that signer's certificate;
 //     every certificate it carries has the members of an RFC 5280
 //     certificate and decodes (malformed_publication). A certificate whose
