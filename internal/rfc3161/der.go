@@ -119,25 +119,27 @@ func elementsOf(body []byte) ([]element, bool) {
 }
 
 // Universal tag numbers encoding/asn1 does not name: EXTERNAL, EMBEDDED PDV,
-// RELATIVE-OID, the one X.680 reserves, and the last it assigns
-// (RELATIVE-OID-IRI).
+// RELATIVE-OID, the one X.680 reserves, the unrestricted CHARACTER STRING,
+// and the last it assigns (RELATIVE-OID-IRI).
 const (
-	tagExternal      = 8
-	tagEmbeddedPDV   = 11
-	tagRelativeOID   = 13
-	tagReserved      = 15
-	tagLastUniversal = 36
+	tagExternal        = 8
+	tagEmbeddedPDV     = 11
+	tagRelativeOID     = 13
+	tagReserved        = 15
+	tagCharacterString = 29
+	tagLastUniversal   = 36
 )
 
 // contentsOK checks a universal element by the rules of DER that need no
-// schema: the form X.690 gives its type (constructed for SEQUENCE, SET,
-// EXTERNAL and EMBEDDED PDV, primitive for every other type, strings
-// included), and the contents of a BOOLEAN (00 or FF), an INTEGER or
-// ENUMERATED (in the fewest octets), a BIT STRING (its unused bits zero), a
-// NULL (empty), an OBJECT IDENTIFIER or RELATIVE-OID (each subidentifier in
-// the fewest octets), a UTCTime (YYMMDDhhmmssZ) and a GeneralizedTime
-// (YYYYMMDDhhmmss, a fraction without trailing zeros, Z). An element of
-// another class is the schema's, and is not read here.
+// schema: the form X.690 gives its type (constructed for SEQUENCE and SET,
+// and for the types it encodes as a SEQUENCE: EXTERNAL, EMBEDDED PDV and the
+// unrestricted CHARACTER STRING; primitive for every other type, the
+// restricted character strings included), and the contents of a BOOLEAN (00
+// or FF), an INTEGER or ENUMERATED (in the fewest octets), a BIT STRING (its
+// unused bits zero), a NULL (empty), an OBJECT IDENTIFIER or RELATIVE-OID
+// (each subidentifier in the fewest octets), a UTCTime (YYMMDDhhmmssZ) and a
+// GeneralizedTime (YYYYMMDDhhmmss, a fraction without trailing zeros, Z). An
+// element of another class is the schema's, and is not read here.
 func contentsOK(e element) bool {
 	if e.class != asn1.ClassUniversal {
 		return true
@@ -145,7 +147,7 @@ func contentsOK(e element) bool {
 	switch e.tag {
 	case 0:
 		return false // end-of-contents, which only the indefinite form uses
-	case asn1.TagSequence, asn1.TagSet, tagExternal, tagEmbeddedPDV:
+	case asn1.TagSequence, asn1.TagSet, tagExternal, tagEmbeddedPDV, tagCharacterString:
 		return e.compound
 	}
 	if e.tag == tagReserved || e.tag > tagLastUniversal {

@@ -55,6 +55,8 @@ func TestIsDER(t *testing.T) {
 		{"a primitive EXTERNAL", "0800", false},
 		{"a constructed EMBEDDED PDV", "2b00", true},
 		{"a primitive EMBEDDED PDV", "0b00", false},
+		{"a constructed CHARACTER STRING", "3d00", true},
+		{"a primitive CHARACTER STRING", "1d00", false},
 		{"a tag below 31 in the high-tag-number form", "9f1e00", false},
 		{"a high tag number with a leading zero group", "9f801f00", false},
 		{"context tag 31", "9f1f00", true},
