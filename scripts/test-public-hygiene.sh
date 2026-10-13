@@ -32,6 +32,11 @@ root=root
 req=REQ
 w=widgets
 ref="${w}#9"
+# The line Dependabot signs off its commits with, GitHub's support address
+# on its own, and Dependabot as a commit's author.
+signoff="Signed-off-by: dependabot[bot] <support@""github.com>"
+support="support@""github.com"
+dependabot='dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>'
 
 check_text() { # check_text <text>: the guard's text mode on <text>; sets out and rc
   rc=0
@@ -85,7 +90,10 @@ catches email "ask someone@""widgets.io"
 catches email "Signed-off-by: A Person <a.person@""gmail.com>"
 catches email "mail x@""notexample.com"
 catches email "write to admin@$tz"
-catches email "Signed-off-by: dependabot[bot] <support@""github.com>"
+# Dependabot's sign-off is refused in text mode, which the commit hook and
+# the pull request check use; only commits mode allows it (below).
+catches email "$signoff"
+catches email "write to $support"
 catches email "write to xconduct@$tz"
 catches email "write to conduct@$tz.widgets.io"
 catches email "write to conduct@""widgets.io"
@@ -119,6 +127,11 @@ passes "session_signoff_not_expected and statementDigest"
 passes "mktemp -d; /usr/bin/env; ./tmp/x; golang.org/x/mod@v0.41.0; /var/lib"
 passes "a private key signs; the repository keeps it out"
 passes "the first line"$'\n'"and the second line"
+# What Dependabot writes in a pull request: the upstream project's issues as
+# owner/name#N or a bare #N, the compatibility score badge, its commands.
+passes "in <a href=\"https://redirect.github.com/actions/checkout/pull/2311\">actions/checkout#2311</a> (<a href=\"https://redirect.github.com/golang/sys/issues/77\">#77</a>)"
+passes "[![Dependabot compatibility score](https://dependabot-badges.githubapp.com/badges/compatibility_score?dependency-name=golang.org/x/sys&package-manager=go_modules&previous-version=0.47.0&new-version=0.48.0)](https://docs.github.com/en/github/managing-security-vulnerabilities/about-dependabot-security-updates#about-compatibility-scores)"
+passes "- \`@dependabot rebase\` will rebase this PR"
 
 # The three modes and the hook, in a scratch repository holding the guard,
 # the hook and this file.
@@ -157,6 +170,43 @@ g add leak.txt
 expect 1 "tree mode, a tracked file with a local path" "$repo/scripts/check-public-hygiene.sh" tree
 rm "$repo/leak.txt"
 g rm -q --cached leak.txt
+# Tree mode allows Dependabot's sign-off line nowhere.
+printf '%s\n' "$signoff" > "$repo/signoff.txt"
+g add signoff.txt
+expect 1 "tree mode, Dependabot's sign-off in a tracked file" "$repo/scripts/check-public-hygiene.sh" tree
+rm "$repo/signoff.txt"
+g rm -q --cached signoff.txt
+
+# Dependabot's sign-off line, in commits mode: allowed, exactly, in a commit
+# Dependabot authored, and refused anywhere else.
+bot_body="Bumps [golang.org/x/sys](https://github.com/golang/sys) from 0.47.0 to 0.48.0.
+- [Commits](https://github.com/golang/sys/compare/v0.47.0...v0.48.0)
+
+---
+updated-dependencies:
+- dependency-name: golang.org/x/sys
+  dependency-version: 0.48.0
+  dependency-type: indirect
+  update-type: version-update:semver-minor
+..."
+commit_as() { # commit_as <author> <body> <sign-off line>: an empty commit; prints its id
+  g commit -q --allow-empty --author="$1" -m "Dependencies: Bump golang.org/x/sys from 0.47.0 to 0.48.0" -m "$2" -m "$3"
+  g rev-parse HEAD
+}
+c="$(commit_as "$dependabot" "$bot_body" "$signoff")"
+expect 0 "commits mode, Dependabot's sign-off in a commit Dependabot authored" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
+c="$(commit_as "test <test@example.com>" "$bot_body" "$signoff")"
+expect 1 "commits mode, Dependabot's sign-off in a commit someone else authored" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
+c="$(commit_as "dependabot[bot] <test@example.com>" "$bot_body" "$signoff")"
+expect 1 "commits mode, Dependabot's sign-off with Dependabot's name but another address" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
+c="$(commit_as "someone <49699333+dependabot[bot]@users.noreply.github.com>" "$bot_body" "$signoff")"
+expect 1 "commits mode, Dependabot's sign-off with Dependabot's address but another name" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
+c="$(commit_as "$dependabot" "Questions go to $support." "$signoff")"
+expect 1 "commits mode, GitHub's support address outside the sign-off, Dependabot the author" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
+c="$(commit_as "$dependabot" "$bot_body" "$signoff and more")"
+expect 1 "commits mode, the sign-off line with more text, Dependabot the author" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
+c="$(commit_as "$dependabot" "As discussed in ${w}#4." "$signoff")"
+expect 1 "commits mode, a cross-reference beside the sign-off, Dependabot the author" "$repo/scripts/check-public-hygiene.sh" commits "$c^!"
 
 msg="$work/COMMIT_EDITMSG"
 # A comment line is checked too: git keeps comment lines in a message made
@@ -167,6 +217,8 @@ printf 'Fix the parser\n\nSee %s.\n' "$ref" > "$msg"
 expect 1 "hook, a leak in the body" bash -c 'cd "$1" && .githooks/commit-msg "$2"' _ "$repo" "$msg"
 printf 'Fix the parser\n# ------------------------ >8 ------------------------\ndiff: %s\n' "$ref" > "$msg"
 expect 0 "hook, a leak below the scissors line" bash -c 'cd "$1" && .githooks/commit-msg "$2"' _ "$repo" "$msg"
+printf 'Dependencies: Bump golang.org/x/sys\n\n%s\n' "$signoff" > "$msg"
+expect 1 "hook, Dependabot's sign-off" bash -c 'cd "$1" && .githooks/commit-msg "$2"' _ "$repo" "$msg"
 
 if [[ "$fail" -ne 0 ]]; then
   echo "public hygiene self-tests: FAIL"

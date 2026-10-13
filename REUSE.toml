@@ -1,8 +1,8 @@
 # Copyright and licence of the files that cannot carry, or do not carry, a
 # notice of their own (https://reuse.software/). Each Go file names its
 # licence in its first line and takes its copyright from here; the scripts,
-# the commit hook, the workflows, the issue forms and CITATION.cff carry both
-# in their own header comment.
+# the commit hook, the workflows, the Dependabot configuration, the issue
+# forms and CITATION.cff carry both in their own header comment.
 # Every other file is listed below by path, so a file added later is
 # covered only once it is listed or carries its own notice. The licence
 # texts (LICENSE, LICENSES/ and third_party/LICENSE-THIRD-PARTY) are not

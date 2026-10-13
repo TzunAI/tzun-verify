@@ -79,6 +79,14 @@ workflow on a pull request from a fork waits for a maintainer to approve the
 run. A pull request merges once both required checks pass: the CI check and
 public hygiene.
 
+Dependabot opens the dependency updates (`.github/dependabot.yml`): each
+week, one pull request with the minor and patch updates of the Go modules,
+one with those of the actions the workflows use, and one for each major
+update. They pass the same checks as any other pull request. One that
+changes the version of a module a release binary links fails the
+third-party licence check until `scripts/third-party-licenses.sh` is run on
+its branch and the result committed there.
+
 ## Licence of contributions
 
 Under GitHub's Terms of Service, a contribution to this repository is made
