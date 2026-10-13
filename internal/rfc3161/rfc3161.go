@@ -7,8 +7,11 @@
 //
 // The steps run in order and the first that does not hold decides:
 //
-//  1. parse: the DER of a granted TimeStampResp, every element of it DER,
-//     that wraps a CMS SignedData over a TSTInfo; the TimeStampResp,
+//  1. parse: the DER of a granted TimeStampResp that wraps a CMS SignedData
+//     over a TSTInfo, every element of the response DER by the rules of
+//     X.690 that need no schema (the order of a SET OF's elements, the
+//     omission of a DEFAULT value and the removal of trailing zero bits
+//     from a named bit list are not checked); the TimeStampResp,
 //     ContentInfo, SignedData, EncapsulatedContentInfo and SignerInfo, and
 //     the AlgorithmIdentifiers and attributes the SignedData and SignerInfo
 //     hold, have their members and nothing else (der.go), while inside the

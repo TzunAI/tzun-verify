@@ -12,7 +12,8 @@ import "encoding/asn1"
 // library converts BER to DER before it decodes. The checks of this file
 // cover the difference, each before a decoder reads what it checks:
 //
-//   - isDER: the whole response is DER (X.690 §10, §11), every element of it;
+//   - isDER: every element of the response is DER by the rules of X.690
+//     (§10, §11) that need no schema;
 //   - tokenShape: the TimeStampResp, ContentInfo, SignedData,
 //     EncapsulatedContentInfo and SignerInfo, and the AlgorithmIdentifiers
 //     and attributes the SignedData and SignerInfo hold, have their members,
@@ -21,8 +22,12 @@ import "encoding/asn1"
 //     §4.1, in order, and nothing else.
 //
 // None of them reads what a value means. A SIZE constraint is not checked
-// here, nor are the two rules of DER that need the schema: a DEFAULT value
-// left out, and the elements of a SET OF in order. Nor are the contents of an
+// here, nor are the rules of DER that need the schema, among them the order
+// of a SET OF's elements (X.690 §11.6), the omission of a DEFAULT value
+// (§11.5) and the removal of trailing zero bits from a named bit list
+// (§11.2.2), such as a PKIStatusInfo's failInfo. TSAs often send the
+// certificates of a SignedData out of DER order (testdata/sectigo.tsr is
+// one), and a token is not refused for it. Nor are the contents of an
 // OCTET STRING or a BIT STRING (a TSTInfo, an extension's value, a key),
 // which are encodings of their own, read by the step that needs them, nor
 // the members of the PKIStatusInfo, of an attribute's values or of a CRL,
