@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+name: Scorecard
+
+# OpenSSF Scorecard's supply-chain checks on main: on every push, once a
+# week, and whenever a branch protection rule changes. The results go to
+# code scanning (the Security tab), to the run as a SARIF file that anyone
+# signed in to GitHub can download for five days, and to the Scorecard API,
+# which serves the README badge. The API accepts results only from a
+# workflow that keeps to its rules
+# (https://github.com/ossf/scorecard-action#workflow-restrictions): no env
+# or defaults at either level, no write permission at the top, id-token:
+# write on this job alone, a GitHub-hosted Ubuntu runner, and no step but
+# the actions below. The job holds its own GITHUB_TOKEN and no other
+# secret, so the Branch-Protection check sees only what that token can read.
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Saturdays at 01:30 UTC.
+    - cron: '30 1 * * 6'
+  branch_protection_rule:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # Uploading the results to code scanning.
+      security-events: write
+      # The OIDC token that publishing the results to the Scorecard API needs.
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Keep the results with the run
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SARIF file
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload the results to code scanning
+        uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          sarif_file: results.sarif
