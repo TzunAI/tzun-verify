@@ -196,6 +196,7 @@ M = [
     ("internal/rfc3161/der.go", "if !ok || !isSequence(resp) || len(m) != 2 ||", "if !ok || !isSequence(resp) ||", "TimeStampResp: status and timeStampToken, nothing else"),
     ("internal/rfc3161/der.go", "if !ok || len(ci) != 2 ||", "if !ok ||", "ContentInfo: contentType and content, nothing else"),
     ("internal/rfc3161/der.go", "\tif i != len(sd)-1 || !isSet(sd[i]) {", "\tif !isSet(sd[i]) {", "SignedData: nothing after signerInfos"),
+    ("internal/rfc3161/der.go", "\tif i < len(sd) && isContext(sd[i], 1, true) {", "\tif false {", "SignedData: crls [1] after certificates"),
     ("internal/rfc3161/der.go", "if !ok || len(encap) != 2 ||", "if !ok || len(encap) < 2 ||", "EncapsulatedContentInfo: nothing after eContent"),
     ("internal/rfc3161/der.go", "\t\tif !algorithmIdentifier(a) {\n\t\t\treturn false", "\t\tif !algorithmIdentifier(a) && false {\n\t\t\treturn false", "digestAlgorithms: each an AlgorithmIdentifier"),
     ("internal/rfc3161/der.go", "return ok && isSequence(e) && (len(m) == 1 || len(m) == 2) &&", "return ok && isSequence(e) && len(m) >= 1 &&", "an AlgorithmIdentifier: at most one parameters element"),

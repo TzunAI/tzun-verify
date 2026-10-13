@@ -9,6 +9,7 @@ import (
 	"encoding/asn1"
 	"encoding/base64"
 	"encoding/hex"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -330,6 +331,19 @@ func TestStepOneStrictness(t *testing.T) {
 	} {
 		verify(name, cms(edit), mf)
 	}
+	// crls [1] sits after certificates [0] and before signerInfos. The
+	// signature does not cover it.
+	crls := func(at int, h string) string {
+		return cms(func(_, sd, _ *node) {
+			if len(sd.kids) != 5 || !(sd.kids[3].class == asn1.ClassContextSpecific && sd.kids[3].tag == 0) {
+				t.Fatal("the SignedData is not version, digestAlgorithms, encapContentInfo, certificates, signerInfos")
+			}
+			sd.kids = slices.Insert(sd.kids, at, raw(t, h))
+		})
+	}
+	verify("SignedData, an empty crls [1] after certificates", crls(4, "a100"), okw)
+	verify("SignedData, an empty crls [1] before certificates", crls(3, "a100"), mf)
+	verify("SignedData, a primitive crls [1] after certificates", crls(4, "8100"), mf)
 
 	// The certificates, each an RFC 5280 certificate. The signer's key: a
 	// BOOLEAN of length 6 is not DER, whatever the algorithm, and an
