@@ -132,30 +132,39 @@ const (
 	chainZeroType1 = "01df808001809409000000000000000000000000000000000000008080c0010507"
 )
 
-// refSender is go-ethereum's reading of a raw transaction: its own decoder,
-// and its latest signer for the chain id the transaction signs, or for
-// chain 1 when it signs none. go-ethereum is the library decodeTx is built
-// on, so this holds decodeTx to the library's reading, not to a second
-// implementation. go-ethereum builds no signer for chain id 0, so only its
-// EIP-155 signer reads a legacy transaction that signs it, and a typed
-// transaction that signs it has no sender here, as in decodeTx. Other
-// libraries read these differently (ethers v6 recovers a sender for a
-// typed transaction that signs chain id 0); which reading item 2 takes is
-// the follow-up issue on sender recovery.
+// refSender is the reading item 2 of Anchor §10.4 gives a raw transaction,
+// stated apart from decodeTx and txRulesOK. go-ethereum decodes it; a
+// transaction that signs a chain id signs 1 or more, which refuses a typed
+// transaction that signs chain id 0 and a legacy one with v 35 or 36; a
+// type 2 maxPriorityFeePerGas is at most its maxFeePerGas; the recovery id v
+// gives (v - 27, v - chainId*2 - 35, or a typed transaction's yParity) is 0
+// or 1, and r and s pass go-ethereum's own test of their range and of a low
+// s (crypto.ValidateSignatureValues). The sender is then what go-ethereum's
+// latest signer recovers, for the chain id signed, or for chain 1 when none
+// is. go-ethereum alone recovers a sender from a legacy transaction that
+// signs chain id 0 and from a type 2 transaction whose tip exceeds its cap.
 func refSender(raw []byte) (common.Address, error) {
 	tx := new(types.Transaction)
 	if err := tx.UnmarshalBinary(raw); err != nil {
 		return common.Address{}, err
 	}
+	v, r, s := tx.RawSignatureValues()
 	id := tx.ChainId()
+	recID := new(big.Int).Set(v)
 	switch {
 	case tx.Type() == types.LegacyTxType && !tx.Protected():
 		id = big.NewInt(1)
-	case id.Sign() > 0:
+		recID.Sub(v, big.NewInt(27))
+	case id.Sign() <= 0:
+		return common.Address{}, errors.New("signs chain id 0")
 	case tx.Type() == types.LegacyTxType:
-		return types.Sender(types.NewEIP155Signer(id), tx)
-	default:
-		return common.Address{}, errors.New("no signer for chain id 0")
+		recID.Sub(v, new(big.Int).Add(new(big.Int).Lsh(id, 1), big.NewInt(35)))
+	}
+	if tx.Type() == types.DynamicFeeTxType && tx.GasTipCap().Cmp(tx.GasFeeCap()) > 0 {
+		return common.Address{}, errors.New("maxPriorityFeePerGas above maxFeePerGas")
+	}
+	if !recID.IsUint64() || recID.Uint64() > 1 || !crypto.ValidateSignatureValues(byte(recID.Uint64()), r, s, true) {
+		return common.Address{}, errors.New("signature values")
 	}
 	return types.Sender(types.LatestSignerForChainID(id), tx)
 }
@@ -164,13 +173,10 @@ func refSender(raw []byte) (common.Address, error) {
 // refused as malformed or unsupported, or it decodes to a transaction of
 // type 0, 1 or 2 whose encoding is the raw bytes and whose hash, the id
 // the chain knows it by, is keccak256 of them, which is the transactionId
-// the verifier reports and compares (item 3). TxID agrees. For the rest it
-// is held to go-ethereum, the library it is built on (refSender): a
-// transaction go-ethereum decodes and recovers a sender from, with its
-// latest signer, decodes to that sender, and one it cannot is refused.
-// go-ethereum builds no signer for chain id 0, so a typed transaction that
-// signs it is refused, though its signature may recover a key; the
-// follow-up issue on sender recovery asks which reading item 2 takes.
+// the verifier reports and compares (item 3). TxID agrees. A transaction of
+// type 0, 1 or 2 yields a sender exactly when refSender, the rules of item 2
+// stated a second way over go-ethereum, recovers one, and it is the same
+// sender.
 //
 // go test runs the seeds; go test -run='^$' -fuzz=FuzzDecodeTx fuzzes.
 func FuzzDecodeTx(f *testing.F) {
@@ -181,11 +187,13 @@ func FuzzDecodeTx(f *testing.F) {
 	for _, raw := range seedTxs(f) {
 		f.Add(raw)
 	}
-	for _, b := range []string{"03", "04", "7f", "80", "bf", "c0", "01", "02", "01c0", "02c0",
-		// Typed transactions that sign chain id 0, which fuzzing found.
-		chainZeroType2, chainZeroType1} {
+	for _, b := range []string{"03", "04", "7f", "80", "bf", "c0", "01", "02", "01c0", "02c0"} {
 		x, _ := hex.DecodeString(b)
 		f.Add(x)
+	}
+	// One transaction for each rule of item 2, and well-formed ones.
+	for _, c := range item2Cases {
+		f.Add(hexBytes(c.raw))
 	}
 	f.Fuzz(func(t *testing.T, raw []byte) {
 		if len(raw) == 0 {
@@ -200,14 +208,14 @@ func FuzzDecodeTx(f *testing.F) {
 		switch why {
 		case "":
 			if refErr != nil || refFrom != sender {
-				t.Fatalf("sender %s; go-ethereum recovers %s (%v)", sender.Hex(), refFrom.Hex(), refErr)
+				t.Fatalf("sender %s; refSender reads %s (%v)", sender.Hex(), refFrom.Hex(), refErr)
 			}
 		case ReasonMalformed:
 			if tx != nil {
 				t.Fatalf("a transaction returned with %s", why)
 			}
 			if refErr == nil && (raw[0] >= 0xc0 || raw[0] == types.AccessListTxType || raw[0] == types.DynamicFeeTxType) {
-				t.Fatalf("refused as malformed; go-ethereum recovers sender %s", refFrom.Hex())
+				t.Fatalf("refused as malformed; refSender reads sender %s", refFrom.Hex())
 			}
 			return
 		case ReasonUnsupportedTxType:
@@ -463,16 +471,21 @@ func FuzzVerify(f *testing.F) {
 			f.Add(full, manifest(vb.Bounds))
 		}
 	}
-	// The vectors' transaction replaced by a type 2 transaction that signs
-	// chain id 0, which fuzzing found.
-	chainZero := map[string]any{}
-	for k, x := range pubs[0] {
-		chainZero[k] = x
+	// The vectors' transaction replaced by one that item 2 refuses, for each
+	// rule.
+	for _, c := range item2Cases {
+		if c.sender != "" {
+			continue
+		}
+		refused := map[string]any{}
+		for k, x := range pubs[0] {
+			refused[k] = x
+		}
+		delete(refused, "transactionId")
+		refused["rawTransaction"] = "0x" + c.raw
+		b, _ := json.Marshal(refused)
+		f.Add(b, manifest(nil))
 	}
-	delete(chainZero, "transactionId")
-	chainZero["rawTransaction"] = "0x" + chainZeroType2
-	b, _ := json.Marshal(chainZero)
-	f.Add(b, manifest(nil))
 	P := hexBytes(v.P)
 	src := &StaticSource{Chain: new(big.Int).SetUint64(v.HeaderSource.ChainID), Mode: Finality{Declared: true, Finalized: true},
 		Finalized: v.HeaderSource.Finalized, Blocks: map[uint64]Block{}, Txs: map[common.Hash]TxLookup{}}

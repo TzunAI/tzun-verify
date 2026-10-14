@@ -746,58 +746,121 @@ func TestSignedChainIDFactIsAString(t *testing.T) {
 	}
 }
 
-// TestTypedChainIDZero holds item 2 to a typed transaction that signs chain
-// id 0: go-ethereum builds no signer for it, so this build recovers no
-// sender and the publication is false, malformed_publication. The first two
-// are the type 2 and type 1 transactions fuzzing found, whose r is no
-// point's x coordinate; the third is signed over chain id 0 by hand, so its
-// signature recovers a key, and a verifier that recovers it decides the
-// entry at item 5 instead (the follow-up issue on sender recovery).
-func TestTypedChainIDZero(t *testing.T) {
-	key, err := crypto.GenerateKey()
-	if err != nil {
-		t.Fatal(err)
-	}
-	to := crypto.PubkeyToAddress(key.PublicKey)
-	inner := &types.DynamicFeeTx{ChainID: new(big.Int), Nonce: 1, GasTipCap: big.NewInt(1e9), GasFeeCap: big.NewInt(3e9),
-		Gas: 30000, To: &to, Value: new(big.Int), Data: testP}
-	payload, err := rlp.EncodeToBytes([]any{inner.ChainID, inner.Nonce, inner.GasTipCap, inner.GasFeeCap, inner.Gas,
-		inner.To, inner.Value, inner.Data, inner.AccessList})
-	if err != nil {
-		t.Fatal(err)
-	}
-	h := crypto.Keccak256(append([]byte{types.DynamicFeeTxType}, payload...))
-	sig, err := crypto.Sign(h, key)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if pub, err := crypto.SigToPub(h, sig); err != nil || crypto.PubkeyToAddress(*pub) != to {
-		t.Fatalf("the hand-made signature does not recover its key: %v", err)
-	}
-	inner.R, inner.S, inner.V = new(big.Int).SetBytes(sig[:32]), new(big.Int).SetBytes(sig[32:64]), big.NewInt(int64(sig[64]))
-	signed, err := types.NewTx(inner).MarshalBinary()
-	if err != nil {
-		t.Fatal(err)
-	}
+// item2Signer is the address of the key of the fuzz seeds (seedTxs), which
+// signed every transaction of item2Cases whose signature is a real one.
+const item2Signer = "0x2c7536e3605d9c16a7a3d7b1898e529396a65c23"
 
-	f := newFixture(t, txOpts{txType: 2})
-	for _, c := range []struct {
-		name string
-		raw  string
-	}{
-		{"type 2, chain id 0", "02e080800101809409000000000000000000000000000000000000008080c0800507"},
-		{"type 1, chain id 0", "01df808001809409000000000000000000000000000000000000008080c0010507"},
-		{"type 2, chain id 0, signed", hex.EncodeToString(signed)},
-	} {
+// item2Cases are raw transactions of types 0, 1 and 2 for item 2 of Anchor
+// §10.4, each carrying 32 zero bytes of calldata but the two fuzzing found,
+// which carry none. rules is whether txRulesOK holds; sender is the sender
+// decodeTx recovers, or "" when it refuses the transaction as
+// malformed_publication.
+var item2Cases = []struct {
+	name   string
+	raw    string
+	rules  bool
+	sender string
+}{
+	// Well formed: the rules hold and the signer's key is recovered.
+	{"legacy, v 27, no chain id", "f88301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a000000000000000000000000000000000000000000000000000000000000000001ba0df0ffd2c28d257380d45c591f6a58fb3cdbf6e0acd40f857d0456c61a3b8f13fa006f153cf7c84d158ca1dfdf5246000509a6428b4df5180d4e3359a641109b61b", true, item2Signer},
+	{"legacy, v 38, chain id 1", "f88302843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a0000000000000000000000000000000000000000000000000000000000000000026a0e058b908a6408da0c0cd50839ec05319397ee6f062bd1146c7f3de98a5355b55a0640e704a3e0c9e21fb7ee77bd9c32b638ead56c8a06cf8d454efba9471393d39", true, item2Signer},
+	{"type 1, chain id 1", "01f8850103843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c080a03868b3202a079a6293cb28f308c8f3be08d6684623c7956d9e4f25ddcb112ed6a004bb09daaf1e5b81a54844421e972e027f9b44871ee12084a72c82f37de6a4e9", true, item2Signer},
+	{"type 2, chain id 1", "02f88a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a0c29b6dad31844f327d25632f3cc757bc5a80f1eb7dae204e5dc38379c43d7b5fa02ae7dd41ec3690ac724b807135f4e53047776f4d25315a0c5936eaa6bd061342", true, item2Signer},
+	{"type 2, maxPriorityFeePerGas equal to maxFeePerGas", "02f88a010584773594008477359400827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a0bb5780705593ca9d1d81ca6a7a40575f2feb1eda0b37403109515dce95a71654a06c889afcf844954f50930dffeaf17de193007c9edc00f56fdf5357fa047a27c8", true, item2Signer},
+	// r and s at the bottom of their ranges; the key recovered is no one's.
+	{"type 2, r 1, s 1", "02f84a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c0800101", true, "0x9979ab8c5e067b3bb4a80379697855fc093e1af4"},
+	// A type 1 or type 2 transaction signs chain id 1 or more. The two signed
+	// by the key recover it; the two fuzzing found carry r 5, no point's x.
+	{"type 2, chain id 0", "02f88a8001843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a0e5cf9ac30913204c2304ff26b31395221488ec07bfddadc72a07ac6b9e9b52dba01376360669d45b1f752fbcaacb63f3d7c6d28c5a96e229c122cbb9f1c93eadfb", false, ""},
+	{"type 1, chain id 0", "01f8858001843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c080a0b4a0f86712ea3127f47395eccbaf84d994ca860e103725ef7867643017ab0df5a02783e3ec2631c43ed64b706c34225348f8422029be3afe82147f5fa254359aa4", false, ""},
+	{"type 2, chain id 0, found by fuzzing", chainZeroType2, false, ""},
+	{"type 1, chain id 0, found by fuzzing", chainZeroType1, false, ""},
+	// A legacy v is 27, 28, or chainId*2+35 or +36 with chain id 1 or more. v 35
+	// and 36 sign chain id 0, and go-ethereum's EIP-155 signer recovers the key.
+	{"legacy, v 35, chain id 0", "f88302843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a0000000000000000000000000000000000000000000000000000000000000000023a0b8518f02496753340c353fe934213da62cfad76f72def1248886eeab8fe5527ea036a06a7585f073e930f672ed460e76b15bf2c891dafb49de43c6e9a1597569f0", false, ""},
+	{"legacy, v 36, chain id 0", "f88301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a0000000000000000000000000000000000000000000000000000000000000000024a0b2e5d376fe825bbc624b1e2c9927f613e4ce978d71e3e6acd46fdb1fd4455838a06c73364b5730a5b82a576a374a1b6aa12d379f08c240b7afb4ffdc4bd926567b", false, ""},
+	{"legacy, v 0", "f88301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a0000000000000000000000000000000000000000000000000000000000000000080a0df0ffd2c28d257380d45c591f6a58fb3cdbf6e0acd40f857d0456c61a3b8f13fa006f153cf7c84d158ca1dfdf5246000509a6428b4df5180d4e3359a641109b61b", false, ""},
+	{"legacy, v 34", "f88301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a0000000000000000000000000000000000000000000000000000000000000000022a0df0ffd2c28d257380d45c591f6a58fb3cdbf6e0acd40f857d0456c61a3b8f13fa006f153cf7c84d158ca1dfdf5246000509a6428b4df5180d4e3359a641109b61b", false, ""},
+	// A type 1 or type 2 yParity is 0 or 1. r and s are those of yParity 0 or
+	// 1, so a reader that took yParity modulo 2, 4 or 256 would recover the key.
+	{"type 1, yParity 2", "01f8850103843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c002a03868b3202a079a6293cb28f308c8f3be08d6684623c7956d9e4f25ddcb112ed6a004bb09daaf1e5b81a54844421e972e027f9b44871ee12084a72c82f37de6a4e9", false, ""},
+	{"type 2, yParity 3", "02f88a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c003a0c29b6dad31844f327d25632f3cc757bc5a80f1eb7dae204e5dc38379c43d7b5fa02ae7dd41ec3690ac724b807135f4e53047776f4d25315a0c5936eaa6bd061342", false, ""},
+	{"type 2, yParity 5", "02f88a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c005a0c29b6dad31844f327d25632f3cc757bc5a80f1eb7dae204e5dc38379c43d7b5fa02ae7dd41ec3690ac724b807135f4e53047776f4d25315a0c5936eaa6bd061342", false, ""},
+	{"type 2, yParity 257", "02f88c0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c0820101a0c29b6dad31844f327d25632f3cc757bc5a80f1eb7dae204e5dc38379c43d7b5fa02ae7dd41ec3690ac724b807135f4e53047776f4d25315a0c5936eaa6bd061342", false, ""},
+	// A type 2 maxPriorityFeePerGas is at most its maxFeePerGas.
+	// go-ethereum recovers the key.
+	{"type 2, maxPriorityFeePerGas above maxFeePerGas", "02f88a010184b2d05e00843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c080a0602567b7b0456172e8fe09d6fefa537475335fe851d322db7fb72abd590fea11a05a105d78986c71dcc919a5eea7f30661ddbb6a05a2560e8e1440acaa3740974f", false, ""},
+	// s is at most n/2 (EIP-2). Each high s is the twin, n - s with the parity
+	// flipped, of a low s by the key, so its signature recovers the key.
+	{"legacy, v 28, high s", "f88301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a000000000000000000000000000000000000000000000000000000000000000001ca0df0ffd2c28d257380d45c591f6a58fb3cdbf6e0acd40f857d0456c61a3b8f13fa0f90eac30837b2ea735e2020adb9fffae204ab431cff71f66dc9cc428bf2c8b26", false, ""},
+	{"legacy, v 37, chain id 1, high s", "f88302843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a0000000000000000000000000000000000000000000000000000000000000000025a0e058b908a6408da0c0cd50839ec05319397ee6f062bd1146c7f3de98a5355b55a09bf18fb5c1f361de04811884263cd49b2c01861e0edba7676ae2a3f85efd0408", false, ""},
+	{"type 1, high s", "01f8850103843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a03868b3202a079a6293cb28f308c8f3be08d6684623c7956d9e4f25ddcb112ed6a0fb44f62550e1a47e5ab7bbbde168d1fc3b13985f90677fb718a5db99524f9c58", false, ""},
+	{"type 2, high s", "02f88a0101843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c080a0e9766cb77e6f64b55517c8e43082bbed6e27e025ef12e24e3690ffb98d5bf861a0d6f674e3f862bcf4a1efad4c3c0225c56ae560befc402afeccbfe09dd688fcf9", false, ""},
+	{"type 2, s n/2 + 1", "02f88a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c080a0c29b6dad31844f327d25632f3cc757bc5a80f1eb7dae204e5dc38379c43d7b5fa07fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a1", false, ""},
+	// r is in [1, n-1], s in [1, n/2].
+	{"type 2, s n", "02f88a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a0c29b6dad31844f327d25632f3cc757bc5a80f1eb7dae204e5dc38379c43d7b5fa0fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", false, ""},
+	{"type 2, s 0", "02f86a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a0c29b6dad31844f327d25632f3cc757bc5a80f1eb7dae204e5dc38379c43d7b5f80", false, ""},
+	{"type 2, r 0", "02f86a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c00180a02ae7dd41ec3690ac724b807135f4e53047776f4d25315a0c5936eaa6bd061342", false, ""},
+	{"type 2, r n", "02f88a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a0fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141a02ae7dd41ec3690ac724b807135f4e53047776f4d25315a0c5936eaa6bd061342", false, ""},
+	{"legacy, s 0", "f86301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a000000000000000000000000000000000000000000000000000000000000000001ba0df0ffd2c28d257380d45c591f6a58fb3cdbf6e0acd40f857d0456c61a3b8f13f80", false, ""},
+	{"legacy, r 0", "f86301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a000000000000000000000000000000000000000000000000000000000000000001b80a006f153cf7c84d158ca1dfdf5246000509a6428b4df5180d4e3359a641109b61b", false, ""},
+	{"legacy, r n", "f88301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a000000000000000000000000000000000000000000000000000000000000000001ba0fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141a006f153cf7c84d158ca1dfdf5246000509a6428b4df5180d4e3359a641109b61b", false, ""},
+	// The rules hold and no public key is recovered: r 5 and r n-1 are no
+	// point's x coordinate.
+	{"legacy, v 27, r 5", "f84301843b9aca00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a000000000000000000000000000000000000000000000000000000000000000001b0507", true, ""},
+	{"type 2, r 5", "02f84a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c0800507", true, ""},
+	{"type 2, r n-1, s n/2", "02f88a0104843b9aca0084b2d05e00827530942c7536e3605d9c16a7a3d7b1898e529396a65c2380a00000000000000000000000000000000000000000000000000000000000000000c001a0fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140a07fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0", true, ""},
+}
+
+// TestItem2Rules holds txRulesOK and decodeTx to item2Cases. txRulesOK is
+// checked on its own because go-ethereum refuses some of the transactions
+// it refuses too (r or s out of range, a high s, a yParity above 1, a
+// typed transaction that signs chain id 0), so decodeTx's outcome alone
+// would not show that the rule is stated here.
+func TestItem2Rules(t *testing.T) {
+	for _, c := range item2Cases {
 		raw, err := hex.DecodeString(c.raw)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if tx, _, why := decodeTx(raw); tx != nil || why != ReasonMalformed {
-			t.Errorf("%s: decodeTx gives a transaction %v, reason %q", c.name, tx != nil, why)
+		tx := new(types.Transaction)
+		if err := tx.UnmarshalBinary(raw); err != nil {
+			t.Fatalf("%s: go-ethereum does not decode it: %v", c.name, err)
 		}
-		r := run(set(f.entry("transactionId"), "rawTransaction", report.S(hx(raw))), f.manifest(""), f.source())
-		check(t, c.name, r, want{valid: "false", reason: ReasonMalformed, tx: report.Wrong, txReason: ReasonMalformed,
-			can: report.NotChecked, canReason: "blocked_by:anchor.evm.tx[0]"})
+		if got := txRulesOK(tx); got != c.rules {
+			t.Errorf("%s: txRulesOK %v, want %v", c.name, got, c.rules)
+		}
+		got, from, why := decodeTx(raw)
+		switch {
+		case c.sender == "" && (got != nil || why != ReasonMalformed):
+			t.Errorf("%s: decodeTx gives a transaction %v, sender %s, reason %q; want %s", c.name, got != nil, from.Hex(), why, ReasonMalformed)
+		case c.sender != "" && (got == nil || why != "" || strings.ToLower(from.Hex()) != c.sender):
+			t.Errorf("%s: decodeTx gives sender %s, reason %q; want %s", c.name, from.Hex(), why, c.sender)
+		}
+	}
+}
+
+// TestItem2Verify runs Verify over item2Cases: a transaction decodeTx
+// refuses makes the publication false, malformed_publication, and
+// anchor.evm.canonical is blocked by anchor.evm.tx; one it reads a sender
+// from goes on to item 4, where its zero calldata is not P.
+func TestItem2Verify(t *testing.T) {
+	f := newFixture(t, txOpts{txType: 2})
+	for _, c := range item2Cases {
+		w := want{valid: "false", reason: ReasonMalformed, tx: report.Wrong, txReason: ReasonMalformed,
+			can: report.NotChecked, canReason: "blocked_by:anchor.evm.tx[0]"}
+		if c.sender != "" {
+			w.reason, w.txReason = ReasonCalldataMismatch, ReasonCalldataMismatch
+		}
+		r := run(set(f.entry("transactionId"), "rawTransaction", report.S("0x"+c.raw)), f.manifest(""), f.source())
+		check(t, c.name, r, w)
+	}
+}
+
+// TestSecp256k1Order holds the order txRulesOK states to the curve's.
+func TestSecp256k1Order(t *testing.T) {
+	n := crypto.S256().Params().N
+	if secp256k1N.Cmp(n) != 0 || secp256k1HalfN.Cmp(new(big.Int).Rsh(n, 1)) != 0 {
+		t.Errorf("n %x, n/2 %x; the curve's n is %x", secp256k1N, secp256k1HalfN, n)
 	}
 }

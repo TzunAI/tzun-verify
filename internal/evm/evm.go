@@ -217,7 +217,8 @@ func shape(e *jsonv.Value) (*parsed, bool) {
 	return p, true
 }
 
-// decodeTx is item 2: the EIP-2718 type, then parse and sender recovery.
+// decodeTx is item 2: the EIP-2718 type, then parse, the rules of txRulesOK,
+// and sender recovery.
 func decodeTx(raw []byte) (*types.Transaction, common.Address, string) {
 	switch b := raw[0]; {
 	case b >= 0xc0, b == 0x01, b == 0x02:
@@ -230,29 +231,85 @@ func decodeTx(raw []byte) (*types.Transaction, common.Address, string) {
 	if err := tx.UnmarshalBinary(raw); err != nil {
 		return nil, common.Address{}, ReasonMalformed
 	}
+	if !txRulesOK(tx) {
+		return nil, common.Address{}, ReasonMalformed
+	}
 	var signer types.Signer
 	switch {
 	case tx.Type() != types.LegacyTxType:
-		// go-ethereum builds no signer for a chain id below 1 (its
-		// constructor panics), so this build recovers no sender from a
-		// typed transaction that signs chain id 0 and refuses it here.
-		// Its signature can still recover a key; which reason item 2
-		// gives it is open (the follow-up issue on sender recovery).
-		id := tx.ChainId()
-		if id == nil || id.Sign() <= 0 {
-			return nil, common.Address{}, ReasonMalformed
-		}
-		signer = types.NewLondonSigner(id)
+		signer = types.NewLondonSigner(tx.ChainId())
 	case tx.Protected():
 		signer = types.NewEIP155Signer(tx.ChainId())
 	default:
 		signer = types.HomesteadSigner{}
 	}
+	// With the rules met, the one way left for recovery to fail is a
+	// signature from which no public key can be recovered: r is no point's
+	// x coordinate, or the point recovered is the point at infinity.
 	from, err := types.Sender(signer, tx)
 	if err != nil {
 		return nil, common.Address{}, ReasonMalformed
 	}
 	return tx, from, ""
+}
+
+// secp256k1N is n, the order of the secp256k1 group, and secp256k1HalfN is
+// n/2 rounded down. An s above n/2 is the high twin of the low s that
+// signs the same message with the same key (EIP-2).
+var (
+	secp256k1N, _  = new(big.Int).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
+	secp256k1HalfN = new(big.Int).Rsh(secp256k1N, 1)
+)
+
+// The values a legacy transaction's v may take: 27 or 28 for one that signs
+// no chain id, and chainId*2+35 or chainId*2+36 for one that signs chainId
+// (EIP-155), which a chain id of 1 or more puts at 37 or above.
+var (
+	legacyV27 = big.NewInt(27)
+	legacyV28 = big.NewInt(28)
+	minV155   = big.NewInt(37)
+)
+
+// txRulesOK holds a decoded transaction of type 0, 1 or 2 to the rules item
+// 2 sets before the sender is recovered. A transaction that breaks one is
+// malformed_publication:
+//
+//   - a type 1 or type 2 transaction signs a chain id of 1 or more;
+//   - a legacy transaction's v is 27 or 28, or chainId*2+35 or chainId*2+36
+//     with a chain id of 1 or more, so v 35 and 36 (chain id 0) are refused;
+//   - a type 1 or type 2 transaction's yParity is 0 or 1;
+//   - a type 2 transaction's maxPriorityFeePerGas is at most its
+//     maxFeePerGas;
+//   - r is in [1, n-1] and s in [1, n/2], n the order of secp256k1.
+//
+// No block on a chain a manifest can name includes such a transaction, so
+// refusing it never refuses a real anchor. The rules are stated here rather
+// than left to go-ethereum's decoder and signers, which accept some of these
+// transactions and refuse others, so that the outcome and its reason are
+// the same as every conforming verifier's, whatever its Ethereum library.
+// The one rule of item 2 not here, that the signature recovers a public
+// key, is decodeTx's.
+func txRulesOK(tx *types.Transaction) bool {
+	v, r, s := tx.RawSignatureValues()
+	if tx.Type() == types.LegacyTxType {
+		if v.Cmp(legacyV27) != 0 && v.Cmp(legacyV28) != 0 && v.Cmp(minV155) < 0 {
+			return false
+		}
+	} else {
+		if id := tx.ChainId(); id == nil || id.Sign() <= 0 {
+			return false
+		}
+		if v.Sign() != 0 && v.Cmp(common.Big1) != 0 {
+			return false
+		}
+	}
+	if tx.Type() == types.DynamicFeeTxType && tx.GasTipCap().Cmp(tx.GasFeeCap()) > 0 {
+		return false
+	}
+	if r.Sign() < 1 || r.Cmp(secp256k1N) >= 0 {
+		return false
+	}
+	return s.Sign() >= 1 && s.Cmp(secp256k1HalfN) <= 0
 }
 
 // signedChainID is the chain id the signature covers; nil for a
