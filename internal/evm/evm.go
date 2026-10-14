@@ -233,7 +233,14 @@ func decodeTx(raw []byte) (*types.Transaction, common.Address, string) {
 	var signer types.Signer
 	switch {
 	case tx.Type() != types.LegacyTxType:
-		signer = types.NewLondonSigner(tx.ChainId())
+		// go-ethereum has no signer for a chain id below 1 (its
+		// constructor panics), so the signature of a typed transaction
+		// that signs chain id 0 yields no sender.
+		id := tx.ChainId()
+		if id == nil || id.Sign() <= 0 {
+			return nil, common.Address{}, ReasonMalformed
+		}
+		signer = types.NewLondonSigner(id)
 	case tx.Protected():
 		signer = types.NewEIP155Signer(tx.ChainId())
 	default:
