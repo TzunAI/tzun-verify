@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/TzunAI/tzun-verify/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TzunAI/tzun-verify/actions/workflows/ci.yml?query=branch%3Amain)
 [![public hygiene](https://github.com/TzunAI/tzun-verify/actions/workflows/public-hygiene.yml/badge.svg?branch=main)](https://github.com/TzunAI/tzun-verify/actions/workflows/public-hygiene.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TzunAI/tzun-verify/badge)](https://scorecard.dev/viewer/?uri=github.com/TzunAI/tzun-verify)
 [![Licence: BSD-3-Clause-Clear](https://img.shields.io/badge/licence-BSD--3--Clause--Clear-blue)](LICENSE)
 
 The standalone verifier for Decision Evidence Object (DEO) proof bundles. It
@@ -381,7 +380,7 @@ can hold an API key. The manifest is named by the SHA-256 of its file's bytes
 |---|---|---|
 | Merkle proofs | github.com/transparency-dev/merkle | main at fbbcd741 (`v0.0.3-0.20260921095310-fbbcd741c3d1`): its v0.0.2 tag accepts five invalid consistency proofs |
 | Checkpoint bodies | github.com/transparency-dev/formats `log.Checkpoint` | v0.1.1 |
-| Ethereum transactions, sender recovery, RLP | github.com/ethereum/go-ethereum | v1.17.6, built without cgo. The trie proof is walked by this repository (`internal/evm/trie.go`), in order. |
+| Ethereum transactions, sender recovery, RLP | github.com/ethereum/go-ethereum | v1.17.8, built without cgo. The trie proof is walked by this repository (`internal/evm/trie.go`), in order. |
 | RFC 3161 and CMS | github.com/digitorus/timestamp, github.com/digitorus/pkcs7, over Go's crypto/x509 | the 2026-09-14 commits. Beyond them, and so `missing_dependency` on the check whose step needs them (Anchor §10.5 step 5): a signer named by subjectKeyIdentifier; a key on a curve other than P-224, P-256, P-384 and P-521, or given by explicit parameters; a DSA key; an MD5 signature; a CMS signature algorithm the CMS library does not map, such as RSASSA-PSS. A certificate that no step needs is not examined. |
 | JSON | this repository's `internal/jsonv` | keeps number text, lone surrogates and member order, which `encoding/json` does not |
 
