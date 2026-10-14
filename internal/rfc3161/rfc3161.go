@@ -7,11 +7,16 @@
 //
 // The steps run in order and the first that does not hold decides:
 //
-//  1. parse: the DER of a granted TimeStampResp that wraps a CMS SignedData
-//     over a TSTInfo, every element of the response DER by the rules of
-//     X.690 that need no schema (the order of a SET OF's elements, the
-//     omission of a DEFAULT value and the removal of trailing zero bits
-//     from a named bit list are not checked); the TimeStampResp,
+//  1. parse: a granted TimeStampResp that wraps a CMS SignedData over a
+//     TSTInfo, every element of the response with a DER header (X.690
+//     §8.1, §10.1), and one with a universal tag with the form X.690 gives
+//     its type and, if it is a BOOLEAN, INTEGER, ENUMERATED, BIT STRING,
+//     NULL, OBJECT IDENTIFIER, RELATIVE-OID, UTCTime or GeneralizedTime,
+//     the contents der.go's contentsOK names (der.go does not check the
+//     other rules of DER, among them midnight as 000000, the contents of a
+//     REAL or a character string, the order of a SET's components and of a
+//     SET OF's elements, the omission of a DEFAULT value and the removal
+//     of trailing zero bits from a named bit list); the TimeStampResp,
 //     ContentInfo, SignedData, EncapsulatedContentInfo and SignerInfo, and
 //     the AlgorithmIdentifiers and attributes the SignedData and SignerInfo
 //     hold, have their members and nothing else (der.go), while inside the

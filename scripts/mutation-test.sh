@@ -163,7 +163,7 @@ M = [
     ("internal/rfc3161/rfc3161.go", "\tcase trustUnchecked:\n", "\tcase \"never\":\n", "trust not-checked, missing_dependency"),
     ("internal/rfc3161/rfc3161.go", "\tfor _, a := range c.Subject.Names {\n\t\tif a.Type.Equal(oidCommonName) {\n\t\t\ts, _ := a.Value.(string)\n\t\t\treturn s\n\t\t}\n\t}\n", "\tif c.Subject.CommonName != \"\" {\n\t\treturn c.Subject.CommonName\n\t}\n", "authority is the first common name, an empty one kept"),
     ("internal/rfc3161/rfc3161.go", "\t\t}\n\t}\n\treturn \"\"\n}", "\t\t}\n\t}\n\treturn c.Subject.String()\n}", "authority is empty without a common name"),
-    ("internal/rfc3161/rfc3161.go", "if !ok || !isDER(der) || !tokenShape(der) {", "if !ok || !tokenShape(der) {", "the whole response is DER"),
+    ("internal/rfc3161/rfc3161.go", "if !ok || !isDER(der) || !tokenShape(der) {", "if !ok || !tokenShape(der) {", "isDER on the whole response"),
     ("internal/rfc3161/rfc3161.go", "if !ok || !isDER(der) || !tokenShape(der) {", "if !ok || !isDER(der) {", "each CMS structure has its members and nothing else"),
     ("internal/rfc3161/rfc3161.go", "\tif !certificateShape(der) {\n\t\treturn nil, false, errNotCertificate", "\tif false {\n\t\treturn nil, false, errNotCertificate", "each carried certificate has the members of RFC 5280"),
     ("internal/rfc3161/der.go", "if first && c == 0x80 {", "if first && c == 0x80 && false {", "DER: a high tag number without a leading zero group"),

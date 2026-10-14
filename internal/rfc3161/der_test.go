@@ -27,7 +27,7 @@ func unhex(t *testing.T, h string) []byte {
 	return b
 }
 
-// TestIsDER: the rules of DER that need no schema, element by element.
+// TestIsDER: the header, form and contents isDER checks, element by element.
 func TestIsDER(t *testing.T) {
 	gt := func(s string) string { return hex.EncodeToString(append([]byte{0x18, byte(len(s))}, s...)) }
 	ut := func(s string) string { return hex.EncodeToString(append([]byte{0x17, byte(len(s))}, s...)) }
@@ -219,11 +219,11 @@ func attributeOf(t *testing.T, attrs *node, oid asn1.ObjectIdentifier) *node {
 
 // TestStepOneStrictness: §10.5 step 1 reads the token as the DER of a
 // TimeStampResp that is a CMS SignedData, every one of whose certificates
-// decodes as an X.509 certificate. Every element of the response is DER by
-// the rules that need no schema, wherever it sits; each structure has its
-// members and nothing else. A token that breaks either is malformed at
-// step 1, before a later step looks at it, and whether or not the signature
-// covers the element.
+// decodes as an X.509 certificate. Every element of the response, wherever
+// it sits, has the header, form and contents isDER checks; each structure
+// has its members and nothing else. A token that breaks either is
+// malformed at step 1, before a later step looks at it, and whether or not
+// the signature covers the element.
 func TestStepOneStrictness(t *testing.T) {
 	root := testpki.Root("Root")
 	signer := testpki.TSASigner("TSA", root)

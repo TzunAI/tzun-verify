@@ -10,10 +10,13 @@ import "encoding/asn1"
 // accepts members after the last field of a SEQUENCE and does not check the
 // tag of a RawValue, crypto/x509 skips parts of a certificate, and the CMS
 // library converts BER to DER before it decodes. The checks of this file
-// cover the difference, each before a decoder reads what it checks:
+// cover part of the difference, each before a decoder reads what it checks:
 //
-//   - isDER: every element of the response is DER by the rules of X.690
-//     (§10, §11) that need no schema;
+//   - isDER: every element of the response has a DER header (X.690 §8.1.2,
+//     §8.1.3, §10.1); one with a universal tag has the form X.690 gives its
+//     type (§8, §10.2) and, if it is a BOOLEAN, INTEGER, ENUMERATED,
+//     BIT STRING, NULL, OBJECT IDENTIFIER, RELATIVE-OID, UTCTime or
+//     GeneralizedTime, the contents contentsOK names;
 //   - tokenShape: the TimeStampResp, ContentInfo, SignedData,
 //     EncapsulatedContentInfo and SignerInfo, and the AlgorithmIdentifiers
 //     and attributes the SignedData and SignerInfo hold, have their members,
@@ -21,11 +24,18 @@ import "encoding/asn1"
 //   - certificateShape: each carried certificate has the members of RFC 5280
 //     §4.1, in order, and nothing else.
 //
-// None of them reads what a value means. A SIZE constraint is not checked
-// here, nor are the rules of DER that need the schema, among them the order
-// of a SET OF's elements (X.690 §11.6), the omission of a DEFAULT value
-// (§11.5) and the removal of trailing zero bits from a named bit list
-// (§11.2.2), such as a PKIStatusInfo's failInfo. TSAs often send the
+// None of them reads what a value means. The other rules of DER are not
+// checked here, among them: midnight as 000000 rather than 240000 in a
+// UTCTime or GeneralizedTime (X.690 §11.7.5, §11.8.3); the contents of a
+// REAL (§11.3) and of a character string, such as a GeneralString's escape
+// sequences (§11.4), the four octets of each of a UniversalString's
+// characters and the two of a BMPString's (§8.23.7, §8.23.8) and a
+// UTF8String's UTF-8 (§8.23.10); the form of an element whose tag is not
+// universal, and the contents of a primitive one; and the rules that need
+// the schema: the order of a SET's components (§10.3) and of a SET OF's
+// elements (§11.6), the omission of a DEFAULT value (§11.5) and the removal
+// of trailing zero bits from a named bit list (§11.2.2), such as a
+// PKIStatusInfo's failInfo. Nor is a SIZE constraint. TSAs often send the
 // certificates of a SignedData out of DER order (testdata/sectigo.tsr is
 // one), and a token is not refused for it. Nor are the contents of an
 // OCTET STRING or a BIT STRING (a TSTInfo, an extension's value, a key),
@@ -130,16 +140,17 @@ const (
 	tagLastUniversal   = 36
 )
 
-// contentsOK checks a universal element by the rules of DER that need no
-// schema: the form X.690 gives its type (constructed for SEQUENCE and SET,
-// and for the types it encodes as a SEQUENCE: EXTERNAL, EMBEDDED PDV and the
-// unrestricted CHARACTER STRING; primitive for every other type, the
-// restricted character strings included), and the contents of a BOOLEAN (00
-// or FF), an INTEGER or ENUMERATED (in the fewest octets), a BIT STRING (its
-// unused bits zero), a NULL (empty), an OBJECT IDENTIFIER or RELATIVE-OID
-// (each subidentifier in the fewest octets), a UTCTime (YYMMDDhhmmssZ) and a
-// GeneralizedTime (YYYYMMDDhhmmss, a fraction without trailing zeros, Z). An
-// element of another class is the schema's, and is not read here.
+// contentsOK checks these rules of DER for a universal element: that it is
+// not end-of-contents; the form X.690 gives its type (constructed for
+// SEQUENCE and SET, and for the types it encodes as a SEQUENCE: EXTERNAL,
+// EMBEDDED PDV and the unrestricted CHARACTER STRING; primitive for every
+// other type, the restricted character strings included); and the contents
+// of a BOOLEAN (00 or FF), an INTEGER or ENUMERATED (in the fewest octets),
+// a BIT STRING (its unused bits zero), a NULL (empty), an OBJECT IDENTIFIER
+// or RELATIVE-OID (each subidentifier in the fewest octets), a UTCTime
+// (YYMMDDhhmmssZ) and a GeneralizedTime (YYYYMMDDhhmmss, a fraction without
+// trailing zeros, Z). A universal tag number X.680 assigns to no type, and
+// an element of another class, are the schema's, and are not read here.
 func contentsOK(e element) bool {
 	if e.class != asn1.ClassUniversal {
 		return true
@@ -197,10 +208,11 @@ func digits(b []byte) bool {
 	return true
 }
 
-// isDER reports whether b is exactly one element and DER throughout: every
-// element's header as readElement reads it and every universal element's
-// contents as contentsOK checks them, at any depth. It walks the elements
-// with a stack rather than by recursion, so no nesting depth is refused.
+// isDER reports whether b is exactly one element and every element in it, b
+// included and at any depth, has a header as readElement reads it and, if
+// it is universal, the form and contents contentsOK checks. It walks the
+// elements with a stack rather than by recursion, so no nesting depth is
+// refused.
 func isDER(b []byte) bool {
 	if _, rest, ok := readElement(b); !ok || len(rest) != 0 {
 		return false
