@@ -49,6 +49,7 @@ M = [
     ("internal/anchor/anchor.go", "\tif anyFalse {\n\t\treturn finishOrigin", "\tif false {\n\t\treturn finishOrigin", "no facts from a lying artifact"),
     ("internal/anchor/anchor.go", "if e == nil || e.Kind != jsonv.Object {", "if e == nil {", "a publication that is not an object"),
     ("internal/anchor/newer.go", "if a.Size == b.Size {", "if false {", "split view"),
+    ("internal/evm/evm.go", "if id == nil || id.Sign() <= 0 {", "if false {", "a typed transaction signing chain id 0 is malformed"),
     ("internal/evm/evm.go", "if p.txID != nil && *p.txID != computedID {", "if false {", "keccak(raw) = transactionId"),
     ("internal/evm/evm.go", "if !bytes.Equal(tx.Data(), in.P) {", "if false {", "calldata = P"),
     ("internal/evm/evm.go", "\tif len(bySender) == 0 {\n\t\tr.txFail(ReasonSenderMismatch)", "\tif false {\n\t\tr.txFail(ReasonSenderMismatch)", "the sender is a manifest publisher"),
