@@ -453,10 +453,30 @@ func OffCurve(c *Cert) []byte {
 // spki (kept when spki is nil) and signed again by issuer (by c itself when
 // issuer is nil) with ECDSA over SHA-256. With sigAlg set, the certificate
 // names that signature algorithm instead, over the same signature. It
-// returns what the stock parser reads when it can, and otherwise a
-// certificate that carries only Raw, RawIssuer, RawSubject and
-// SerialNumber, which is all BuildToken reads.
+// returns what Rebuild returns.
 func Reissue(c, issuer *Cert, spki []byte, sigAlg asn1.ObjectIdentifier) *x509.Certificate {
+	alg := algID{Algorithm: oidECDSASHA256}
+	if sigAlg != nil {
+		alg = algID{Algorithm: sigAlg}
+	}
+	return Rebuild(c, issuer, func(fields [][]byte) [][]byte {
+		fields[2] = must(asn1.Marshal(alg))
+		if spki != nil {
+			fields[6] = spki
+		}
+		return fields
+	})
+}
+
+// Rebuild returns c's certificate with the elements of its tbsCertificate
+// (version, serialNumber, signature, issuer, validity, subject,
+// subjectPublicKeyInfo, extensions, each as its DER) as edit returns them,
+// signed again by issuer (by c itself when issuer is nil) with ECDSA over
+// SHA-256, under the outer signature algorithm the third element names. It
+// returns what the stock parser reads when it can, and otherwise a
+// certificate that carries only Raw, RawIssuer, RawSubject and SerialNumber,
+// which is all BuildToken reads.
+func Rebuild(c, issuer *Cert, edit func(fields [][]byte) [][]byte) *x509.Certificate {
 	var cert struct {
 		TBS asn1.RawValue
 		Alg asn1.RawValue
@@ -474,15 +494,7 @@ func Reissue(c, issuer *Cert, spki []byte, sigAlg asn1.ObjectIdentifier) *x509.C
 		}
 		fields = append(fields, f.FullBytes)
 	}
-	// version, serialNumber, signature, issuer, validity, subject, subjectPublicKeyInfo, extensions
-	alg := algID{Algorithm: oidECDSASHA256}
-	if sigAlg != nil {
-		alg = algID{Algorithm: sigAlg}
-	}
-	fields[2] = must(asn1.Marshal(alg))
-	if spki != nil {
-		fields[6] = spki
-	}
+	fields = edit(fields)
 	var body []byte
 	for _, f := range fields {
 		body = append(body, f...)
@@ -496,9 +508,9 @@ func Reissue(c, issuer *Cert, spki []byte, sigAlg asn1.ObjectIdentifier) *x509.C
 	sig := must(ecdsa.SignASN1(rand.Reader, key, h[:]))
 	der := must(asn1.Marshal(struct {
 		TBS asn1.RawValue
-		Alg algID
+		Alg asn1.RawValue
 		Sig asn1.BitString
-	}{asn1.RawValue{FullBytes: tbs}, alg, asn1.BitString{Bytes: sig, BitLength: 8 * len(sig)}}))
+	}{asn1.RawValue{FullBytes: tbs}, asn1.RawValue{FullBytes: fields[2]}, asn1.BitString{Bytes: sig, BitLength: 8 * len(sig)}}))
 	if parsed, err := x509.ParseCertificate(der); err == nil {
 		return parsed
 	}

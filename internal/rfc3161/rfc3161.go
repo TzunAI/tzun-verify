@@ -8,8 +8,25 @@
 // The steps run in order and the first that does not hold decides:
 //
 //  1. parse: a granted TimeStampResp that wraps a CMS SignedData over a
-//     TSTInfo; the SignedData has a single SignerInfo, and the token itself
-//     holds that signer's certificate (malformed_publication). A
+//     TSTInfo, every element of the response with a DER header (X.690
+//     §8.1, §10.1), though not inside an OCTET STRING or BIT STRING (the
+//     TSTInfo, an extension's value, a key), which are encodings of their
+//     own, and one with a universal tag with the form X.690 gives
+//     its type and, if it is a BOOLEAN, INTEGER, ENUMERATED, BIT STRING,
+//     NULL, OBJECT IDENTIFIER, RELATIVE-OID, UTCTime or GeneralizedTime,
+//     the contents der.go's contentsOK names (der.go does not check the
+//     other rules of DER, among them midnight as 000000, the contents of a
+//     REAL or a character string, the order of a SET's components and of a
+//     SET OF's elements, the omission of a DEFAULT value and the removal
+//     of trailing zero bits from a named bit list); the TimeStampResp,
+//     ContentInfo, SignedData, EncapsulatedContentInfo and SignerInfo, and
+//     the AlgorithmIdentifiers and attributes the SignedData and SignerInfo
+//     hold, have their members and nothing else (der.go), while inside the
+//     PKIStatusInfo, an attribute's values, a CRL and the TSTInfo, members
+//     are checked only as far as their decoders read them; the SignedData
+//     has a single SignerInfo, and the token itself holds that signer's
+//     certificate; every certificate it carries has the members of an
+//     RFC 5280 certificate and decodes (malformed_publication). A
 //     certificate whose key uses an algorithm or curve this build does not
 //     implement is read with its key left unread;
 //  2. imprint: SHA-256 and P (imprint_mismatch);
@@ -114,6 +131,7 @@ var (
 	}
 	nullParams           = []byte{0x05, 0x00}
 	errUnsupportedDigest = errors.New("rfc3161: unsupported certHash algorithm")
+	errNotCertificate    = errors.New("rfc3161: not an RFC 5280 certificate")
 )
 
 // RFC 3161 §2.4.2 and RFC 5652, transcribed.
@@ -157,9 +175,11 @@ type signerInfo struct {
 	UnsignedAttrs      asn1.RawValue `asn1:"optional,tag:1"`
 }
 
+// attribute is one signed or unsigned attribute. encoding/asn1 does not
+// check the tag of a RawValue: tokenShape has checked that Values is a SET.
 type attribute struct {
 	Type   asn1.ObjectIdentifier
-	Values asn1.RawValue `asn1:"set"`
+	Values asn1.RawValue
 }
 
 type messageImprint struct {
@@ -296,6 +316,9 @@ func keyNotImplemented(spki []byte) bool {
 // and readable is false. Every other certificate the stock parser refuses
 // is not a certificate.
 func parseCertificate(der []byte) (c *x509.Certificate, readable bool, err error) {
+	if !certificateShape(der) {
+		return nil, false, errNotCertificate
+	}
 	c, err = x509.ParseCertificate(der)
 	if err == nil {
 		return c, true, nil
@@ -421,11 +444,15 @@ func parse(s string) (*token, string) {
 }
 
 func parseToken(s string) (*token, bool, string) {
-	t, ok := parseStrict(s)
+	der, ok := strictBase64(s)
+	if !ok || !isDER(der) || !tokenShape(der) {
+		return nil, false, ""
+	}
+	t, ok := parseStrict(der)
 	if ok {
 		return t, true, ""
 	}
-	if skiSigner(s) {
+	if skiSigner(der) {
 		// A signer named by subjectKeyIdentifier is legal CMS (RFC 5652
 		// §5.3); the linked library finds a signer only by issuer and
 		// serial number. That is a gap in this verifier, not in the token
@@ -437,11 +464,7 @@ func parseToken(s string) (*token, bool, string) {
 
 // skiSigner reports whether a token otherwise well-formed names its signer
 // by subjectKeyIdentifier ([0]), and carries the certificate it names.
-func skiSigner(s string) bool {
-	der, ok := strictBase64(s)
-	if !ok {
-		return false
-	}
+func skiSigner(der []byte) bool {
 	var resp timeStampResp
 	if rest, err := asn1.Unmarshal(der, &resp); err != nil || len(rest) != 0 || len(resp.TimeStampToken.FullBytes) == 0 {
 		return false
@@ -473,11 +496,8 @@ func skiSigner(s string) bool {
 	return false
 }
 
-func parseStrict(s string) (*token, bool) {
-	der, ok := strictBase64(s)
-	if !ok {
-		return nil, false
-	}
+// parseStrict decodes a token that isDER and tokenShape have checked.
+func parseStrict(der []byte) (*token, bool) {
 	var resp timeStampResp
 	rest, err := asn1.Unmarshal(der, &resp)
 	if err != nil || len(rest) != 0 {
