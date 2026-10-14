@@ -233,7 +233,16 @@ func decodeTx(raw []byte) (*types.Transaction, common.Address, string) {
 	var signer types.Signer
 	switch {
 	case tx.Type() != types.LegacyTxType:
-		signer = types.NewLondonSigner(tx.ChainId())
+		// go-ethereum builds no signer for a chain id below 1 (its
+		// constructor panics), so this build recovers no sender from a
+		// typed transaction that signs chain id 0 and refuses it here.
+		// Its signature can still recover a key; which reason item 2
+		// gives it is open (the follow-up issue on sender recovery).
+		id := tx.ChainId()
+		if id == nil || id.Sign() <= 0 {
+			return nil, common.Address{}, ReasonMalformed
+		}
+		signer = types.NewLondonSigner(id)
 	case tx.Protected():
 		signer = types.NewEIP155Signer(tx.ChainId())
 	default:

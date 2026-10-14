@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -742,5 +743,61 @@ func TestSignedChainIDFactIsAString(t *testing.T) {
 	r = run(g.entry(), g.manifest(""), g.source())
 	if v, _ := r.Tx.Fact("signedChainId"); v == nil || v.Kind != jsonv.Null {
 		t.Errorf("unprotected signedChainId %+v", v)
+	}
+}
+
+// TestTypedChainIDZero holds item 2 to a typed transaction that signs chain
+// id 0: go-ethereum builds no signer for it, so this build recovers no
+// sender and the publication is false, malformed_publication. The first two
+// are the type 2 and type 1 transactions fuzzing found, whose r is no
+// point's x coordinate; the third is signed over chain id 0 by hand, so its
+// signature recovers a key, and a verifier that recovers it decides the
+// entry at item 5 instead (the follow-up issue on sender recovery).
+func TestTypedChainIDZero(t *testing.T) {
+	key, err := crypto.GenerateKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	to := crypto.PubkeyToAddress(key.PublicKey)
+	inner := &types.DynamicFeeTx{ChainID: new(big.Int), Nonce: 1, GasTipCap: big.NewInt(1e9), GasFeeCap: big.NewInt(3e9),
+		Gas: 30000, To: &to, Value: new(big.Int), Data: testP}
+	payload, err := rlp.EncodeToBytes([]any{inner.ChainID, inner.Nonce, inner.GasTipCap, inner.GasFeeCap, inner.Gas,
+		inner.To, inner.Value, inner.Data, inner.AccessList})
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := crypto.Keccak256(append([]byte{types.DynamicFeeTxType}, payload...))
+	sig, err := crypto.Sign(h, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pub, err := crypto.SigToPub(h, sig); err != nil || crypto.PubkeyToAddress(*pub) != to {
+		t.Fatalf("the hand-made signature does not recover its key: %v", err)
+	}
+	inner.R, inner.S, inner.V = new(big.Int).SetBytes(sig[:32]), new(big.Int).SetBytes(sig[32:64]), big.NewInt(int64(sig[64]))
+	signed, err := types.NewTx(inner).MarshalBinary()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f := newFixture(t, txOpts{txType: 2})
+	for _, c := range []struct {
+		name string
+		raw  string
+	}{
+		{"type 2, chain id 0", "02e080800101809409000000000000000000000000000000000000008080c0800507"},
+		{"type 1, chain id 0", "01df808001809409000000000000000000000000000000000000008080c0010507"},
+		{"type 2, chain id 0, signed", hex.EncodeToString(signed)},
+	} {
+		raw, err := hex.DecodeString(c.raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if tx, _, why := decodeTx(raw); tx != nil || why != ReasonMalformed {
+			t.Errorf("%s: decodeTx gives a transaction %v, reason %q", c.name, tx != nil, why)
+		}
+		r := run(set(f.entry("transactionId"), "rawTransaction", report.S(hx(raw))), f.manifest(""), f.source())
+		check(t, c.name, r, want{valid: "false", reason: ReasonMalformed, tx: report.Wrong, txReason: ReasonMalformed,
+			can: report.NotChecked, canReason: "blocked_by:anchor.evm.tx[0]"})
 	}
 }
