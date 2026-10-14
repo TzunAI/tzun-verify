@@ -373,3 +373,88 @@ func TestEVMAnchorVectors(t *testing.T) {
 		}
 	}
 }
+
+// TestEVMTransactionVectors: the transaction cases of
+// evm-anchor-vectors.json, each checked offline (Anchor §10.4 item 2). A
+// transaction that breaks a rule of item 2 is false, malformed_publication,
+// and anchor.evm.tx reports none of its facts, since it has not decoded.
+// The transaction just inside each rule is read, and its sender fact is the
+// address the file states.
+func TestEVMTransactionVectors(t *testing.T) {
+	d := load(t, "evm-anchor-vectors.json")
+	tx := get(t, d, "transactionCases")
+	chain := get(t, tx, "chain")
+	origin := str(t, d, "anchorOrigin")
+	p := hexb(t, str(t, d, "p"))
+	// "" stands for a null rule: item 2 reads the transaction.
+	rules := map[string]bool{}
+	ids := map[string]bool{}
+	for _, c := range get(t, tx, "cases").A {
+		id := str(t, c, "id")
+		if ids[id] {
+			t.Errorf("%s: the id is repeated", id)
+		}
+		ids[id] = true
+		rule := ""
+		if !isNull(c, "rule") {
+			rule = str(t, c, "rule")
+		}
+		rules[rule] = true
+		refuses := str(t, c, "item2") == "refuses"
+		if refuses == (rule == "") {
+			t.Errorf("%s: item2 %s beside rule %q", id, str(t, c, "item2"), rule)
+		}
+		t.Run(id, func(t *testing.T) {
+			entry := report.Obj("kind", report.S(evm.Kind), "chain", chain,
+				"transactionId", get(t, c, "transactionId"), "rawTransaction", get(t, c, "rawTransaction"),
+				"blockNumber", get(t, tx, "blockNumber"), "blockHash", get(t, tx, "blockHash"))
+			manifest := report.Obj("publishers", report.Obj(origin, report.Arr(
+				report.Obj("address", get(t, c, "publisher"), "chain", chain, "namespace", report.S("test")))))
+			r := evm.Verify(evm.Input{Entry: entry, P: p, AnchorOrigin: origin, Manifest: manifest,
+				Deadline: time.Now().Add(time.Minute)})
+			want := get(t, c, "expect")
+			valid := report.Null()
+			if r.Valid != nil {
+				valid = report.B(*r.Valid)
+			}
+			reason, _ := optStr(want, "reason")
+			gotReason := r.Reason
+			if r.Valid != nil && *r.Valid {
+				gotReason = ""
+			}
+			if canonicalOf(t, valid) != canonicalOf(t, get(t, want, "valid")) || gotReason != reason {
+				t.Errorf("valid %s %q, want %s %q", canonicalOf(t, valid), r.Reason, canonicalOf(t, get(t, want, "valid")), reason)
+			}
+			for _, x := range []struct {
+				key string
+				row report.Check
+			}{{"tx", r.Tx}, {"canonical", r.Canonical}} {
+				w := get(t, want, x.key)
+				rr, _ := optStr(w, "reason")
+				// The vectors name the publication's own tx row without
+				// its index.
+				if rr == "blocked_by:anchor.evm.tx" {
+					rr = "blocked_by:" + r.Tx.ID
+				}
+				expectRow(t, id, x.row.ID, report.CheckJSON(x.row), str(t, w, "outcome"), rr, nil)
+			}
+			sender, ok := r.Tx.Fact("sender")
+			switch {
+			case refuses && len(r.Tx.Facts) != 0:
+				t.Errorf("a transaction item 2 refuses reports facts %s", canonicalOf(t, factsOf(report.CheckJSON(r.Tx))))
+			case !refuses && (!ok || sender.S != strings.ToLower(str(t, c, "sender"))):
+				t.Errorf("sender fact %v, want %s", sender, str(t, c, "sender"))
+			}
+		})
+	}
+	known := []string{"typed-chain-id", "legacy-v", "signature-scalars", "fee-cap", "public-key-recovery", ""}
+	for _, rule := range known {
+		if !rules[rule] {
+			t.Errorf("no transaction case for rule %q", rule)
+		}
+		delete(rules, rule)
+	}
+	for rule := range rules {
+		t.Errorf("a transaction case names rule %q, which is not a rule of item 2", rule)
+	}
+}
