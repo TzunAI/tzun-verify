@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2026 Tzun, Inc.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
+name: CodeQL
+
+# CodeQL's static analysis of the Go code and of these workflows, on every
+# push to main, on every pull request to main, once a week, and on demand.
+# The results go to code scanning (the Security tab), and a pull request's
+# alerts show on it. Unlike ci.yml it skips no pull request, Markdown-only
+# ones included: OpenSSF Scorecard's SAST check counts the merged pull
+# requests whose commits a static analysis tool checked. The Go code is
+# built by hand (`go build ./...`) with the toolchain go.mod pins, never a
+# download of another; the analysis leaves out the tests, as CodeQL does by
+# default. The workflows need no build.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Wednesdays at 03:17 UTC.
+    - cron: '17 3 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # One run per branch; a new push supersedes the last, except on main.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+  analyze:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # Uploading the results to code scanning.
+      security-events: write
+    env:
+      GOTOOLCHAIN: local
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            build-mode: manual
+          - language: actions
+            build-mode: none
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          # The toolchain go.mod pins. The next step refuses any other.
+          go-version: '1.27.1'
+          cache-dependency-path: go.sum
+
+      - name: Toolchain is the pinned one
+        if: matrix.language == 'go'
+        run: |
+          want="go$(sed -n 's/^toolchain go//p' go.mod)"
+          got="$(go env GOVERSION)"
+          echo "go.mod pins $want; runner has $got"
+          test "$got" = "$want"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Build
+        if: matrix.build-mode == 'manual'
+        run: go build ./...
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          category: /language:${{ matrix.language }}
