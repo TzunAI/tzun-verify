@@ -341,9 +341,23 @@ func TestStepOneStrictness(t *testing.T) {
 			sd.kids = slices.Insert(sd.kids, at, raw(t, h))
 		})
 	}
-	verify("SignedData, an empty crls [1] after certificates", crls(4, "a100"), okw)
-	verify("SignedData, an empty crls [1] before certificates", crls(3, "a100"), mf)
-	verify("SignedData, a primitive crls [1] after certificates", crls(4, "8100"), mf)
+	after, before, primitive := crls(4, "a100"), crls(3, "a100"), crls(4, "8100")
+	verify("SignedData, an empty crls [1] after certificates", after, okw)
+	verify("SignedData, an empty crls [1] before certificates", before, mf)
+	verify("SignedData, a primitive crls [1] after certificates", primitive, mf)
+	// tokenShape decides each, not isDER or the CMS decoder.
+	for _, c := range []struct {
+		name, tok string
+		ok        bool
+	}{{"after certificates", after, true}, {"before certificates", before, false}, {"primitive", primitive, false}} {
+		der, err := base64.StdEncoding.DecodeString(c.tok)
+		if err != nil || !isDER(der) {
+			t.Fatalf("crls [1] %s: not DER (%v)", c.name, err)
+		}
+		if got := tokenShape(der); got != c.ok {
+			t.Errorf("crls [1] %s: tokenShape %v, want %v", c.name, got, c.ok)
+		}
+	}
 
 	// The certificates, each an RFC 5280 certificate. The signer's key: a
 	// BOOLEAN of length 6 is not DER, whatever the algorithm, and an
