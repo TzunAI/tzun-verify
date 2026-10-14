@@ -54,6 +54,39 @@ scripts/check-public-hygiene.sh tree
 reuse lint
 ```
 
+`go test` runs each fuzz target (`func Fuzz…` in a package's
+`fuzz_test.go`) on its seeds: the conformance vectors in `testdata/vectors`,
+the package's own test data, inputs the target builds itself, and any input
+committed under the package's `testdata/fuzz/`. To fuzz a target, run it
+alone for a while:
+
+```
+go test -run='^$' -fuzz='^FuzzVerify$' -fuzztime=5m -fuzzminimizetime=100x ./internal/bundle
+```
+
+`-fuzzminimizetime=100x` keeps a target whose inputs are long, as this
+one's are, from spending the run shrinking each new input it finds. To fuzz
+every target in turn:
+
+```
+for p in $(go list ./internal/...); do
+  for t in $(go test -list='^Fuzz' "$p" | grep '^Fuzz'); do
+    go test -run='^$' -fuzz="^$t\$" -fuzztime=5m -fuzzminimizetime=100x "$p" || break 2
+  done
+done
+```
+
+An input that fails is written to the package's `testdata/fuzz/`. If what
+it shows is in the scope of [`SECURITY.md`](SECURITY.md), among others a
+bundle reported as verified that the specification says must not be, a
+check reported as passed that was not performed, or two runs on the same
+input that disagree, report it privately as that file says, and do not
+open an issue or a pull request with it. Otherwise open an issue. The pull
+request that fixes it adds the input as a test that fails without the fix,
+a seed of the target or a file under the package's `testdata/fuzz/` listed
+in `REUSE.toml`; for a security report, only once the advisory is
+published.
+
 ## What a change must keep true
 
 - **No Tzun code.** Nothing here imports a Tzun module

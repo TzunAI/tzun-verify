@@ -102,6 +102,10 @@ fails, and no draft release is made.
 
 ## Cutting a release
 
+Before step 1, fuzz every target for five minutes on the commit of `main`
+the release will start from (CONTRIBUTING.md, "Building and testing", says
+how). An input that fails holds the release until its fix is on `main`.
+
 1. On a branch, set `Version` in `internal/cli/cli.go` to the release's
    version, and the version in README's sample output ("What it prints") to
    match. Copy the bytes served at https://tzun.ai/anchors/publishers.json
