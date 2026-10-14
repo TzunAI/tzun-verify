@@ -9,7 +9,9 @@
 //
 //  1. parse: a granted TimeStampResp that wraps a CMS SignedData over a
 //     TSTInfo, every element of the response with a DER header (X.690
-//     §8.1, §10.1), and one with a universal tag with the form X.690 gives
+//     §8.1, §10.1), though not inside an OCTET STRING or BIT STRING (the
+//     TSTInfo, an extension's value, a key), which are encodings of their
+//     own, and one with a universal tag with the form X.690 gives
 //     its type and, if it is a BOOLEAN, INTEGER, ENUMERATED, BIT STRING,
 //     NULL, OBJECT IDENTIFIER, RELATIVE-OID, UTCTime or GeneralizedTime,
 //     the contents der.go's contentsOK names (der.go does not check the

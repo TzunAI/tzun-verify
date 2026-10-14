@@ -302,8 +302,9 @@ func TestStepOneStrictness(t *testing.T) {
 		s := certID(a).at(1, 1)
 		s.tag, s.body = asn1.TagBitString, []byte{0x07, 0x01} // seven unused bits, one of them set
 	}), mf)
-	// A DER BIT STRING there is DER: what the value means is step 3's to
-	// judge (the signer binding), and the signature fails there too.
+	// A BIT STRING with DER contents there passes isDER: what the value
+	// means is step 3's to judge (the signer binding), and the signature
+	// fails there too.
 	verify("issuerSerial's serial a DER BIT STRING", signed(oidSigningCertV2, func(a *node) {
 		s := certID(a).at(1, 1)
 		s.tag, s.body = asn1.TagBitString, []byte{0x00, 0x01}
