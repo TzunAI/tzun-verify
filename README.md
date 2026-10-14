@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/TzunAI/tzun-verify/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TzunAI/tzun-verify/actions/workflows/ci.yml?query=branch%3Amain)
 [![public hygiene](https://github.com/TzunAI/tzun-verify/actions/workflows/public-hygiene.yml/badge.svg?branch=main)](https://github.com/TzunAI/tzun-verify/actions/workflows/public-hygiene.yml?query=branch%3Amain)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TzunAI/tzun-verify/badge)](https://scorecard.dev/viewer/?uri=github.com/TzunAI/tzun-verify)
 [![Licence: BSD-3-Clause-Clear](https://img.shields.io/badge/licence-BSD--3--Clause--Clear-blue)](LICENSE)
 
 The standalone verifier for Decision Evidence Object (DEO) proof bundles. It
