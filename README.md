@@ -232,10 +232,10 @@ tar -xzf "tzun-verify_${v}_$p.tar.gz" tzun-verify
 - The bare binaries check the same way; they need `chmod +x` before they
   run.
 
-Every file can also be rebuilt: on a clean checkout of the tag, with the
-pinned toolchain, GNU tar, gzip and zip, `scripts/release-artifacts.sh
-"$(mktemp -d)/dist" v<version>` writes the release's files and a
-`SHA256SUMS` that must equal the release's, line for line.
+Every file `SHA256SUMS` lists can also be rebuilt: on a clean checkout of
+the tag, with the pinned toolchain, GNU tar, gzip and zip,
+`scripts/release-artifacts.sh "$(mktemp -d)/dist" v<version>` writes those
+files and a `SHA256SUMS` that must equal the release's, line for line.
 
 ## How to run it
 
@@ -488,12 +488,15 @@ Its correctness does not rest on reading the Go:
    `third_party/LICENSE-THIRD-PARTY` no longer holds the licences of the
    modules a release links (License, below).
 10. **Release provenance.** `.github/workflows/release.yml` makes every
-   release file on two machines, from two clean checkouts of the tag, and
-   stops the release unless every file, binaries and archives, is identical
-   byte for byte across the two. On each machine
+   file `SHA256SUMS` lists on two machines, from two clean checkouts of the
+   tag, and stops the release unless each of them, binaries and archives,
+   is identical byte for byte across the two. On each machine
    `scripts/reproducible-build.sh` builds every binary twice and requires
-   the two builds to agree. Every file is listed in `SHA256SUMS` and has a
-   GitHub build provenance attestation ("Install"; RELEASING.md).
+   the two builds to agree. Each of those files has a GitHub build
+   provenance attestation, which the release also carries as
+   `tzun-verify_<version>.intoto.jsonl`, and the workflow checks every one
+   of them against that file with `gh attestation verify --bundle` before
+   it makes the draft ("Install"; RELEASING.md).
 11. **Planned:** an external security review.
 
 ## Choices this build makes
