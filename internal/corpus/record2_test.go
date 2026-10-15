@@ -447,7 +447,8 @@ func TestEVMTransactionVectors(t *testing.T) {
 			}
 		})
 	}
-	known := []string{"typed-chain-id", "legacy-v", "signature-scalars", "fee-cap", "public-key-recovery", ""}
+	// The rules of item 2, by the labels the specification gives them.
+	known := []string{"chain-id", "legacy-v", "signature-values", "fees", "recovery", "encoding", "field-sizes", ""}
 	for _, rule := range known {
 		if !rules[rule] {
 			t.Errorf("no transaction case for rule %q", rule)
