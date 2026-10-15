@@ -23,14 +23,20 @@
 #
 # The rules, each a pattern and the exceptions it allows:
 #   org-repo       a repository of the TzunAI organisation other than
-#                  tzun-verify, as owner/name, a GitHub URL or an npm scope. The
-#                  branch named by a GitHub merge commit's first line ("Merge
-#                  pull request #N from <owner>/<branch>") is not a repository.
+#                  tzun-verify, as owner/name, a GitHub URL or an npm scope.
+#                  The repository that builds spec.tzun.ai is refused like
+#                  any other: a reader outside Tzun cannot open it, so the
+#                  specification is cited at spec.tzun.ai or by document and
+#                  section (tzun-anchor/1 §10.4). The branch named by a
+#                  GitHub merge commit's first line ("Merge pull request #N
+#                  from <owner>/<branch>") is not a repository.
 #   prefixed-name  a lower-case tzun-<word> or tzun_<word>, or TZUN_<WORD>,
 #                  whose first word is not one of the protocol and file names in
 #                  PUBLIC_WORDS below.
 #   cross-ref      <name>#<number>, an issue or pull request of another
-#                  repository; tzun-verify#<number> is allowed.
+#                  repository; tzun-verify#<number> is allowed. The bare name
+#                  tzun-spec passes prefixed-name; tzun-spec#<number> is
+#                  refused here.
 #   session        a link to a conversation with an assistant.
 #   local-path     an absolute path under a home, temporary, mount or root
 #                  directory, on any operating system.
@@ -78,8 +84,9 @@ import unicodedata
 # the tzun-mandate/1 document, the tzun-agent/1 descriptor, the
 # tzun-assertion-v1 and tzun-decider-cmt-v1 digest domains and the
 # tzun-cmt-salt-v1 derived salt of Record, the tzun-merkle-vector- leaf
-# label of the tree vectors, the tzun-spec repository that builds
-# spec.tzun.ai, and scripts/check-no-tzun-imports.sh.
+# label of the tree vectors, tzun-spec, the name of the project that builds
+# spec.tzun.ai (the name only: org-repo and cross-ref refuse a link to its
+# repository), and scripts/check-no-tzun-imports.sh.
 PUBLIC_WORDS = {"anchor", "verify", "spec", "signoff", "decision", "confirm", "mandate", "agent", "assertion",
                 "decider", "cmt", "merkle", "imports"}
 
@@ -111,7 +118,6 @@ DEPENDABOT_AUTHOR = ("dependabot[bot]", "49699333+dependabot[bot]@users.noreply.
 DEPENDABOT_SIGNOFF = "Signed-off-by: dependabot[bot] <support" + "@github.com>"
 
 SELF_REPO = "tzun-verify"
-SPEC_REPO = "tzun-spec"
 
 
 MERGE_LINE = re.compile(r"^Merge pull request #[0-9]+ from ")
@@ -119,7 +125,7 @@ MERGE_LINE = re.compile(r"^Merge pull request #[0-9]+ from ")
 
 def allow_org_repo(m, line, author):
     name = m.group(1).lower()
-    if name in (SELF_REPO, SELF_REPO + ".git", SPEC_REPO, SPEC_REPO + ".git"):
+    if name in (SELF_REPO, SELF_REPO + ".git"):
         return True
     # The branch a GitHub merge commit names, not a repository.
     lead = MERGE_LINE.match(line)
