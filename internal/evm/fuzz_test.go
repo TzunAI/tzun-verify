@@ -133,23 +133,36 @@ const (
 )
 
 // refSender is the reading item 2 of Anchor §10.4 gives a raw transaction,
-// stated apart from decodeTx and txRulesOK. go-ethereum decodes it; a
-// transaction that signs a chain id signs 1 or more, which refuses a typed
-// transaction that signs chain id 0 and a legacy one with v 35 or 36; a
-// type 2 maxPriorityFeePerGas is at most its maxFeePerGas; the recovery id v
-// gives (v - 27, v - chainId*2 - 35, or a typed transaction's yParity) is 0
-// or 1, and r and s pass go-ethereum's own test of their range and of a low
-// s (crypto.ValidateSignatureValues). The sender is then what go-ethereum's
-// latest signer recovers, for the chain id signed, or for chain 1 when none
-// is. go-ethereum alone recovers a sender from a legacy transaction that
-// signs chain id 0 and from a type 2 transaction whose tip exceeds its cap.
+// stated apart from decodeTx and its rules. go-ethereum decodes it, which
+// holds the nonce and gasLimit in 64 bits; its encoding is go-ethereum's
+// encoding of what it decoded, the canonical RLP of its fields; the chain
+// id it signs (for a legacy transaction, the one its v gives), value and
+// fees fit 256 bits; a chain id it signs is 1 or more, which refuses a
+// typed transaction that signs chain id 0 and a legacy one with v 35 or
+// 36; a type 2 maxPriorityFeePerGas is at most its maxFeePerGas; the
+// recovery id v gives (v - 27, v - chainId*2 - 35, or a typed
+// transaction's yParity) is 0 or 1, and r and s pass go-ethereum's own test
+// of their range and of a low s (crypto.ValidateSignatureValues). The
+// sender is then what go-ethereum's latest signer recovers, for the chain
+// id signed, or for chain 1 when none is. go-ethereum alone recovers a
+// sender from a legacy transaction that signs chain id 0, from a type 2
+// transaction whose tip exceeds its cap, and from one whose chain id,
+// value, gasPrice or fees exceed 2^256 - 1.
 func refSender(raw []byte) (common.Address, error) {
 	tx := new(types.Transaction)
 	if err := tx.UnmarshalBinary(raw); err != nil {
 		return common.Address{}, err
 	}
+	if again, err := tx.MarshalBinary(); err != nil || !bytes.Equal(again, raw) {
+		return common.Address{}, errors.New("not the canonical encoding of its fields")
+	}
 	v, r, s := tx.RawSignatureValues()
 	id := tx.ChainId()
+	for _, n := range []*big.Int{id, tx.Value(), tx.GasPrice(), tx.GasTipCap(), tx.GasFeeCap()} {
+		if n.BitLen() > 256 {
+			return common.Address{}, errors.New("a field above 2^256 - 1")
+		}
+	}
 	recID := new(big.Int).Set(v)
 	switch {
 	case tx.Type() == types.LegacyTxType && !tx.Protected():
@@ -169,6 +182,66 @@ func refSender(raw []byte) (common.Address, error) {
 	return types.Sender(types.LatestSignerForChainID(id), tx)
 }
 
+// refFields is the encoding and field sizes rules of item 2 over a raw
+// transaction of type 0, 1 or 2, stated apart from txEncoding and
+// fieldSizesOK. go-ethereum's RLP decoder reads RLP in the canonical form
+// only, so the transaction meets the encoding rule when that decoder reads
+// it as one list of the type's fields, its lists no deeper than four, an
+// integer field a string with no leading zero byte. Field sizes are then
+// counted in bytes: at most 8 for the nonce and gasLimit and 32 for the
+// chain id, value, gasPrice and fees; and a legacy v of 35 or more gives a
+// chain id, (v - 35) / 2, of at most 256 bits.
+func refFields(raw []byte) (encoding, sizes bool) {
+	// Each field's most bytes: 0 for an integer bounded elsewhere, -1 for a
+	// field that is no integer, -2 for a legacy v.
+	enc, layout := raw[1:], []int(nil)
+	switch raw[0] {
+	case types.AccessListTxType:
+		layout = []int{32, 8, 32, 8, -1, 32, -1, -1, 0, 0, 0}
+	case types.DynamicFeeTxType:
+		layout = []int{32, 8, 32, 32, 8, -1, 32, -1, -1, 0, 0, 0}
+	default:
+		enc, layout = raw, []int{8, 32, 8, -1, 32, -1, -2, 0, 0}
+	}
+	var fields []any
+	if err := rlp.DecodeBytes(enc, &fields); err != nil || len(fields) != len(layout) || listDepth(fields) > 4 {
+		return false, false
+	}
+	sizes = true
+	for i, most := range layout {
+		if most == -1 {
+			continue
+		}
+		b, ok := fields[i].([]byte)
+		if !ok || len(b) > 0 && b[0] == 0 {
+			return false, false
+		}
+		switch {
+		case most > 0 && len(b) > most:
+			sizes = false
+		case most == -2:
+			if v := new(big.Int).SetBytes(b); v.Cmp(big.NewInt(35)) >= 0 && new(big.Int).Rsh(v.Sub(v, big.NewInt(35)), 1).BitLen() > 256 {
+				sizes = false
+			}
+		}
+	}
+	return true, sizes
+}
+
+// listDepth is how deep lists sit in v, as go-ethereum's RLP decoder reads
+// it into []any, a list at depth 1.
+func listDepth(v any) int {
+	l, ok := v.([]any)
+	if !ok {
+		return 0
+	}
+	d := 0
+	for _, x := range l {
+		d = max(d, listDepth(x))
+	}
+	return d + 1
+}
+
 // FuzzDecodeTx holds item 2 of Anchor §10.4 to any raw transaction: it is
 // refused as malformed or unsupported, or it decodes to a transaction of
 // type 0, 1 or 2 whose encoding is the raw bytes and whose hash, the id
@@ -176,7 +249,9 @@ func refSender(raw []byte) (common.Address, error) {
 // the verifier reports and compares (item 3). TxID agrees. A transaction of
 // type 0, 1 or 2 yields a sender exactly when refSender, the rules of item 2
 // stated a second way over go-ethereum, recovers one, and it is the same
-// sender.
+// sender; and txEncoding and fieldSizesOK, which read the raw bytes before
+// go-ethereum does, agree with refFields on every one, whether or not
+// go-ethereum decodes it.
 //
 // go test runs the seeds; go test -run='^$' -fuzz=FuzzDecodeTx fuzzes.
 func FuzzDecodeTx(f *testing.F) {
@@ -202,6 +277,16 @@ func FuzzDecodeTx(f *testing.F) {
 		id := crypto.Keccak256Hash(raw)
 		if got := TxID("0x" + hex.EncodeToString(raw)); got != strings.ToLower(id.Hex()) {
 			t.Fatalf("TxID %q, keccak256 %s", got, id.Hex())
+		}
+		if typed := raw[0] == types.AccessListTxType || raw[0] == types.DynamicFeeTxType; typed || raw[0] >= 0xc0 {
+			ints, encoded := txEncoding(raw)
+			refEncoded, refSizes := refFields(raw)
+			if encoded != refEncoded {
+				t.Fatalf("txEncoding %v, refFields %v", encoded, refEncoded)
+			}
+			if encoded && fieldSizesOK(ints) != refSizes {
+				t.Fatalf("fieldSizesOK %v, refFields %v", !refSizes, refSizes)
+			}
 		}
 		tx, sender, why := decodeTx(raw)
 		refFrom, refErr := refSender(raw)
