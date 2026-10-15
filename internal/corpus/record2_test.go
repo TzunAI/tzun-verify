@@ -378,8 +378,10 @@ func TestEVMAnchorVectors(t *testing.T) {
 // evm-anchor-vectors.json, each checked offline (Anchor §10.4 item 2). A
 // transaction that breaks a rule of item 2 is false, malformed_publication,
 // and anchor.evm.tx reports none of its facts, since it has not decoded.
-// The transaction just inside each rule is read, and its sender fact is the
-// address the file states.
+// The transaction just inside each rule is read, its sender fact is the
+// address the file states, and its signedChainId fact is the value the file
+// states: the signed chain id in decimal, or null for a legacy transaction
+// whose v is 27 or 28, which signs none (Anchor §10.7).
 func TestEVMTransactionVectors(t *testing.T) {
 	d := load(t, "evm-anchor-vectors.json")
 	tx := get(t, d, "transactionCases")
@@ -444,6 +446,19 @@ func TestEVMTransactionVectors(t *testing.T) {
 				t.Errorf("a transaction item 2 refuses reports facts %s", canonicalOf(t, factsOf(report.CheckJSON(r.Tx))))
 			case !refuses && (!ok || sender.S != strings.ToLower(str(t, c, "sender"))):
 				t.Errorf("sender fact %v, want %s", sender, str(t, c, "sender"))
+			}
+			// The file states null for a refused case, whose facts the
+			// check above holds to none.
+			wantChain := canonicalOf(t, get(t, c, "signedChainId"))
+			switch chainID, ok := r.Tx.Fact("signedChainId"); {
+			case refuses:
+				if wantChain != "null" {
+					t.Errorf("a refused case states signedChainId %s", wantChain)
+				}
+			case !ok:
+				t.Errorf("no signedChainId fact, want %s", wantChain)
+			case canonicalOf(t, chainID) != wantChain:
+				t.Errorf("signedChainId fact %s, want %s", canonicalOf(t, chainID), wantChain)
 			}
 		})
 	}
