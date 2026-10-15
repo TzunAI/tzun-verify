@@ -10,7 +10,7 @@ the binary. Pushing the tag starts these workflows:
   target, and every mutation killed);
 - `.github/workflows/release.yml`: the release files, built on two machines
   and compared, their build provenance attested, and a **draft** release
-  holding them.
+  holding them and the attestation.
 
 Nothing is published until a person publishes the draft ("Cutting a
 release"). Packages for npm, PyPI and Homebrew are planned (#2, #3, #4);
@@ -46,9 +46,11 @@ change to document here and in the release notes.
 | darwin/arm64 | `tzun-verify_<version>_darwin_arm64` | `tzun-verify_<version>_darwin_arm64.tar.gz` |
 | windows/amd64 | `tzun-verify_<version>_windows_amd64.exe` | `tzun-verify_<version>_windows_amd64.zip` |
 
-and once, `LICENSE-THIRD-PARTY` and `SHA256SUMS`: twelve files in all. For
-version `0.1.0`, the linux/amd64 binary is `tzun-verify_0.1.0_linux_amd64`
-and its archive `tzun-verify_0.1.0_linux_amd64.tar.gz`.
+and once, `LICENSE-THIRD-PARTY`, `SHA256SUMS` and
+`tzun-verify_<version>.intoto.jsonl`: thirteen files in all (`0.1.0` has
+the first twelve). For version `0.1.0`, the linux/amd64 binary is
+`tzun-verify_0.1.0_linux_amd64` and its archive
+`tzun-verify_0.1.0_linux_amd64.tar.gz`.
 
 - **Binary**: the executable, byte for byte the one in the archive. Release
   downloads carry no file mode, so it needs `chmod +x` on Linux and macOS.
@@ -68,6 +70,17 @@ and its archive `tzun-verify_0.1.0_linux_amd64.tar.gz`.
   that `SHA256SUMS` lists, signed for `.github/workflows/release.yml` at the tag,
   on a GitHub-hosted runner. `gh attestation verify` checks any of them
   (README, "Install").
+- **`tzun-verify_<version>.intoto.jsonl`**: that attestation as a file, as
+  the attest step wrote it: one line, a Sigstore bundle
+  (`application/vnd.dev.sigstore.bundle.v0.3+json`) whose DSSE envelope
+  holds the in-toto statement, with its signing certificate and
+  transparency log entry. `gh attestation verify --bundle` reads it instead
+  of asking GitHub for the attestation. `SHA256SUMS` does not list it: it is
+  made after `SHA256SUMS`, from the files it lists, and no rebuild
+  reproduces it, since its certificate and log entry belong to the run that
+  signed it. The suffix is the one slsa-github-generator gives the same
+  kind of file and the one OpenSSF Scorecard reads as provenance; the
+  in-toto bundle convention would have each line a bare DSSE envelope.
 
 The release notes list the specification versions the release implements,
 from the table under "Specification" in the tagged tree's README, the
@@ -80,8 +93,8 @@ SHA-256 of the publisher manifest it pins, then `SHA256SUMS` itself
 |---|---|---|
 | build | a fresh GitHub-hosted runner | Checks that the tagged commit is on `main` and that the toolchain is the one `go.mod` pins, then runs `scripts/release-artifacts.sh`, which refuses a tag other than `v<Version>`, builds every target twice through `scripts/reproducible-build.sh` (two copies of the tree at different paths, fresh build and module caches, identical binaries required), checks that the linux/amd64 binary's `--version` names the version, and writes the archives and `SHA256SUMS`. |
 | rebuild | a second fresh runner | The same, from its own clean checkout at another path. Only its `SHA256SUMS` leaves the job. |
-| attest | a third | Requires the first machine's files to be exactly those its `SHA256SUMS` names, each matching it, and the two machines' `SHA256SUMS` to be identical: any byte difference in any file stops the release here. Then attests the files' build provenance. |
-| release | a fourth | Creates the draft release with the files, `SHA256SUMS` and the notes; a version with a pre-release part (`0.2.0-rc.1`) is marked a pre-release. |
+| attest | a third | Requires the first machine's files to be exactly those its `SHA256SUMS` names, each matching it, and the two machines' `SHA256SUMS` to be identical: any byte difference in any file stops the release here. Then attests the files' build provenance and checks every file against the attestation file with `gh attestation verify --bundle`. |
+| release | a fourth | Creates the draft release with the files, `SHA256SUMS`, the attestation file and the notes; a version with a pre-release part (`0.2.0-rc.1`) is marked a pre-release. |
 
 Permissions are per job: `contents: read` for the builds, `id-token: write`
 and `attestations: write` (with `contents: read`) for the attestation, and
@@ -121,7 +134,7 @@ how). An input that fails holds the release until its fix is on `main`.
 
 3. Wait for both workflows on the tag. `release.yml` ends with a draft
    release; `ci.yml`'s release gate must be green too.
-4. Check the draft: twelve files, `SHA256SUMS` as the notes show it, the
+4. Check the draft: thirteen files, `SHA256SUMS` as the notes show it, the
    specification versions the notes list. To check the build yourself, run
    on a clean checkout of the tag, with Go 1.27.1, GNU tar, gzip and zip:
 

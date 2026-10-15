@@ -5,8 +5,8 @@
 # Prints a release's notes in Markdown: the specification versions the
 # release implements (the table under "Specification" in README.md, as the
 # tagged tree states it), the SHA-256 of the publisher manifest it pins, how
-# to check its files, and its SHA256SUMS. The
-# release workflow writes the draft release's notes with it.
+# to check its files against SHA256SUMS and the attestation file, and its
+# SHA256SUMS. The release workflow writes the draft release's notes with it.
 #
 #   scripts/release-notes.sh <version> <SHA256SUMS>
 set -euo pipefail
@@ -39,7 +39,7 @@ $table
 
 ## Files
 
-For linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64: the binary \`tzun-verify_${version}_<os>_<arch>\` (\`.exe\` on Windows) and an archive holding it with README.md, LICENSE, NOTICE and LICENSE-THIRD-PARTY (\`.tar.gz\`; \`.zip\` on Windows). \`LICENSE-THIRD-PARTY\` also stands alone: the licence of every module a binary links. \`SHA256SUMS\` gives the SHA-256 of every file, and every file has a build provenance attestation.
+For linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64: the binary \`tzun-verify_${version}_<os>_<arch>\` (\`.exe\` on Windows) and an archive holding it with README.md, LICENSE, NOTICE and LICENSE-THIRD-PARTY (\`.tar.gz\`; \`.zip\` on Windows). \`LICENSE-THIRD-PARTY\` also stands alone: the licence of every module a binary links. \`SHA256SUMS\` gives the SHA-256 of each of those files, and each has a build provenance attestation, which \`tzun-verify_${version}.intoto.jsonl\` holds: a Sigstore bundle, signed in this release's workflow run. \`SHA256SUMS\` does not list that file, which no rebuild reproduces.
 
 Every binary was built twice on each of two machines, from two clean checkouts of this tag, and every file (binaries and archives) was identical byte for byte across the two machines. Anyone can rebuild them with \`scripts/release-artifacts.sh\` and compare (RELEASING.md).
 
@@ -52,11 +52,12 @@ This release pins a byte-for-byte copy of https://tzun.ai/anchors/publishers.jso
 \`\`\`
 grep " tzun-verify_${version}_linux_amd64.tar.gz\$" SHA256SUMS | sha256sum --check
 gh attestation verify tzun-verify_${version}_linux_amd64.tar.gz --repo TzunAI/tzun-verify \\
+  --bundle tzun-verify_${version}.intoto.jsonl \\
   --signer-workflow TzunAI/tzun-verify/.github/workflows/release.yml \\
   --source-ref refs/tags/v${version} --deny-self-hosted-runners
 \`\`\`
 
-README.md, "Install", says more.
+With \`--bundle\`, gh reads the attestation from \`tzun-verify_${version}.intoto.jsonl\` and needs no login; without it, gh fetches the same attestation from GitHub. README.md, "Install", says more.
 
 ## SHA256SUMS
 
