@@ -192,11 +192,12 @@ linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 and windows/amd64:
   `NOTICE` and `LICENSE-THIRD-PARTY`: `tzun-verify_<version>_<os>_<arch>.tar.gz`
   (`.zip` on Windows);
 
-and `LICENSE-THIRD-PARTY` on its own, one `SHA256SUMS` over every file, and
-a build provenance attestation (GitHub artifact attestations) for every
-file. RELEASING.md lists the names. A release's notes list the
-specification versions it implements and the SHA-256 of the publisher
-manifest it pins.
+and `LICENSE-THIRD-PARTY` on its own, one `SHA256SUMS` over those files, a
+build provenance attestation (GitHub artifact attestations) for every one of
+them, and, from 0.1.1, that attestation as a file,
+`tzun-verify_<version>.intoto.jsonl`. RELEASING.md lists the names. A
+release's notes list the specification versions it implements and the
+SHA-256 of the publisher manifest it pins.
 
 Download the archive for your platform and `SHA256SUMS`, check the archive
 against `SHA256SUMS` and against its attestation, then unpack it:
@@ -222,6 +223,12 @@ tar -xzf "tzun-verify_${v}_$p.tar.gz" tzun-verify
   repository's release workflow from the tag `v<version>` on a
   GitHub-hosted runner. It reads the attestation from GitHub; `SHA256SUMS`
   alone only shows the download matches the release page.
+- From 0.1.1, download `tzun-verify_<version>.intoto.jsonl` too and add
+  `--bundle "tzun-verify_$v.intoto.jsonl"` to the `gh attestation verify`
+  line: gh then reads the attestation from that file and needs no login.
+  With no network at all, add `--custom-trusted-root trusted_root.jsonl`,
+  a file `gh attestation trusted-root >trusted_root.jsonl` wrote while
+  online.
 - The bare binaries check the same way; they need `chmod +x` before they
   run.
 
