@@ -32,6 +32,8 @@ root=root
 req=REQ
 w=widgets
 ref="${w}#9"
+# The project that builds spec.tzun.ai.
+sp="$t-spec"
 # The line Dependabot signs off its commits with, GitHub's support address
 # on its own, and Dependabot as a commit's author.
 signoff="Signed-off-by: dependabot[bot] <support@""github.com>"
@@ -71,6 +73,14 @@ catches org-repo "see $org/widgets for the code"
 catches org-repo "https://github.com/$org/widgets/pull/3"
 catches org-repo "git@github.com:$org/widgets.git"
 catches org-repo "npm install @$lc_org/widgets"
+# The repository that builds spec.tzun.ai, which a reader outside Tzun cannot
+# open, in each form; its bare name passes (below).
+catches org-repo "see $org/$sp for the source"
+catches org-repo "https://github.com/$org/$sp/blob/main/README.md"
+catches org-repo "git@github.com:$org/$sp.git"
+catches org-repo "https://github.com/${lc_org}/${T}-SPEC/pull/14"
+catches org-repo "- Senders follow the rules ($org/${sp}#14)."
+catches cross-ref "as ${sp}#3 says"
 catches prefixed-name "the $t-widgets repository"
 catches prefixed-name "import $t""_widgets"
 catches prefixed-name "export $T""_WIDGETS=1"
@@ -116,6 +126,7 @@ passes "a $t-mandate/1 document, a $t-agent/1 descriptor, $t-confirm-v1, $t-asse
 passes "scripts/check-no-$t-imports.sh"
 passes "$org is the organisation; Tzun-specific terms are fine"
 passes "see tzun-verify#12"
+passes "the $sp project builds spec.$tz"
 passes "Merge pull request #7; step #3; (#12)"
 passes "Co-Authored-By: A Bot <noreply@anthropic.com>"
 passes "123+someone@users.noreply.github.com and ops@example.com and a@b.test"
