@@ -217,7 +217,28 @@ func shape(e *jsonv.Value) (*parsed, bool) {
 	return p, true
 }
 
-// decodeTx is item 2: the EIP-2718 type, then parse and sender recovery.
+// decodeTx is item 2. The first byte gives the EIP-2718 type. A transaction
+// of type 0, 1 or 2 then decodes and yields a sender only when it meets
+// each rule item 2 states, every one of them this package's own code:
+//
+//   - Encoding and Field sizes, on the raw bytes, before go-ethereum reads
+//     them: txFieldsOK;
+//   - Chain id, Legacy v, Signature values and Fees, on the transaction
+//     go-ethereum decodes: txRulesOK;
+//   - Recovery: a public key is recovered from the signature.
+//
+// A transaction that breaks one is malformed_publication. Ethereum mainnet,
+// Sepolia and Hoodi, the chains of §9's network table, refuse such a
+// transaction under the rules they apply today, so no block they produce
+// today holds one (mainnet blocks from before Homestead do hold legacy
+// transactions with a high s), and refusing it refuses no publication made
+// on them. A development chain can be more lenient: anvil, for one, mines a
+// transaction whose s is above (n-1)/2. A publication on such a chain that
+// breaks one of these rules is refused like any other. The rules are stated
+// here rather than left to go-ethereum's decoder and signers, which accept
+// some of these transactions and refuse others, so that the outcome and its
+// reason are the same as every conforming verifier's, whatever its Ethereum
+// library.
 func decodeTx(raw []byte) (*types.Transaction, common.Address, string) {
 	switch b := raw[0]; {
 	case b >= 0xc0, b == 0x01, b == 0x02:
@@ -226,33 +247,260 @@ func decodeTx(raw []byte) (*types.Transaction, common.Address, string) {
 	default:
 		return nil, common.Address{}, ReasonUnsupportedTxType
 	}
+	if !txFieldsOK(raw) {
+		return nil, common.Address{}, ReasonMalformed
+	}
 	tx := new(types.Transaction)
 	if err := tx.UnmarshalBinary(raw); err != nil {
+		return nil, common.Address{}, ReasonMalformed
+	}
+	if !txRulesOK(tx) {
 		return nil, common.Address{}, ReasonMalformed
 	}
 	var signer types.Signer
 	switch {
 	case tx.Type() != types.LegacyTxType:
-		// go-ethereum builds no signer for a chain id below 1 (its
-		// constructor panics), so this build recovers no sender from a
-		// typed transaction that signs chain id 0 and refuses it here.
-		// Its signature can still recover a key; which reason item 2
-		// gives it is open (the follow-up issue on sender recovery).
-		id := tx.ChainId()
-		if id == nil || id.Sign() <= 0 {
-			return nil, common.Address{}, ReasonMalformed
-		}
-		signer = types.NewLondonSigner(id)
+		signer = types.NewLondonSigner(tx.ChainId())
 	case tx.Protected():
 		signer = types.NewEIP155Signer(tx.ChainId())
 	default:
 		signer = types.HomesteadSigner{}
 	}
+	// With the rules met, the one way left for recovery to fail is a
+	// signature from which no public key can be recovered: r is no point's
+	// x coordinate, or the point recovered is the point at infinity.
 	from, err := types.Sender(signer, tx)
 	if err != nil {
 		return nil, common.Address{}, ReasonMalformed
 	}
 	return tx, from, ""
+}
+
+// secp256k1N is n, the order of the secp256k1 group, and secp256k1HalfN is
+// (n-1)/2, n being odd. An s above it is the high twin of the low s that
+// signs the same message with the same key (EIP-2).
+var (
+	secp256k1N, _  = new(big.Int).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
+	secp256k1HalfN = new(big.Int).Rsh(secp256k1N, 1)
+)
+
+// The values a legacy transaction's v may take: 27 or 28 for one that signs
+// no chain id, and chainId*2+35 or chainId*2+36 for one that signs chainId
+// (EIP-155), which a chain id of 1 or more puts at 37 or above.
+var (
+	legacyV27 = big.NewInt(27)
+	legacyV28 = big.NewInt(28)
+	minV155   = big.NewInt(37)
+)
+
+// txRulesOK holds a transaction of type 0, 1 or 2 that go-ethereum has
+// decoded to four of the rules of item 2 (decodeTx), each read from the
+// decoded fields:
+//
+//   - Chain id: a type 1 or type 2 transaction signs a chain id of 1 or
+//     more;
+//   - Legacy v: a legacy transaction's v is 27 or 28, or chainId*2+35 or
+//     chainId*2+36 with a chain id of 1 or more, so v 35 and 36 (chain id
+//     0) are refused;
+//   - Signature values: r is in [1, n-1] and s in [1, (n-1)/2], n the order
+//     of secp256k1, and a type 1 or type 2 transaction's yParity is 0 or 1;
+//   - Fees: a type 2 transaction's maxPriorityFeePerGas is at most its
+//     maxFeePerGas.
+func txRulesOK(tx *types.Transaction) bool {
+	v, r, s := tx.RawSignatureValues()
+	if tx.Type() == types.LegacyTxType {
+		if v.Cmp(legacyV27) != 0 && v.Cmp(legacyV28) != 0 && v.Cmp(minV155) < 0 {
+			return false
+		}
+	} else {
+		if id := tx.ChainId(); id == nil || id.Sign() <= 0 {
+			return false
+		}
+		if v.Sign() != 0 && v.Cmp(common.Big1) != 0 {
+			return false
+		}
+	}
+	if tx.Type() == types.DynamicFeeTxType && tx.GasTipCap().Cmp(tx.GasFeeCap()) > 0 {
+		return false
+	}
+	if r.Sign() < 1 || r.Cmp(secp256k1N) >= 0 {
+		return false
+	}
+	return s.Sign() >= 1 && s.Cmp(secp256k1HalfN) <= 0
+}
+
+// txFieldNames lists the fields of each type's RLP list, in order: EIP-155
+// for a legacy transaction, EIP-2930 for type 1, EIP-1559 for type 2. Every
+// field is an integer but those txByteFields names.
+var txFieldNames = map[byte][]string{
+	types.LegacyTxType:     {"nonce", "gasPrice", "gasLimit", "to", "value", "data", "v", "r", "s"},
+	types.AccessListTxType: {"chainId", "nonce", "gasPrice", "gasLimit", "to", "value", "data", "accessList", "yParity", "r", "s"},
+	types.DynamicFeeTxType: {"chainId", "nonce", "maxPriorityFeePerGas", "maxFeePerGas", "gasLimit", "to", "value", "data", "accessList", "yParity", "r", "s"},
+}
+
+var txByteFields = map[string]bool{"to": true, "data": true, "accessList": true}
+
+// txListDepth is how deep lists sit in a transaction of type 0, 1 or 2,
+// its own list at depth 1: its access list, an entry of it and the entry's
+// storage keys reach depth 4.
+const txListDepth = 4
+
+// The bounds of the field sizes rule of item 2.
+var (
+	maxUint64  = new(big.Int).SetUint64(1<<64 - 1)
+	maxUint256 = new(big.Int).Sub(new(big.Int).Lsh(common.Big1, 256), common.Big1)
+	// maxLegacyV is 2 × (2^256 - 1) + 36, the v of a legacy transaction
+	// that signs chain id 2^256 - 1 with recovery id 1.
+	maxLegacyV = new(big.Int).Add(new(big.Int).Lsh(maxUint256, 1), big.NewInt(36))
+)
+
+// fieldMax is the most each integer field may be under the field sizes rule
+// of item 2: the nonce and gasLimit 2^64 - 1; the chain id, value and fees
+// 2^256 - 1; and a legacy v that of a chain id of 2^256 - 1. A nonce of
+// 2^64 - 1 meets the rule, although EIP-2681 makes a transaction that
+// carries it invalid on chain. yParity, r and s are bounded by the
+// signature values rule instead.
+var fieldMax = map[string]*big.Int{
+	"nonce":                maxUint64,
+	"gasLimit":             maxUint64,
+	"chainId":              maxUint256,
+	"value":                maxUint256,
+	"gasPrice":             maxUint256,
+	"maxPriorityFeePerGas": maxUint256,
+	"maxFeePerGas":         maxUint256,
+	"v":                    maxLegacyV,
+}
+
+// txFieldsOK holds raw, a transaction of type 0, 1 or 2, to the encoding
+// and field sizes rules of item 2. It reads raw's bytes itself rather than
+// through go-ethereum's decoder, whose strictness and field types would
+// otherwise decide these two rules.
+func txFieldsOK(raw []byte) bool {
+	ints, ok := txEncoding(raw)
+	return ok && fieldSizesOK(ints)
+}
+
+// txEncoding holds raw, a transaction of type 0, 1 or 2, to the encoding
+// rule of item 2, and returns its integer fields by name. raw is the
+// canonical RLP of the type's fields: a legacy transaction is one RLP list,
+// a typed one its type byte and one RLP list, with nothing after it; every
+// item in it is written in the canonical form (rlpHead); and an integer has
+// no leading zero byte, so zero is the empty string. A list that does not
+// hold the type's fields, or holds a list where an integer belongs or lists
+// deeper than txListDepth, is no transaction of that type, and is refused
+// too, as go-ethereum's decoder refuses it.
+func txEncoding(raw []byte) (map[string]*big.Int, bool) {
+	typ, enc := raw[0], raw[1:]
+	if typ >= 0xc0 {
+		typ, enc = types.LegacyTxType, raw
+	}
+	list, content, rest, ok := rlpHead(enc)
+	if !ok || !list || len(rest) != 0 {
+		return nil, false
+	}
+	items, ok := rlpItems(content, 1)
+	names := txFieldNames[typ]
+	if !ok || len(items) != len(names) {
+		return nil, false
+	}
+	ints := map[string]*big.Int{}
+	for i, name := range names {
+		if txByteFields[name] {
+			continue
+		}
+		it := items[i]
+		if it.list || len(it.val) > 0 && it.val[0] == 0 {
+			return nil, false
+		}
+		ints[name] = new(big.Int).SetBytes(it.val)
+	}
+	return ints, true
+}
+
+// fieldSizesOK is the field sizes rule of item 2 over a transaction's
+// integer fields, as txEncoding reads them.
+func fieldSizesOK(ints map[string]*big.Int) bool {
+	for name, n := range ints {
+		if bound := fieldMax[name]; bound != nil && n.Cmp(bound) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// txItem is one RLP item of a transaction: a list, or a string, and its
+// content.
+type txItem struct {
+	list bool
+	val  []byte
+}
+
+// rlpItems splits the content of a list at the given depth into its items,
+// each in the canonical form, and the lists among them too, down to
+// txListDepth.
+func rlpItems(content []byte, depth int) ([]txItem, bool) {
+	var items []txItem
+	for len(content) > 0 {
+		list, val, rest, ok := rlpHead(content)
+		if !ok {
+			return nil, false
+		}
+		if list {
+			if depth >= txListDepth {
+				return nil, false
+			}
+			if _, ok := rlpItems(val, depth+1); !ok {
+				return nil, false
+			}
+		}
+		items = append(items, txItem{list: list, val: val})
+		content = rest
+	}
+	return items, true
+}
+
+// rlpHead reads the RLP item b starts with, held to the canonical form of
+// the encoding rule of item 2: a single byte below 0x80 is written as
+// itself, a length of 55 or less in the short form, and a longer length
+// with no leading zero byte. It returns whether the item is a list, its
+// content and the bytes after it; ok is false when the item is not in the
+// canonical form or runs past the end of b.
+func rlpHead(b []byte) (list bool, content, rest []byte, ok bool) {
+	if len(b) == 0 {
+		return false, nil, nil, false
+	}
+	h := b[0]
+	if h < 0x80 {
+		return false, b[:1], b[1:], true
+	}
+	list = h >= 0xc0
+	short := h - 0x80
+	if list {
+		short = h - 0xc0
+	}
+	head, size := 1, uint64(short)
+	if short > 55 {
+		// The long form: the length takes the next short - 55 bytes.
+		n := int(short - 55)
+		if len(b) < 1+n || b[1] == 0 {
+			return false, nil, nil, false
+		}
+		size = 0
+		for _, c := range b[1 : 1+n] {
+			size = size<<8 | uint64(c)
+		}
+		if size <= 55 {
+			return false, nil, nil, false
+		}
+		head += n
+	} else if !list && size == 1 && len(b) > 1 && b[1] < 0x80 {
+		return false, nil, nil, false
+	}
+	if size > uint64(len(b)-head) {
+		return false, nil, nil, false
+	}
+	end := head + int(size)
+	return list, b[head:end], b[end:], true
 }
 
 // signedChainID is the chain id the signature covers; nil for a
