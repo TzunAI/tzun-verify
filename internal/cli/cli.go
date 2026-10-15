@@ -28,7 +28,7 @@ import (
 
 // Version is this build's version. Releases set it in source, not by
 // linker flag, so a rebuild from the tagged tree reproduces the binary.
-const Version = "0.1.0"
+const Version = "0.1.1"
 
 const usage = `usage: tzun-verify [flags] <bundle.json>
 

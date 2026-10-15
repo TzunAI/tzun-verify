@@ -303,7 +303,7 @@ public node knows its transaction; long values shortened):
 
 ```
 $ tzun-verify --publishers publishers.json record.json
-tzun-verify 0.1.0 · publisher list sha256 1cf3…c9d2 (from --publishers)
+tzun-verify 0.1.1 · publisher list sha256 1cf3…c9d2 (from --publishers)
 Record 7, chain "beta" · digest 3ab2…0003 · bundle b1
   OK          bundle
   OK          subject
