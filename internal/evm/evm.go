@@ -227,13 +227,18 @@ func shape(e *jsonv.Value) (*parsed, bool) {
 //     go-ethereum decodes: txRulesOK;
 //   - Recovery: a public key is recovered from the signature.
 //
-// A transaction that breaks one is malformed_publication. No block a chain
-// produces today can include such a transaction (mainnet blocks from before
-// Homestead do hold legacy transactions with a high s), so refusing one
-// never refuses a real anchor. The rules are stated here rather than left
-// to go-ethereum's decoder and signers, which accept some of these
-// transactions and refuse others, so that the outcome and its reason are
-// the same as every conforming verifier's, whatever its Ethereum library.
+// A transaction that breaks one is malformed_publication. Ethereum mainnet,
+// Sepolia and Hoodi, the chains of §9's network table, refuse such a
+// transaction under the rules they apply today, so no block they produce
+// today holds one (mainnet blocks from before Homestead do hold legacy
+// transactions with a high s), and refusing it refuses no publication made
+// on them. A development chain can be more lenient: anvil, for one, mines a
+// transaction whose s is above (n-1)/2. A publication on such a chain that
+// breaks one of these rules is refused like any other. The rules are stated
+// here rather than left to go-ethereum's decoder and signers, which accept
+// some of these transactions and refuse others, so that the outcome and its
+// reason are the same as every conforming verifier's, whatever its Ethereum
+// library.
 func decodeTx(raw []byte) (*types.Transaction, common.Address, string) {
 	switch b := raw[0]; {
 	case b >= 0xc0, b == 0x01, b == 0x02:
@@ -350,9 +355,11 @@ var (
 )
 
 // fieldMax is the most each integer field may be under the field sizes rule
-// of item 2: the nonce (EIP-2681) and gasLimit 2^64 - 1; the chain id,
-// value and fees 2^256 - 1; and a legacy v that of a chain id of 2^256 - 1.
-// yParity, r and s are bounded by the signature values rule instead.
+// of item 2: the nonce and gasLimit 2^64 - 1; the chain id, value and fees
+// 2^256 - 1; and a legacy v that of a chain id of 2^256 - 1. A nonce of
+// 2^64 - 1 meets the rule, although EIP-2681 makes a transaction that
+// carries it invalid on chain. yParity, r and s are bounded by the
+// signature values rule instead.
 var fieldMax = map[string]*big.Int{
 	"nonce":                maxUint64,
 	"gasLimit":             maxUint64,
