@@ -84,11 +84,12 @@ import unicodedata
 # the tzun-mandate/1 document, the tzun-agent/1 descriptor, the
 # tzun-assertion-v1 and tzun-decider-cmt-v1 digest domains and the
 # tzun-cmt-salt-v1 derived salt of Record, the tzun-merkle-vector- leaf
-# label of the tree vectors, tzun-spec, the name of the project that builds
-# spec.tzun.ai (the name only: org-repo and cross-ref refuse a link to its
-# repository), and scripts/check-no-tzun-imports.sh.
+# label of the tree vectors, the tzun-recovery system id of the custody row
+# in the bundle corpus's custody cases, tzun-spec, the name of the project
+# that builds spec.tzun.ai (the name only: org-repo and cross-ref refuse a
+# link to its repository), and scripts/check-no-tzun-imports.sh.
 PUBLIC_WORDS = {"anchor", "verify", "spec", "signoff", "decision", "confirm", "mandate", "agent", "assertion",
-                "decider", "cmt", "merkle", "imports"}
+                "decider", "cmt", "merkle", "recovery", "imports"}
 
 # Domains reserved for examples and tests (RFC 2606, RFC 6761): an address
 # there belongs to no one.
