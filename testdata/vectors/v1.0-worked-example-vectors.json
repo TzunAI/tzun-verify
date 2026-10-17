@@ -1042,8 +1042,7 @@
         "totals": null
       },
       "canonical": "{\"event\":\"issued\",\"mandateDigest\":\"26b1fbef903914e39cb45378b7f10648611c751c1b93624173bcfe7b7b9938da\",\"record\":\"fb29b130c25c42d6ac72f1ea4123f0c542d6fefed9cfcaaa6b9a1b5e74af9844\",\"successor\":null,\"totals\":null,\"used\":null,\"v\":\"tzun-mandate-event/1\"}",
-      "digest": "82511c5907fe6cc93c23b40b0933d4576ea86af28700eddbadae0856ece9b7b3",
-      "leaf": "3cd80448fd26f5fa662c52e6f637caa300f4aa19d6a5badbc18561b210f1191f"
+      "digest": "82511c5907fe6cc93c23b40b0933d4576ea86af28700eddbadae0856ece9b7b3"
     },
     {
       "label": "revoked",
@@ -1059,8 +1058,7 @@
         }
       },
       "canonical": "{\"event\":\"revoked\",\"mandateDigest\":\"26b1fbef903914e39cb45378b7f10648611c751c1b93624173bcfe7b7b9938da\",\"record\":\"3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b\",\"successor\":null,\"totals\":{\"paid\":5785000},\"used\":43,\"v\":\"tzun-mandate-event/1\"}",
-      "digest": "f9814da2e2a573135e95060b29131aa188891043555690013be605a0bdd2f6a4",
-      "leaf": "f20fe7f450fa0485113a2adaaf4636721ec2773afcd9ad032d327556439f84af"
+      "digest": "f9814da2e2a573135e95060b29131aa188891043555690013be605a0bdd2f6a4"
     },
     {
       "label": "superseded",
@@ -1076,8 +1074,7 @@
         }
       },
       "canonical": "{\"event\":\"superseded\",\"mandateDigest\":\"26b1fbef903914e39cb45378b7f10648611c751c1b93624173bcfe7b7b9938da\",\"record\":\"4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c\",\"successor\":\"5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d\",\"totals\":{\"paid\":5785000},\"used\":43,\"v\":\"tzun-mandate-event/1\"}",
-      "digest": "2048c436f2546861a943b6da15439bb7eb41a22a6a1be8b4b204e064ffeb8026",
-      "leaf": "f46da21bf58d31b03d4669f22b7b2b16ef5df30c296be6abff23daaea6a04981"
+      "digest": "2048c436f2546861a943b6da15439bb7eb41a22a6a1be8b4b204e064ffeb8026"
     },
     {
       "label": "expired",
@@ -1093,8 +1090,7 @@
         }
       },
       "canonical": "{\"event\":\"expired\",\"mandateDigest\":\"26b1fbef903914e39cb45378b7f10648611c751c1b93624173bcfe7b7b9938da\",\"record\":\"fb29b130c25c42d6ac72f1ea4123f0c542d6fefed9cfcaaa6b9a1b5e74af9844\",\"successor\":null,\"totals\":{\"paid\":5785000},\"used\":43,\"v\":\"tzun-mandate-event/1\"}",
-      "digest": "f9fc181c117d71eca7b161f94a56be7121e029662428f330d6546e5474bdeff3",
-      "leaf": "27fb91fd80da6baf4a383736ec39109525bfed2c477682ea7ada6d7c8193f210"
+      "digest": "f9fc181c117d71eca7b161f94a56be7121e029662428f330d6546e5474bdeff3"
     }
   ],
   "confirmationChallenges": [
