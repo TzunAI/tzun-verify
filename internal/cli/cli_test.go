@@ -604,8 +604,8 @@ func TestNothingPresentPassesSilently(t *testing.T) {
 	clientData := base64.RawURLEncoding.EncodeToString([]byte(`{"type":"webauthn.get","challenge":"x","origin":"https://example.test"}`))
 	// A batch statement with the members Record §9.4 reads.
 	statement := report.Obj("mode", report.S("batch"), "root", report.S(strings.Repeat("cd", 32)), "treeSize", report.N(2))
-	// custodyChain entries: the capture's own, which mirrors no ledger row,
-	// and a hashed one, the mirror of a row.
+	// custodyChain entries: the capture's own, which has no entryHash, and a
+	// mirror entry, whose entryHash is 64 lowercase hex digits (Record §2.1).
 	captureEntry := report.Obj("timestamp", report.S("2026-01-01T00:00:00.000Z"), "actor", report.S("acct:u-1"),
 		"action", report.S("decision_captured"), "systemId", report.S("sys-1"))
 	mirrorEntry := report.Obj("timestamp", report.S("2026-01-01T00:01:00.000Z"), "actor", report.S("ops@example.com"),
@@ -631,20 +631,33 @@ func TestNothingPresentPassesSilently(t *testing.T) {
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"a null custody slot", with(base, "custody", report.Null()),
 			"custody.ledger", "not-checked", "not_applicable", 0},
-		// A hashed custodyChain entry mirrors a ledger row: beside a slot
-		// that holds no rows, the row it names was left out, and custody
-		// material is present that this build does not verify (Bundle §6).
-		{"a hashed mirror entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
+		// A mirror entry beside a slot that holds no row names a custody row
+		// the bundle leaves out: a finding, which exits 1 (Verification §4.3).
+		{"a mirror entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
+			"envelope", with(env, "custodyChain", report.Arr(captureEntry, mirrorEntry))),
+			"custody.ledger", "checked-wrong", "mirror_entry_unexpected", 1},
+		{"a mirror entry beside a null custody slot", with(with(base, "custody", report.Null()),
+			"envelope", with(env, "custodyChain", report.Arr(mirrorEntry))),
+			"custody.ledger", "checked-wrong", "mirror_entry_unexpected", 1},
+		// Beside a slot that holds a row, custody material abstains (rule 2).
+		{"a mirror entry beside custody entries", with(with(base, "custody", report.Obj("entries", report.Arr(report.Obj("id", report.N(1))))),
 			"envelope", with(env, "custodyChain", report.Arr(captureEntry, mirrorEntry))),
 			"custody.ledger", "abstain", "unsupported_artifact", 4},
-		{"a hashed mirror entry beside a null custody slot", with(with(base, "custody", report.Null()),
-			"envelope", with(env, "custodyChain", report.Arr(mirrorEntry))),
-			"custody.ledger", "abstain", "unsupported_artifact", 4},
-		{"an unhashed custodyChain entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
+		// Any other custodyChain element is no mirror entry.
+		{"the capture's entry beside an empty custody slot", with(with(base, "custody", report.Obj("entries", report.Arr())),
 			"envelope", with(env, "custodyChain", report.Arr(captureEntry))),
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"a custodyChain entry whose entryHash is null", with(with(base, "custody", report.Null()),
 			"envelope", with(env, "custodyChain", report.Arr(with(mirrorEntry, "entryHash", report.Null())))),
+			"custody.ledger", "not-checked", "not_applicable", 0},
+		{"a custodyChain entry whose entryHash is \"x\"", with(with(base, "custody", report.Obj("entries", report.Arr())),
+			"envelope", with(env, "custodyChain", report.Arr(with(mirrorEntry, "entryHash", report.S("x"))))),
+			"custody.ledger", "not-checked", "not_applicable", 0},
+		{"a custodyChain entry whose entryHash is a number", with(with(base, "custody", report.Obj("entries", report.Arr())),
+			"envelope", with(env, "custodyChain", report.Arr(with(mirrorEntry, "entryHash", report.N(1))))),
+			"custody.ledger", "not-checked", "not_applicable", 0},
+		{"a custodyChain entry whose entryHash has an uppercase digit", with(with(base, "custody", report.Null()),
+			"envelope", with(env, "custodyChain", report.Arr(with(mirrorEntry, "entryHash", report.S("AB"+strings.Repeat("ab", 31)))))),
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"related records", with(base, "relatedRecords", report.Obj("x", report.Obj("role", report.S("credential-registration")))),
 			"relatedRecords", "abstain", "unsupported_slot", 4},

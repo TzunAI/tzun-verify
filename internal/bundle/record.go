@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/TzunAI/tzun-verify/internal/canonical"
+	"github.com/TzunAI/tzun-verify/internal/grammar"
 	"github.com/TzunAI/tzun-verify/internal/jsonv"
 	"github.com/TzunAI/tzun-verify/internal/merkle"
 	"github.com/TzunAI/tzun-verify/internal/report"
@@ -24,6 +25,7 @@ const (
 	ReasonLinkMissing         = "chain_link_missing"
 	ReasonPredecessorMismatch = "predecessor_mismatch"
 	ReasonNoPredecessor       = "not_in_bundle:predecessor"
+	ReasonMirrorUnexpected    = "mirror_entry_unexpected"
 )
 
 // EnvelopeVersion is the one envelope version this build reads
@@ -156,35 +158,52 @@ func (v *verification) chainLinkRow() report.Check {
 
 // custodyRow is custody.ledger (Verification §4.3). This version
 // does not verify custody material, so the row is never checked-correct.
-// It reads not_applicable only for a bundle that carries none: a null slot
-// or one whose entries are an empty array, beside an envelope whose
-// custodyChain mirrors no ledger row. Anything else abstains, so that what
-// the bundle holds is never passed over (Bundle §6, Specs §4): a hashed
-// mirror entry beside a ledger that holds no rows names a row the bundle
-// leaves out, and only a verifier of custody material could decide it.
+// One finding comes first and takes precedence over the rules: a slot that
+// holds no row, null or an object whose entries are an empty array, beside
+// an envelope whose custodyChain holds a mirror entry (Record §2.1) is
+// checked-wrong, mirror_entry_unexpected, since the envelope names a custody
+// row the bundle leaves out. Otherwise a slot that holds no row is
+// not_applicable, and anything else abstains, so that custody material is
+// never passed over (Bundle §6).
 func (v *verification) custodyRow() report.Check {
 	slot := member(v.root, "custody")
-	if entries := member(slot, "entries"); (slot == nil || entries != nil && entries.Kind == jsonv.Array && len(entries.A) == 0) && !mirrorsLedger(v.env) {
+	entries := member(slot, "entries")
+	noRow := slot == nil || entries != nil && entries.Kind == jsonv.Array && len(entries.A) == 0
+	switch {
+	case noRow && holdsMirrorEntry(v.env):
+		return report.Check{ID: IDCustody, Outcome: report.Wrong, Reason: ReasonMirrorUnexpected}
+	case noRow:
 		return report.Check{ID: IDCustody, Outcome: report.NotChecked, Reason: ReasonNA}
 	}
 	return report.Check{ID: IDCustody, Outcome: report.Abstain, Reason: ReasonUnsupported}
 }
 
-// mirrorsLedger reports whether the envelope's custodyChain holds a hashed
-// entry: an object whose entryHash is present and not null, the mirror of a
-// custody ledger row. An entry without one, such as the capture's own,
-// mirrors no row (Record §2.1 leaves the chain's content undefined).
-func mirrorsLedger(env *jsonv.Value) bool {
+// holdsMirrorEntry reports whether the envelope's custodyChain holds a
+// mirror entry (Record §2.1).
+func holdsMirrorEntry(env *jsonv.Value) bool {
 	chain := member(env, "custodyChain")
 	if chain == nil || chain.Kind != jsonv.Array {
 		return false
 	}
 	for _, e := range chain.A {
-		if isObject(e) && member(e, "entryHash") != nil {
+		if isMirrorEntry(e) {
 			return true
 		}
 	}
 	return false
+}
+
+// isMirrorEntry reports whether a custodyChain element is a mirror entry: a
+// JSON object whose entryHash is a string of exactly 64 lowercase hex digits
+// (Record §2.1). The test is lowercase only, whatever Specs §3.4 lets a
+// reader accept for a hash it compares. Any other element mirrors no row:
+// one that is not an object (member reads nothing from it), one without an
+// entryHash, such as the entry a writer adds when it captures the record, and
+// one whose entryHash is null, not a string, of another length, or has an
+// uppercase digit.
+func isMirrorEntry(e *jsonv.Value) bool {
+	h, ok := member(e, "entryHash").Str()
+	return ok && grammar.BareDigest(h)
 }
 
 // recordTimestampRows run Anchor §10.5 over the record's own token
