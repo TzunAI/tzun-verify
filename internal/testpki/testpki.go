@@ -18,6 +18,7 @@ import (
 	"encoding/asn1"
 	"encoding/base64"
 	"math/big"
+	"slices"
 	"time"
 
 	"github.com/digitorus/timestamp"
@@ -119,10 +120,12 @@ func TSASigner(name string, parent *Cert) *Cert {
 }
 
 // Token returns a base64 DER TimeStampResp over digest (SHA-256 imprint),
-// signed by signer, carrying signer and chain, at genTime.
+// signed by signer, carrying signer and chain, at genTime. The signing
+// library writes genTime in its time zone, so it is handed genTime in UTC: a
+// GeneralizedTime with an offset is not DER.
 func Token(digest []byte, signer *Cert, chain []*x509.Certificate, genTime time.Time, withCerts bool) string {
 	ts := timestamp.Timestamp{
-		HashAlgorithm: crypto.SHA256, HashedMessage: digest, Time: genTime,
+		HashAlgorithm: crypto.SHA256, HashedMessage: digest, Time: genTime.UTC(),
 		Policy: asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 99999, 1}, AddTSACertificate: withCerts, Certificates: chain,
 	}
 	der, err := ts.CreateResponseWithOpts(signer.Cert, signer.Key, crypto.SHA256)
@@ -158,7 +161,9 @@ type TokenOptions struct {
 	// id-ct-TSTInfo. OmitContentType leaves the attribute out.
 	ContentType     asn1.ObjectIdentifier
 	OmitContentType bool
-	// Binding is "v2" (the default), "v2-sha384", "v1" or "none".
+	// Binding is "v2" (the default), "v2-sha384", "v1" or "none"; or
+	// "v2-unknown", whose ESSCertIDv2 names SHA3-256, or "v2-alg-three",
+	// whose hashAlgorithm is SHA-256 with a NULL and a second NULL.
 	Binding string
 	// CertHashOf names the certificate whose hash the binding carries;
 	// nil means the signer's.
@@ -172,9 +177,31 @@ type TokenOptions struct {
 	// ecdsa-with-SHA256. The signature is ECDSA over SHA-256 whatever it
 	// names.
 	SignatureAlgorithm asn1.ObjectIdentifier
+	// DigestAlgorithm is the SignerInfo's digestAlgorithm; nil means
+	// SHA-256. The message digest is SHA-256 whatever it names.
+	DigestAlgorithm asn1.ObjectIdentifier
+	// MessageDigest, when set, is the message-digest attribute's value in
+	// place of the TSTInfo's digest.
+	MessageDigest []byte
+	// AttrsOutOfOrder carries the signed attributes in the reverse of their
+	// DER SET OF order, and signs them as carried. With SignDEROrder they
+	// are signed in DER order instead: what a verifier that encodes the
+	// attributes again would check.
+	AttrsOutOfOrder, SignDEROrder bool
+	// TSTInfo, when set, edits the members of the TSTInfo (version, policy,
+	// messageImprint, serialNumber and genTime, each as its DER) before the
+	// token is signed over it.
+	TSTInfo func(members [][]byte) [][]byte
+	// SignedAttrs, when set, edits the signed attributes (content-type,
+	// message-digest and the binding, those that are written, each as its
+	// DER) before they are put in order and signed.
+	SignedAttrs func(attrs [][]byte) [][]byte
 }
 
 var (
+	// SHA3_256 is a digest algorithm crypto/x509 does not implement.
+	SHA3_256 = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 8}
+
 	oidSignedData    = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 7, 2}
 	oidTSTInfo       = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 16, 1, 4}
 	oidContentType   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 9, 3}
@@ -192,17 +219,6 @@ type algID struct {
 	Parameters asn1.RawValue `asn1:"optional"`
 }
 
-type tstInfo struct {
-	Version        int
-	Policy         asn1.ObjectIdentifier
-	MessageImprint struct {
-		HashAlgorithm algID
-		HashedMessage []byte
-	}
-	SerialNumber *big.Int
-	GenTime      asn1.RawValue
-}
-
 // generalizedTime is t as a DER GeneralizedTime: UTC, with a fraction of a
 // second only when t has one, and without trailing zeros.
 func generalizedTime(t time.Time) asn1.RawValue {
@@ -217,19 +233,28 @@ func must(b []byte, err error) []byte {
 	return b
 }
 
-func set(tag int, class int, elems [][]byte) []byte {
-	sorted := append([][]byte{}, elems...)
-	for i := 1; i < len(sorted); i++ {
-		for j := i; j > 0 && string(sorted[j]) < string(sorted[j-1]); j-- {
-			sorted[j], sorted[j-1] = sorted[j-1], sorted[j]
+// sorted returns DER elements in DER SET OF order (X.690 §11.6).
+func sorted(elems [][]byte) [][]byte {
+	out := append([][]byte{}, elems...)
+	for i := 1; i < len(out); i++ {
+		for j := i; j > 0 && string(out[j]) < string(out[j-1]); j-- {
+			out[j], out[j-1] = out[j-1], out[j]
 		}
 	}
+	return out
+}
+
+// wrap encodes a constructed element of the given class and tag around
+// elements, in the order given.
+func wrap(tag int, class int, elems [][]byte) []byte {
 	var content []byte
-	for _, e := range sorted {
+	for _, e := range elems {
 		content = append(content, e...)
 	}
 	return must(asn1.Marshal(asn1.RawValue{Class: class, Tag: tag, IsCompound: true, Bytes: content}))
 }
+
+func set(tag int, class int, elems [][]byte) []byte { return wrap(tag, class, sorted(elems)) }
 
 func attr(oid asn1.ObjectIdentifier, value []byte) []byte {
 	return must(asn1.Marshal(struct {
@@ -253,6 +278,21 @@ func binding(o TokenOptions) []byte {
 	}{[]asn1.RawValue{{Class: asn1.ClassContextSpecific, Tag: 4, IsCompound: true, Bytes: o.Signer.Cert.RawIssuer}}, serial}))
 	var id []byte
 	switch o.Binding {
+	case "v2-unknown":
+		h := sha256.Sum256(target.Raw)
+		id = must(asn1.Marshal(struct {
+			Alg    algID
+			Hash   []byte
+			Issuer asn1.RawValue
+		}{algID{Algorithm: SHA3_256}, h[:], asn1.RawValue{FullBytes: issuer}}))
+	case "v2-alg-three":
+		h := sha256.Sum256(target.Raw)
+		alg := wrap(asn1.TagSequence, asn1.ClassUniversal, [][]byte{OID(oidSHA256), {0x05, 0x00}, {0x05, 0x00}})
+		id = must(asn1.Marshal(struct {
+			Alg    asn1.RawValue
+			Hash   []byte
+			Issuer asn1.RawValue
+		}{asn1.RawValue{FullBytes: alg}, h[:], asn1.RawValue{FullBytes: issuer}}))
 	case "v1":
 		h := sha1.Sum(target.Raw)
 		id = must(asn1.Marshal(struct {
@@ -279,15 +319,25 @@ func binding(o TokenOptions) []byte {
 // BuildToken builds a TimeStampResp field by field and signs it with the
 // signer's ECDSA key.
 func BuildToken(o TokenOptions) string {
-	var tst tstInfo
-	tst.Version = 1
-	tst.Policy = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 99999, 1}
-	tst.MessageImprint.HashAlgorithm = algID{Algorithm: oidSHA256}
-	tst.MessageImprint.HashedMessage = o.Digest
-	tst.SerialNumber = big.NewInt(42)
-	tst.GenTime = generalizedTime(o.GenTime)
-	content := must(asn1.Marshal(tst))
+	members := [][]byte{
+		must(asn1.Marshal(1)),
+		OID(asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 99999, 1}),
+		must(asn1.Marshal(struct {
+			HashAlgorithm algID
+			HashedMessage []byte
+		}{algID{Algorithm: oidSHA256}, o.Digest})),
+		must(asn1.Marshal(big.NewInt(42))),
+		must(asn1.Marshal(generalizedTime(o.GenTime))),
+	}
+	if o.TSTInfo != nil {
+		members = o.TSTInfo(members)
+	}
+	content := wrap(asn1.TagSequence, asn1.ClassUniversal, members)
 	digest := sha256.Sum256(content)
+	md := digest[:]
+	if o.MessageDigest != nil {
+		md = o.MessageDigest
+	}
 
 	var attrs [][]byte
 	if !o.OmitContentType {
@@ -297,7 +347,7 @@ func BuildToken(o TokenOptions) string {
 		}
 		attrs = append(attrs, attr(oidContentType, must(asn1.Marshal(ct))))
 	}
-	attrs = append(attrs, attr(oidMessageDigest, must(asn1.Marshal(digest[:]))))
+	attrs = append(attrs, attr(oidMessageDigest, must(asn1.Marshal(md))))
 	switch o.Binding {
 	case "none":
 	case "v1":
@@ -305,10 +355,22 @@ func BuildToken(o TokenOptions) string {
 	default:
 		attrs = append(attrs, attr(oidSigningCertV2, binding(o)))
 	}
-	signedSet := set(asn1.TagSet, asn1.ClassUniversal, attrs)
+	if o.SignedAttrs != nil {
+		attrs = o.SignedAttrs(attrs)
+	}
+	carried := sorted(attrs)
+	signedOrder := carried
+	if o.AttrsOutOfOrder {
+		carried = slices.Clone(carried)
+		slices.Reverse(carried)
+		if !o.SignDEROrder {
+			signedOrder = carried
+		}
+	}
+	signedSet := wrap(asn1.TagSet, asn1.ClassUniversal, signedOrder)
 	h := sha256.Sum256(signedSet)
 	sig := must(ecdsa.SignASN1(rand.Reader, o.Signer.Key, h[:]))
-	implicit := set(0, asn1.ClassContextSpecific, attrs)
+	implicit := wrap(0, asn1.ClassContextSpecific, carried)
 
 	version := 1
 	sid := asn1.RawValue{FullBytes: must(asn1.Marshal(struct {
@@ -323,6 +385,10 @@ func BuildToken(o TokenOptions) string {
 	if sigAlg == nil {
 		sigAlg = oidECDSASHA256
 	}
+	digestAlg := o.DigestAlgorithm
+	if digestAlg == nil {
+		digestAlg = oidSHA256
+	}
 	signerInfo := must(asn1.Marshal(struct {
 		Version     int
 		SID         asn1.RawValue
@@ -333,7 +399,7 @@ func BuildToken(o TokenOptions) string {
 	}{
 		Version:     version,
 		SID:         sid,
-		DigestAlg:   algID{Algorithm: oidSHA256},
+		DigestAlg:   algID{Algorithm: digestAlg},
 		SignedAttrs: asn1.RawValue{FullBytes: implicit},
 		SigAlg:      algID{Algorithm: sigAlg},
 		Signature:   sig,

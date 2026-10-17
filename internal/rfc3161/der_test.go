@@ -64,6 +64,14 @@ func TestIsDER(t *testing.T) {
 		{"a context-specific primitive is not read inside", "8001ff", true},
 		{"an OCTET STRING is not read inside", "0403 050100", true},
 		{"a universal number X.680 assigns to no type", "3f2500", true},
+		{"a constructed reserved universal 15", "2f00", true},
+		{"a primitive OID-IRI", "1f2300", true},
+		{"a constructed OID-IRI", "3f2300", false},
+		{"a primitive RELATIVE-OID-IRI", "1f2400", true},
+		{"a constructed RELATIVE-OID-IRI", "3f2400", false},
+		{"a constructed TIME", "2e00", false},
+		{"a constructed DATE", "3f1f00", false},
+		{"a constructed DURATION", "3f2200", false},
 		{"BOOLEAN FF", "0101ff", true},
 		{"BOOLEAN 00", "010100", true},
 		{"BOOLEAN 01", "010101", false},
@@ -112,18 +120,114 @@ func TestIsDER(t *testing.T) {
 			t.Errorf("%s: isDER %v, want %v", c.name, got, c.ok)
 		}
 	}
-	// No nesting depth is refused.
-	deep := []byte{0x05, 0x00}
-	for i := 0; i < 10000; i++ {
-		var err error
-		if deep, err = asn1.Marshal(asn1.RawValue{Tag: asn1.TagSequence, IsCompound: true, Bytes: deep}); err != nil {
-			t.Fatal(err)
+
+	// The decoder bounds: constructed elements, of any class, nest at most
+	// 64 deep, the outermost at depth 1, and an encoding holds at most
+	// 100,000 elements, the outermost included. What lies inside the
+	// contents of a primitive element counts toward neither.
+	for _, c := range []struct {
+		name string
+		der  []byte
+		ok   bool
+	}{
+		{"64 nested SEQUENCEs", nested(64, asn1.ClassUniversal, nil), true},
+		{"65 nested SEQUENCEs", nested(65, asn1.ClassUniversal, nil), false},
+		{"64 nested SEQUENCEs around a NULL", nested(64, asn1.ClassUniversal, []byte{0x05, 0x00}), true},
+		{"64 nested [0]", nested(64, asn1.ClassContextSpecific, nil), true},
+		{"65 nested [0]", nested(65, asn1.ClassContextSpecific, nil), false},
+		{"63 nested SEQUENCEs around a [0]", nested(63, asn1.ClassUniversal, []byte{0xa0, 0x00}), true},
+		{"64 nested SEQUENCEs around a [0]", nested(64, asn1.ClassUniversal, []byte{0xa0, 0x00}), false},
+		{"64 nested SEQUENCEs around an OCTET STRING holding 64 more",
+			nested(64, asn1.ClassUniversal, octets(nested(64, asn1.ClassUniversal, nil))), true},
+		{"a SEQUENCE of 99,999 NULLs", nulls(99999), true},
+		{"a SEQUENCE of 100,000 NULLs", nulls(100000), false},
+		{"a SEQUENCE of 99,998 NULLs and an OCTET STRING holding 1,000 more",
+			sequence(append(bytes.Repeat([]byte{0x05, 0x00}, 99998), octets(nulls(1000))...)), true},
+	} {
+		if got := isDER(c.der); got != c.ok {
+			t.Errorf("%s: isDER %v, want %v", c.name, got, c.ok)
+		}
+		if elems, depth := shape(t, c.der); c.ok != (elems <= 100000 && depth <= 64) {
+			t.Errorf("%s: %d elements, %d deep", c.name, elems, depth)
 		}
 	}
-	if !isDER(deep) {
-		t.Error("10000 nested SEQUENCEs")
-	}
 }
+
+// nested is n constructed elements of the given class (a SEQUENCE when
+// universal, a [0] otherwise), each inside the next, around inner.
+func nested(n, class int, inner []byte) []byte {
+	b := inner
+	tag := asn1.TagSequence
+	if class != asn1.ClassUniversal {
+		tag = 0
+	}
+	for i := 0; i < n; i++ {
+		var err error
+		if b, err = asn1.Marshal(asn1.RawValue{Class: class, Tag: tag, IsCompound: true, Bytes: b}); err != nil {
+			panic(err)
+		}
+	}
+	return b
+}
+
+func sequence(body []byte) []byte {
+	b, err := asn1.Marshal(asn1.RawValue{Tag: asn1.TagSequence, IsCompound: true, Bytes: body})
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+func octets(body []byte) []byte {
+	b, err := asn1.Marshal(body)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+// nulls is a SEQUENCE of n NULLs: n+1 elements.
+func nulls(n int) []byte { return sequence(bytes.Repeat([]byte{0x05, 0x00}, n)) }
+
+// shape counts, by encoding/asn1 rather than by isDER, the elements of an
+// encoding that are not inside the contents of a primitive element, and the
+// depth of the deepest constructed one, the outermost at depth 1.
+func shape(t *testing.T, der []byte) (elements, depth int) {
+	t.Helper()
+	var walk func(b []byte, d int)
+	walk = func(b []byte, d int) {
+		for len(b) > 0 {
+			var v asn1.RawValue
+			rest, err := asn1.Unmarshal(b, &v)
+			if err != nil {
+				t.Fatalf("shape: %v", err)
+			}
+			elements++
+			if v.IsCompound {
+				depth = max(depth, d)
+				walk(v.Bytes, d+1)
+			}
+			b = rest
+		}
+	}
+	walk(der, 1)
+	return elements, depth
+}
+
+// tlv is the hex of one element whose first octet is tag, around contents
+// given as hex, with a length in the short form.
+func tlv(tag byte, contents ...string) string {
+	body := strings.ReplaceAll(strings.Join(contents, ""), " ", "")
+	if len(body)%2 != 0 || len(body)/2 > 127 {
+		panic("tlv: " + body)
+	}
+	return hex.EncodeToString([]byte{tag, byte(len(body) / 2)}) + body
+}
+
+// gtime is the hex of a GeneralizedTime, utime of a UTCTime.
+func gtime(s string) string { return tlv(0x18, hex.EncodeToString([]byte(s))) }
+
+func utime(s string) string { return tlv(0x17, hex.EncodeToString([]byte(s))) }
 
 // node is a DER element held as a tree, so that a test can change one
 // element of a token and encode the token again around it.
@@ -416,6 +520,33 @@ func TestStepOneStrictness(t *testing.T) {
 	verify("the signer's tbsCertificate, a member after extensions", rebuilt(func(f [][]byte) [][]byte {
 		return append(f, []byte{0x05, 0x00})
 	}), mf)
+	// Each at most once, in this order, in this form; nothing else
+	// (tzun-anchor/1 §10.5 step 1).
+	verify("the signer with subjectUniqueID alone", rebuilt(uniqueIDs("82020001")), okw)
+	verify("the signer's subjectUniqueID before its issuerUniqueID", rebuilt(uniqueIDs("82020001", "81020001")), mf)
+	verify("the signer with two issuerUniqueIDs", rebuilt(uniqueIDs("81020001", "81020001")), mf)
+	verify("the signer's subjectUniqueID constructed", rebuilt(uniqueIDs("a2020500")), mf)
+	verify("the signer's tbsCertificate, a [4] after subjectPublicKeyInfo", rebuilt(uniqueIDs("84020001")), mf)
+	verify("the signer's tbsCertificate, an issuerUniqueID after extensions", rebuilt(func(f [][]byte) [][]byte {
+		return append(f, unhex(t, "81020001"))
+	}), mf)
+	verify("the signer's tbsCertificate, two extensions [3]", rebuilt(func(f [][]byte) [][]byte {
+		return append(f, f[exts])
+	}), mf)
+	verify("the signer's extensions [3] primitive", rebuilt(func(f [][]byte) [][]byte {
+		f[exts] = append([]byte{0x83}, f[exts][1:]...)
+		return f
+	}), mf)
+	verify("the signer's extensions [3] holding a SET", rebuilt(func(f [][]byte) [][]byte {
+		e := tree(t, f[exts])
+		e.at(0).tag = asn1.TagSet
+		f[exts] = e.der()
+		return f
+	}), mf)
+	verify("the signer's extensions [3] empty", rebuilt(func(f [][]byte) [][]byte {
+		f[exts] = []byte{0xa3, 0x00}
+		return f
+	}), mf)
 
 	// A certificate no step needs: step 1 reads it, and no later step does.
 	extra := testpki.Root("Extra")
@@ -445,13 +576,510 @@ func TestStepOneStrictness(t *testing.T) {
 		verify("an extra certificate, "+name, carried(edit), mf)
 	}
 
-	// A signer named by subjectKeyIdentifier is this build's abstention
-	// (step 5) only for a token that step 1 otherwise reads.
+	// A signer named by subjectKeyIdentifier, read as one named by issuer
+	// and serial number is.
 	now := time.Now()
 	skiExt := pkix.Extension{Id: asn1.ObjectIdentifier{2, 5, 29, 14}, Value: []byte{0x04, 0x04, 1, 2, 3, 4}}
 	skiSigner := testpki.Signer("SKI TSA", root, now.AddDate(-5, 0, 0), now.AddDate(5, 0, 0), testpki.EKU(true, testpki.TimeStamping), skiExt)
 	ski := build(testpki.TokenOptions{Signer: skiSigner, SKISid: true})
-	verify("signer named by subjectKeyIdentifier", ski, tokenMissing)
+	verify("signer named by subjectKeyIdentifier", ski, okw)
 	verify("signer named by subjectKeyIdentifier, an unsigned attribute not DER", unsigned(ski, "300a 0603 2a0304 3103 050100"), mf)
 	verify("signer named by subjectKeyIdentifier, attrValues a SEQUENCE", unsigned(ski, "300a 0603 2a0304 3003 040141"), mf)
+	resp, _, si := tokenParts(t, ski)
+	si.at(1).tag = 1 // [1], a form RFC 5652 §5.3 does not have
+	verify("sid a primitive [1]", encode(resp), mf)
+	resp, _, si = tokenParts(t, ski)
+	si.at(1).compound, si.at(1).kids = true, []*node{{tag: asn1.TagOctetString, body: si.at(1).body}}
+	verify("sid a constructed [0]", encode(resp), mf)
+}
+
+// stepOne is the setting of the step 1 tests: a root, a timestamping
+// signer under it, and the outcomes they expect.
+type stepOne struct {
+	t       *testing.T
+	root    *testpki.Cert
+	signer  *testpki.Cert
+	gen     time.Time
+	trusted Trust
+}
+
+func newStepOne(t *testing.T) *stepOne {
+	root := testpki.Root("Root")
+	return &stepOne{t: t, root: root, signer: testpki.TSASigner("TSA", root), gen: time.Now().Add(-time.Hour),
+		trusted: Trust{Roots: []*x509.Certificate{root.Cert}}}
+}
+
+func (s *stepOne) build(o testpki.TokenOptions) string {
+	o.Digest = p
+	if o.GenTime.IsZero() {
+		o.GenTime = s.gen
+	}
+	if o.Signer == nil {
+		o.Signer = s.signer
+	}
+	return testpki.BuildToken(o)
+}
+
+func (s *stepOne) verify(name, tok string, w want) Result {
+	s.t.Helper()
+	r := Verify(0, entry(tok), p, s.trusted)
+	check(s.t, name, r, w)
+	return r
+}
+
+// extra returns a token that also carries the root "Extra", its
+// certificate as edit leaves its tree: a certificate no step after step 1
+// needs, so its signature is never checked.
+func (s *stepOne) extra(edit func(c, tbs *node)) string {
+	extra := testpki.Root("Extra")
+	c := tree(s.t, extra.Cert.Raw)
+	edit(c, c.at(0))
+	return s.build(testpki.TokenOptions{Certs: []*x509.Certificate{{Raw: c.der()}}})
+}
+
+var (
+	okw         = want{valid: "true", token: report.Correct, trust: report.Correct}
+	mf          = tokenFail(ReasonMalformed)
+	vf          = tokenFail(ReasonVerificationFailed)
+	tokenOKOnly = want{valid: "false", reason: ReasonVerificationFailed, token: report.Correct, trust: report.Wrong, trustReason: ReasonVerificationFailed}
+)
+
+// TestDecoderBoundsInTokens: the bounds of step 1 on each encoding they
+// apply to, the TimeStampResp, the TSTInfo and a typed extension's value,
+// each counted on its own: exactly 64 levels and exactly 100,000 elements
+// pass, one more does not (malformed_publication, and malformed_token for
+// the record's token).
+func TestDecoderBoundsInTokens(t *testing.T) {
+	s := newStepOne(t)
+	good := s.build(testpki.TokenOptions{})
+
+	// In the TimeStampResp: an unsigned attribute, which the signature does
+	// not cover, whose value is what grows.
+	unsigned := func(value []byte) string {
+		resp, _, si := tokenParts(t, good)
+		attr := &node{tag: asn1.TagSequence, compound: true}
+		attr.add(raw(t, "06032a0304"), &node{tag: asn1.TagSet, compound: true, kids: []*node{{raw: value}}})
+		si.add(&node{class: asn1.ClassContextSpecific, tag: 1, compound: true, kids: []*node{attr}})
+		return encode(resp)
+	}
+	respShape := func(tok string) (int, int) {
+		der, err := base64.StdEncoding.DecodeString(tok)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return shape(t, der)
+	}
+	// Twenty nested SEQUENCEs reach deeper than anything else in the token.
+	_, d20 := respShape(unsigned(nested(20, asn1.ClassUniversal, nil)))
+	deep := 64 - d20 + 20 // nested SEQUENCEs that put the deepest at 64
+	e0, _ := respShape(unsigned(nulls(0)))
+	wide := 100000 - e0 // NULLs that make 100,000 elements
+	for _, c := range []struct {
+		name   string
+		value  []byte
+		elems  int
+		depth  int
+		result want
+	}{
+		{"the TimeStampResp 64 deep", nested(deep, asn1.ClassUniversal, nil), 0, 64, okw},
+		{"the TimeStampResp 65 deep", nested(deep+1, asn1.ClassUniversal, nil), 0, 65, mf},
+		{"the TimeStampResp of 100,000 elements", nulls(wide), 100000, 0, okw},
+		{"the TimeStampResp of 100,001 elements", nulls(wide + 1), 100001, 0, mf},
+	} {
+		tok := unsigned(c.value)
+		elems, depth := respShape(tok)
+		if c.elems != 0 && elems != c.elems || c.depth != 0 && depth != c.depth {
+			t.Fatalf("%s: %d elements, %d deep", c.name, elems, depth)
+		}
+		s.verify(c.name, tok, c.result)
+		if c.result == mf {
+			if r := VerifyRecordToken(report.S(tok), p, s.trusted); r.Token.Reason != ReasonMalformedToken {
+				t.Errorf("%s, the record's token: %s %q", c.name, r.Token.Outcome, r.Token.Reason)
+			}
+		}
+	}
+
+	// In the TSTInfo, counted on its own: a tsa [0] holding a directoryName
+	// [4], whose contents step 1 does not read but does bound. The TSTInfo
+	// is changed after signing, so a TSTInfo within the bounds passes step
+	// 1 and fails step 3.
+	tsa := func(inner []byte) (string, []byte) {
+		resp, sd, _ := tokenParts(t, good)
+		oct := sd.at(2, 1, 0)
+		tst := tree(t, oct.body)
+		dn := &node{class: asn1.ClassContextSpecific, tag: 4, compound: true, kids: []*node{{raw: inner}}}
+		tst.add(&node{class: asn1.ClassContextSpecific, tag: 0, compound: true, kids: []*node{dn}})
+		oct.body = tst.der()
+		return encode(resp), oct.body
+	}
+	_, tstInfo := tsa(nested(20, asn1.ClassUniversal, nil))
+	_, d20 = shape(t, tstInfo)
+	deep = 64 - d20 + 20
+	_, tstInfo = tsa(nulls(0))
+	e0, _ = shape(t, tstInfo)
+	wide = 100000 - e0
+	for _, c := range []struct {
+		name   string
+		inner  []byte
+		elems  int
+		depth  int
+		result want
+	}{
+		{"the TSTInfo 64 deep", nested(deep, asn1.ClassUniversal, nil), 0, 64, vf},
+		{"the TSTInfo 65 deep", nested(deep+1, asn1.ClassUniversal, nil), 0, 65, mf},
+		{"the TSTInfo of 100,000 elements", nulls(wide), 100000, 0, vf},
+		{"the TSTInfo of 100,001 elements", nulls(wide + 1), 100001, 0, mf},
+	} {
+		tok, tstInfo := tsa(c.inner)
+		elems, depth := shape(t, tstInfo)
+		if c.elems != 0 && elems != c.elems || c.depth != 0 && depth != c.depth {
+			t.Fatalf("%s: %d elements, %d deep", c.name, elems, depth)
+		}
+		s.verify(c.name, tok, c.result)
+	}
+
+	// In the value of a typed extension, counted on its own: an
+	// authorityKeyIdentifier, a SEQUENCE whose members past keyIdentifier
+	// crypto/x509 does not read, on a carried certificate no later step
+	// needs.
+	aki := func(value []byte) string {
+		return s.extra(func(_, tbs *node) { setExtension(t, tbs, oidAKI, value) })
+	}
+	for _, c := range []struct {
+		name   string
+		value  []byte
+		result want
+	}{
+		{"an authorityKeyIdentifier 64 deep", nested(64, asn1.ClassUniversal, nil), okw},
+		{"an authorityKeyIdentifier 65 deep", nested(65, asn1.ClassUniversal, nil), mf},
+		{"an authorityKeyIdentifier of 100,000 elements", nulls(99999), okw},
+		{"an authorityKeyIdentifier of 100,001 elements", nulls(100000), mf},
+	} {
+		s.verify(c.name, aki(c.value), c.result)
+	}
+}
+
+var oidAKI = asn1.ObjectIdentifier{2, 5, 29, 35}
+
+// setExtension gives a tbsCertificate's extensions the extension of the
+// given type with value as its extnValue's contents, in place of any it
+// has, as the last.
+func setExtension(t *testing.T, tbs *node, id asn1.ObjectIdentifier, value []byte) {
+	t.Helper()
+	var exts *node
+	for _, f := range tbs.kids {
+		if f.class == asn1.ClassContextSpecific && f.tag == 3 {
+			exts = f.at(0)
+		}
+	}
+	if exts == nil {
+		t.Fatal("no extensions [3]")
+	}
+	der, err := asn1.Marshal(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kept := exts.kids[:0]
+	for _, e := range exts.kids {
+		if !bytes.Equal(e.at(0).der(), der) {
+			kept = append(kept, e)
+		}
+	}
+	ext := &node{tag: asn1.TagSequence, compound: true}
+	ext.add(&node{raw: der}, &node{tag: asn1.TagOctetString, body: value})
+	exts.kids = append(kept, ext)
+}
+
+// TestTSTInfo: the TSTInfo decodes whole by RFC 3161 §2.4.2, as step 1
+// states it: its five members, then accuracy, ordering, nonce, tsa and
+// extensions, each when present and in that order, and nothing else, with
+// the forms and ranges step 1 gives each. The tokens are signed over the
+// TSTInfo they carry, so one step 1 accepts verifies.
+func TestTSTInfo(t *testing.T) {
+	s := newStepOne(t)
+	tst := func(edit func(m [][]byte) [][]byte) string { return s.build(testpki.TokenOptions{TSTInfo: edit}) }
+	with := func(members ...string) string {
+		return tst(func(m [][]byte) [][]byte {
+			for _, e := range members {
+				m = append(m, unhex(t, e))
+			}
+			return m
+		})
+	}
+	set := func(i int, member string) func(m [][]byte) [][]byte {
+		return func(m [][]byte) [][]byte {
+			m[i] = unhex(t, member)
+			return m
+		}
+	}
+	const (
+		accuracy   = "300a 020101 800101 810203e7" // seconds 1, millis 1, micros 999
+		ordering   = "010100"
+		nonce      = "0208 0102030405060708"
+		tsaName    = "a004 a402 3000" // a directoryName, its Name empty
+		extensions = "a10b 3009 06032a0304 04020500"
+	)
+	sha256 := "300d 0609 608648016503040201 0500"
+	imprint := func(alg string, rest ...string) string {
+		return tlv(0x30, append([]string{alg, tlv(0x04, hex.EncodeToString(p))}, rest...)...)
+	}
+	for _, c := range []struct {
+		name string
+		tok  string
+		w    want
+	}{
+		{"the five members", with(), okw},
+		{"every member", with(accuracy, ordering, nonce, tsaName, extensions), okw},
+		{"ordering TRUE alone", with("0101ff"), okw},
+		{"a version of nine octets", tst(set(0, "0209 010000000000000000")), okw},
+		{"a negative version", tst(set(0, "0201 ff")), okw},
+		{"a serialNumber of 21 octets", tst(set(3, "0215 01"+strings.Repeat("00", 20))), okw},
+		{"accuracy seconds of nine octets", with("300b 0209 010000000000000000"), okw},
+		{"accuracy empty", with("3000"), okw},
+		{"accuracy millis 999 alone", with("3004 800203e7"), okw},
+		{"accuracy micros 1 alone", with("3003 810101"), okw},
+		{"accuracy millis 128", with("3004 80020080"), okw},
+		{"tsa an rfc822Name [1]", with("a003 810141"), okw},
+		{"tsa a URI [6]", with("a003 860141"), okw},
+		{"tsa an otherName [0]", with("a004 a0020500"), okw},
+		{"tsa an iPAddress [7]", with("a006 87047f000001"), okw},
+		{"tsa a registeredID [8]", with("a005 88032a0304"), okw},
+		{"tsa an x400Address [3]", with("a002 a300"), okw},
+		{"tsa an ediPartyName [5]", with("a002 a500"), okw},
+		{"tsa a dNSName [2]", with("a003 820141"), okw},
+		{"an extension marked critical", with("a10e 300c 06032a0304 0101ff 04020500"), okw},
+		{"an extension's value not DER", with("a10b 3009 06032a0304 0402 0481"), okw},
+		{"two extensions", with("a116 3009 06032a0304 04020500 3009 06032a0305 04020500"), okw},
+
+		{"a NULL after genTime", with("0500"), mf},
+		{"a NULL after extensions", with(extensions, "0500"), mf},
+		{"a BOOLEAN after extensions", with(extensions, "0101ff"), mf},
+		{"nonce before ordering", with(nonce, "0101ff"), mf},
+		{"two nonces", with(nonce, nonce), mf},
+		{"two orderings", with(ordering, ordering), mf},
+		{"ordering before accuracy", with(ordering, accuracy), mf},
+		{"two accuracies", with(accuracy, accuracy), mf},
+		{"extensions before tsa", with(extensions, tsaName), mf},
+		{"tsa before nonce", with(tsaName, nonce), mf},
+		{"no genTime", tst(func(m [][]byte) [][]byte { return m[:4] }), mf},
+		{"no serialNumber", tst(func(m [][]byte) [][]byte { return append(m[:3], m[4]) }), mf},
+		{"version an ENUMERATED", tst(set(0, "0a0101")), mf},
+		{"policy a RELATIVE-OID", tst(set(1, "0d020304")), mf},
+		{"serialNumber an OCTET STRING", tst(set(3, "04012a")), mf},
+
+		{"accuracy millis 0", with("3003 800100"), mf},
+		{"accuracy millis 1000", with("3004 800203e8"), mf},
+		{"accuracy micros 0", with("3003 810100"), mf},
+		{"accuracy micros 1000", with("3004 810203e8"), mf},
+		{"accuracy millis -1", with("3003 8001ff"), mf},
+		{"accuracy millis 5 in two octets", with("3004 80020005"), mf},
+		{"accuracy millis 128 without its leading zero", with("3003 800180"), mf},
+		{"accuracy millis empty", with("3002 8000"), mf},
+		{"accuracy millis constructed", with("3005 a003 020105"), mf},
+		{"accuracy micros before millis", with("3006 810101 800101"), mf},
+		{"accuracy seconds after millis", with("3006 800101 020101"), mf},
+		{"accuracy two seconds", with("3006 020101 020101"), mf},
+		{"accuracy a NULL", with("3002 0500"), mf},
+		{"accuracy a member after micros", with("3005 810101 0500"), mf},
+
+		{"tsa empty", with("a000"), mf},
+		{"tsa primitive", with("8003 810141"), mf},
+		{"tsa holding two names", with("a006 810141 810142"), mf},
+		{"tsa a [9]", with("a003 890141"), mf},
+		{"tsa a universal SEQUENCE", with("a002 3000"), mf},
+		{"tsa a directoryName [4] primitive", with("a003 840141"), mf},
+		{"tsa an otherName [0] primitive", with("a003 800141"), mf},
+		{"tsa a dNSName [2] constructed", with("a004 a2020500"), mf},
+		{"tsa an application-class name", with("a003 420141"), mf},
+		{"tsa holding a non-minimal length", with("a004 81810141"), mf},
+		{"tsa holding an indefinite length", with("a007 a180 810141 0000"), mf},
+
+		{"extensions empty", with("a100"), mf},
+		{"extensions primitive", with("8100"), mf},
+		{"extensions holding a NULL", with("a102 0500"), mf},
+		{"an extension with a member after its value", with("a10d 300b 06032a0304 04020500 0500"), mf},
+		{"an extension without a value", with("a107 3005 06032a0304"), mf},
+		{"an extension with an INTEGER where critical sits", with("a10e 300c 06032a0304 020101 04020500"), mf},
+
+		{"messageImprint's hashAlgorithm with a second NULL", tst(set(2, imprint("300f 0609 608648016503040201 0500 0500"))), mf},
+		{"messageImprint's hashAlgorithm with a BOOLEAN after its NULL", tst(set(2, imprint("3010 0609 608648016503040201 0500 0101ff"))), mf},
+		{"messageImprint's hashAlgorithm an OBJECT IDENTIFIER alone", tst(set(2, imprint("0609 608648016503040201"))), mf},
+		{"messageImprint with a member after hashedMessage", tst(set(2, imprint(sha256, "0500"))), mf},
+		{"messageImprint's hashedMessage a BIT STRING", tst(set(2, tlv(0x30, sha256, tlv(0x03, "00"+hex.EncodeToString(p))))), mf},
+		{"messageImprint a SET", tst(set(2, tlv(0x31, sha256, tlv(0x04, hex.EncodeToString(p))))), mf},
+		{"a nonce with a leading zero", with("0202 0001"), mf},
+	} {
+		s.verify(c.name, c.tok, c.w)
+	}
+	// The record's own token reads the same, malformed_token.
+	if r := VerifyRecordToken(report.S(with("0500")), p, s.trusted); r.Token.Reason != ReasonMalformedToken {
+		t.Errorf("the record's token, a NULL after genTime: %s %q", r.Token.Outcome, r.Token.Reason)
+	}
+
+	// eContent holds the TSTInfo and nothing after it.
+	resp, sd, _ := tokenParts(t, with())
+	oct := sd.at(2, 1, 0)
+	oct.body = append(oct.body, 0x05, 0x00)
+	s.verify("a NULL after the TSTInfo in eContent", encode(resp), mf)
+
+	// The TSTInfo is a SEQUENCE: one tagged a SET, changed after signing,
+	// fails step 1 before step 3 finds the change.
+	resp, sd, _ = tokenParts(t, with())
+	oct = sd.at(2, 1, 0)
+	asSet := tree(t, oct.body)
+	asSet.tag = asn1.TagSet
+	oct.body = asSet.der()
+	s.verify("the TSTInfo a SET", encode(resp), mf)
+
+	// genTime: a GeneralizedTime in the ranges of a validity time, the year
+	// any of 0000 to 9999, a fraction allowed. A genTime outside the
+	// signer's validity passes steps 1 to 3 and fails step 4.
+	genTime := func(v string) string { return tst(set(4, gtime(v))) }
+	for _, c := range []struct {
+		value string
+		w     want
+	}{
+		{"00000229000000Z", tokenOKOnly},
+		{"00991231235959Z", tokenOKOnly},
+		{"20000229000000Z", tokenOKOnly},
+		{"99991231235959.999Z", tokenOKOnly},
+		{"20261016000000.5Z", okw},
+		{"01000229000000Z", mf},
+		{"21000229000000Z", mf},
+		{"20260229000000Z", mf},
+		{"20261316000000Z", mf},
+		{"20260016000000Z", mf},
+		{"20261000000000Z", mf},
+		{"20261032000000Z", mf},
+		{"20260431000000Z", mf},
+		{"20261016240000Z", mf},
+		{"20261016006000Z", mf},
+		{"20261016000060Z", mf},
+		{"20261016000000+0000", mf},
+		{"20261016000000.50Z", mf},
+	} {
+		s.verify("genTime "+c.value, genTime(c.value), c.w)
+	}
+	s.verify("genTime a UTCTime", tst(set(4, utime("261016000000Z"))), mf)
+
+	// A fraction finer than a nanosecond still puts genTime after its whole
+	// second: a signer valid until that second is not valid at it.
+	at := time.Now().Add(-time.Hour).UTC().Truncate(time.Second)
+	until := testpki.Signer("TSA", s.root, at.AddDate(-1, 0, 0), at, testpki.EKU(true, testpki.TimeStamping))
+	finer := func(frac string) string {
+		return s.build(testpki.TokenOptions{Signer: until, TSTInfo: set(4, gtime(at.Format("20060102150405")+frac))})
+	}
+	r := s.verify("genTime its signer's notAfter", finer("Z"), okw)
+	if !r.GenTime.Equal(at) {
+		t.Errorf("genTime %v, want %v", r.GenTime, at)
+	}
+	s.verify("genTime a nanosecond after its signer's notAfter", finer(".000000001Z"), tokenOKOnly)
+	s.verify("genTime a picosecond after its signer's notAfter", finer(".000000000001Z"), tokenOKOnly)
+}
+
+// TestTypedExtensionValues: the value of each extension step 1 gives a
+// type is, as an encoding of its own, one DER element of that type with
+// nothing after it; the value of any other extension is not read. The
+// extensions are on a carried certificate no later step needs.
+func TestTypedExtensionValues(t *testing.T) {
+	s := newStepOne(t)
+	ext := func(id asn1.ObjectIdentifier, value string) string {
+		return s.extra(func(_, tbs *node) { setExtension(t, tbs, id, unhex(t, value)) })
+	}
+	oid := func(arcs ...int) asn1.ObjectIdentifier { return asn1.ObjectIdentifier(arcs) }
+	uri := func(u string) string { return tlv(0x86, hex.EncodeToString([]byte(u))) }
+	for _, c := range []struct {
+		name  string
+		id    asn1.ObjectIdentifier
+		value string
+	}{
+		{"keyUsage", oid(2, 5, 29, 15), "03020184"},
+		{"basicConstraints", oid(2, 5, 29, 19), tlv(0x30, "0101ff", "020101")},
+		{"extendedKeyUsage", oid(2, 5, 29, 37), tlv(0x30, "06082b06010505070308")},
+		{"subjectKeyIdentifier", oid(2, 5, 29, 14), "040401020304"},
+		{"authorityKeyIdentifier", oid(2, 5, 29, 35), tlv(0x30, "800401020304")},
+		{"subjectAltName", oid(2, 5, 29, 17), tlv(0x30, tlv(0x82, hex.EncodeToString([]byte("localhost"))))},
+		{"nameConstraints", oid(2, 5, 29, 30), tlv(0x30, tlv(0xa0, tlv(0x30, tlv(0x82, hex.EncodeToString([]byte("example"))))))},
+		{"cRLDistributionPoints", oid(2, 5, 29, 31), tlv(0x30, tlv(0x30, tlv(0xa0, tlv(0xa0, uri("http://a/")))))},
+		{"certificatePolicies", oid(2, 5, 29, 32), tlv(0x30, tlv(0x30, "0604551d2000"))},
+		{"authorityInfoAccess", oid(1, 3, 6, 1, 5, 5, 7, 1, 1), tlv(0x30, tlv(0x30, "06082b06010505073002", uri("http://a/")))},
+	} {
+		s.verify(c.name, ext(c.id, c.value), okw)
+		s.verify(c.name+", a NULL after its value", ext(c.id, c.value+"0500"), mf)
+		s.verify(c.name+", its value an empty OCTET STRING's contents", ext(c.id, ""), mf)
+		s.verify(c.name+", its value a NULL", ext(c.id, "0500"), mf)
+	}
+	for _, c := range []struct {
+		name  string
+		id    asn1.ObjectIdentifier
+		value string
+		w     want
+	}{
+		{"basicConstraints empty", oid(2, 5, 29, 19), "3000", okw},
+		{"basicConstraints with pathLenConstraint alone", oid(2, 5, 29, 19), tlv(0x30, "020101"), okw},
+		{"basicConstraints with a NULL after cA", oid(2, 5, 29, 19), tlv(0x30, "0101ff", "0500"), mf},
+		{"basicConstraints with pathLenConstraint before cA", oid(2, 5, 29, 19), tlv(0x30, "020101", "0101ff"), mf},
+		{"basicConstraints with two cAs", oid(2, 5, 29, 19), tlv(0x30, "0101ff", "0101ff"), mf},
+		{"basicConstraints a SET", oid(2, 5, 29, 19), tlv(0x31, "0101ff"), mf},
+		{"extendedKeyUsage with a NULL among its purposes", oid(2, 5, 29, 37), tlv(0x30, "06082b06010505070308", "0500"), mf},
+		{"keyUsage an OCTET STRING", oid(2, 5, 29, 15), "040184", mf},
+		{"subjectKeyIdentifier with a non-minimal length", oid(2, 5, 29, 14), "04810401020304", mf},
+		{"subjectAltName a SET", oid(2, 5, 29, 17), tlv(0x31, tlv(0x82, "41")), mf},
+		{"an extension of another type, two elements", oid(1, 2, 3, 4), "05000500", okw},
+		{"an extension of another type, not DER", oid(1, 2, 3, 4), "04810141", okw},
+		{"an extension of another type, empty", oid(1, 2, 3, 4), "", okw},
+	} {
+		s.verify(c.name, ext(c.id, c.value), c.w)
+	}
+}
+
+// TestValidityTimes: a validity time is a UTCTime or a GeneralizedTime
+// without a fraction of a second, whose fields are in their ranges: a
+// GeneralizedTime's year its four digits, 0000 to 9999; a UTCTime's 19YY
+// for 50 to 99 and 20YY for 00 to 49; the Gregorian leap years, applied to
+// every year. On a carried certificate no later step needs.
+func TestValidityTimes(t *testing.T) {
+	s := newStepOne(t)
+	validity := func(notBefore, notAfter string) string {
+		return s.extra(func(_, tbs *node) {
+			v := tbs.at(4)
+			v.kids = []*node{raw(t, notBefore), raw(t, notAfter)}
+		})
+	}
+	end := gtime("99991231235959Z")
+	for _, c := range []struct {
+		time string
+		w    want
+	}{
+		{gtime("20500101000000Z"), okw},
+		{gtime("00000101000000Z"), okw},
+		{gtime("00990101000000Z"), okw},
+		{gtime("00000229000000Z"), okw},
+		{gtime("20000229000000Z"), okw},
+		{gtime("20240229000000Z"), okw},
+		{gtime("01000229000000Z"), mf},
+		{gtime("19000229000000Z"), mf},
+		{gtime("20260229000000Z"), mf},
+		{gtime("20500101000000.5Z"), mf},
+		{gtime("20500101000000.1Z"), mf},
+		{gtime("20501301000000Z"), mf},
+		{gtime("20500001000000Z"), mf},
+		{gtime("20500100000000Z"), mf},
+		{gtime("20500132000000Z"), mf},
+		{gtime("20500431000000Z"), mf},
+		{gtime("20500101240000Z"), mf},
+		{gtime("20500101006000Z"), mf},
+		{gtime("20500101000060Z"), mf},
+		{utime("000229000000Z"), okw},
+		{utime("520229000000Z"), okw},
+		{utime("960229000000Z"), okw},
+		{utime("500229000000Z"), mf},
+		{utime("490229000000Z"), mf},
+		{utime("501231235959Z"), okw},
+		{utime("491231235959Z"), okw},
+		{utime("500101000060Z"), mf},
+	} {
+		s.verify("notBefore "+c.time, validity(c.time, end), c.w)
+		s.verify("notAfter "+c.time, validity(gtime("00000101000000Z"), c.time), c.w)
+	}
 }

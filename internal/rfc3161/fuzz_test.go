@@ -70,7 +70,7 @@ func FuzzVerifyRecordToken(f *testing.F) {
 		}
 		addRoot(b)
 	}
-	for _, name := range []string{"openssl-tokens.json", "testpki-tokens.json"} {
+	for _, name := range []string{"openssl-tokens.json", "testpki-tokens.json", "testpki-edge-tokens.json"} {
 		b, err := os.ReadFile(filepath.Join("testdata", name))
 		if err != nil {
 			f.Fatal(err)

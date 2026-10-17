@@ -8,35 +8,32 @@
 // The steps run in order and the first that does not hold decides:
 //
 //  1. parse: a granted TimeStampResp that wraps a CMS SignedData over a
-//     TSTInfo, every element of the response with a DER header (X.690
-//     §8.1, §10.1), though not inside an OCTET STRING or BIT STRING (the
-//     TSTInfo, an extension's value, a key), which are encodings of their
-//     own, and one with a universal tag with the form X.690 gives
-//     its type and, if it is a BOOLEAN, INTEGER, ENUMERATED, BIT STRING,
-//     NULL, OBJECT IDENTIFIER, RELATIVE-OID, UTCTime or GeneralizedTime,
-//     the contents der.go's contentsOK names (der.go does not check the
-//     other rules of DER, among them midnight as 000000, the contents of a
-//     REAL or a character string, the order of a SET's components and of a
-//     SET OF's elements, the omission of a DEFAULT value and the removal
-//     of trailing zero bits from a named bit list); the TimeStampResp,
-//     ContentInfo, SignedData, EncapsulatedContentInfo and SignerInfo, and
-//     the AlgorithmIdentifiers and attributes the SignedData and SignerInfo
-//     hold, have their members and nothing else (der.go), while inside the
-//     PKIStatusInfo, an attribute's values, a CRL and the TSTInfo, members
-//     are checked only as far as their decoders read them; the SignedData
-//     has a single SignerInfo, and the token itself holds that signer's
-//     certificate; every certificate it carries has the members of an
-//     RFC 5280 certificate and decodes (malformed_publication). A
+//     TSTInfo. The response, and on their own the TSTInfo and the value of
+//     each certificate extension step 1 gives a type, keep to the rules of
+//     DER der.go's isDER checks and to the decoder bounds (der.go does not
+//     check the other rules of DER, among them midnight as 000000, the
+//     contents of a REAL or a character string, the order of a SET's
+//     components and of a SET OF's elements, the omission of a DEFAULT
+//     value and the removal of trailing zero bits from a named bit list);
+//     the TimeStampResp, ContentInfo, SignedData, EncapsulatedContentInfo,
+//     SignerInfo and TSTInfo, and the AlgorithmIdentifiers and attributes
+//     the SignedData and SignerInfo hold, have their members and nothing
+//     else (der.go), while inside the PKIStatusInfo, an attribute's values
+//     and a CRL, members are checked only as far as their decoders read
+//     them; the SignedData has a single SignerInfo, and the token itself
+//     holds the certificate its sid names, by issuer and serial number or by
+//     subjectKeyIdentifier; every certificate it carries has the members of
+//     an RFC 5280 certificate and decodes (malformed_publication). A
 //     certificate whose key uses an algorithm or curve this build does not
 //     implement is read with its key left unread;
 //  2. imprint: SHA-256 and P (imprint_mismatch);
-//  3. signature and signer: the stock digitorus/timestamp and
-//     digitorus/pkcs7 libraries verify the CMS signature; the signed
-//     attributes hold one content type and one message digest; a
-//     signingCertificate or signingCertificateV2 attribute binds the signer's
-//     certificate; and that certificate's extendedKeyUsage extension is
-//     marked critical and names timestamping as its one purpose
-//     (verification_failed);
+//  3. signature and signer: the signed attributes hold one content type and
+//     one message digest of the TSTInfo; the signature over the signed
+//     attributes, as the token carries them, verifies under the signer's key
+//     (crypto/x509); a signingCertificate or signingCertificateV2 attribute
+//     binds the signer's certificate; and that certificate's
+//     extendedKeyUsage extension is marked critical and names timestamping
+//     as its one purpose (verification_failed);
 //  4. trust: some path from the signer to a root the auditor supplied is
 //     valid at genTime (verification_failed when a path reaches a supplied
 //     root but none is valid; not-checked, no_matching_trust_anchor, when
@@ -44,8 +41,10 @@
 //
 // Step 5: a step that needs a key or an algorithm this build does not
 // implement (a curve other than P-224, P-256, P-384 and P-521, a DSA key, an
-// MD5 signature, a CMS signature algorithm the CMS library does not map)
-// is not-checked, missing_dependency, on its check.
+// MD5 signature, a SignerInfo signature algorithm signatureAlgorithm does
+// not map, a digest algorithm digestAlgorithm does not name) is not-checked,
+// missing_dependency, on its check; at step 3, only when every requirement
+// of step 3 this build can check holds.
 //
 // Steps 1 to 3 are check anchor.tsa.token[i]; step 4 is anchor.tsa.trust[i].
 package rfc3161
@@ -68,9 +67,6 @@ import (
 	"fmt"
 	"math/big"
 	"time"
-
-	"github.com/digitorus/pkcs7"
-	"github.com/digitorus/timestamp"
 
 	"github.com/TzunAI/tzun-verify/internal/jsonv"
 	"github.com/TzunAI/tzun-verify/internal/report"
@@ -102,6 +98,7 @@ var (
 	oidSHA512         = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 2, 3}
 	oidSHA1           = asn1.ObjectIdentifier{1, 3, 14, 3, 2, 26}
 	oidExtKeyUsage    = asn1.ObjectIdentifier{2, 5, 29, 37}
+	oidSubjectKeyID   = asn1.ObjectIdentifier{2, 5, 29, 14}
 	oidKPTimeStamping = asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 3, 8}
 	oidCommonName     = asn1.ObjectIdentifier{2, 5, 4, 3}
 	oidPublicKeyEC    = asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}
@@ -117,22 +114,19 @@ var (
 	// the enterprise arc IANA reserves (1.3.6.1.4.1.0), which names no
 	// algorithm.
 	oidKeyUnread = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 0}
-	// cmsSignatureAlgorithms are the SignerInfo signature algorithms the CMS
-	// library maps to one crypto/x509 verifies. DSA is not among them.
-	cmsSignatureAlgorithms = []asn1.ObjectIdentifier{
-		pkcs7.OIDDigestAlgorithmECDSASHA1, pkcs7.OIDDigestAlgorithmECDSASHA256,
-		pkcs7.OIDDigestAlgorithmECDSASHA384, pkcs7.OIDDigestAlgorithmECDSASHA512,
-		pkcs7.OIDPublicKeyAlgorithmEC,
-		pkcs7.OIDEncryptionAlgorithmRSA, pkcs7.OIDEncryptionAlgorithmRSASHA1, pkcs7.OIDEncryptionAlgorithmRSASHA256,
-		pkcs7.OIDEncryptionAlgorithmRSASHA384, pkcs7.OIDEncryptionAlgorithmRSASHA512,
-		pkcs7.OIDEncryptionAlgorithmECDSAP256, pkcs7.OIDEncryptionAlgorithmECDSAP384, pkcs7.OIDEncryptionAlgorithmECDSAP521,
-		pkcs7.OIDEncryptionAlgorithmEDDSA25519,
-		pkcs7.OIDSignatureAlgorithmMLDSA44, pkcs7.OIDSignatureAlgorithmMLDSA65, pkcs7.OIDSignatureAlgorithmMLDSA87,
-	}
-	nullParams           = []byte{0x05, 0x00}
-	errUnsupportedDigest = errors.New("rfc3161: unsupported certHash algorithm")
-	errNotCertificate    = errors.New("rfc3161: not an RFC 5280 certificate")
+	// derSHA256 is the DER of id-sha256, the hash algorithm of step 2.
+	derSHA256         = mustMarshal(oidSHA256)
+	nullParams        = []byte{0x05, 0x00}
+	errNotCertificate = errors.New("rfc3161: not an RFC 5280 certificate")
 )
+
+func mustMarshal(v any) []byte {
+	b, err := asn1.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
 
 // RFC 3161 §2.4.2 and RFC 5652, transcribed.
 type pkiStatusInfo struct {
@@ -182,30 +176,6 @@ type attribute struct {
 	Values asn1.RawValue
 }
 
-type messageImprint struct {
-	HashAlgorithm pkix.AlgorithmIdentifier
-	HashedMessage []byte
-}
-
-type accuracy struct {
-	Seconds int `asn1:"optional"`
-	Millis  int `asn1:"tag:0,optional"`
-	Micros  int `asn1:"tag:1,optional"`
-}
-
-type tstInfo struct {
-	Version        int
-	Policy         asn1.ObjectIdentifier
-	MessageImprint messageImprint
-	SerialNumber   *big.Int
-	GenTime        time.Time        `asn1:"generalized"`
-	Accuracy       accuracy         `asn1:"optional"`
-	Ordering       bool             `asn1:"optional,default:false"`
-	Nonce          *big.Int         `asn1:"optional"`
-	TSA            asn1.RawValue    `asn1:"tag:0,optional"`
-	Extensions     []pkix.Extension `asn1:"tag:1,optional"`
-}
-
 // Trust is the auditor's RFC 3161 configuration: the roots it trusts and
 // any intermediates it supplies.
 type Trust struct {
@@ -226,10 +196,6 @@ type Result struct {
 
 // token is the output of step 1.
 type token struct {
-	// stock is the token (its ContentInfo) as the CMS library reads it:
-	// less any certificate whose key this build does not implement. Nothing
-	// before step 4 needs those, and the signature does not cover them.
-	stock     []byte
 	tst       tstInfo
 	signer    *x509.Certificate
 	certs     []*x509.Certificate
@@ -312,24 +278,23 @@ func keyNotImplemented(spki []byte) bool {
 
 // parseCertificate reads one certificate. The stock parser refuses a
 // certificate whose EC key is on a curve it does not implement; such a
-// certificate is read with its key left unread instead (a nil PublicKey),
-// and readable is false. Every other certificate the stock parser refuses
-// is not a certificate.
-func parseCertificate(der []byte) (c *x509.Certificate, readable bool, err error) {
+// certificate is read with its key left unread instead (a nil PublicKey).
+// Every other certificate the stock parser refuses is not a certificate.
+func parseCertificate(der []byte) (*x509.Certificate, error) {
 	if !certificateShape(der) {
-		return nil, false, errNotCertificate
+		return nil, errNotCertificate
 	}
-	c, err = x509.ParseCertificate(der)
+	c, err := x509.ParseCertificate(der)
 	if err == nil {
-		return c, true, nil
+		return c, nil
 	}
 	var cert asn1.RawValue
 	if rest, e := asn1.Unmarshal(der, &cert); e != nil || len(rest) != 0 || cert.Tag != asn1.TagSequence {
-		return nil, false, err
+		return nil, err
 	}
 	parts, ok := elements(cert.Bytes) // tbsCertificate, signatureAlgorithm, signature
 	if !ok || len(parts) != 3 {
-		return nil, false, err
+		return nil, err
 	}
 	fields, ok := elements(parts[0].Bytes)
 	spkiAt := 5 // after serialNumber, signature, issuer, validity and subject
@@ -337,7 +302,7 @@ func parseCertificate(der []byte) (c *x509.Certificate, readable bool, err error
 		spkiAt++ // after the version, too
 	}
 	if !ok || len(fields) <= spkiAt || !keyNotImplemented(fields[spkiAt].FullBytes) {
-		return nil, false, err
+		return nil, err
 	}
 	spki := fields[spkiAt].FullBytes
 	placeholder, e := asn1.Marshal(struct {
@@ -345,7 +310,7 @@ func parseCertificate(der []byte) (c *x509.Certificate, readable bool, err error
 		Key       asn1.BitString
 	}{Algorithm: pkix.AlgorithmIdentifier{Algorithm: oidKeyUnread}})
 	if e != nil {
-		return nil, false, err
+		return nil, err
 	}
 	raw := make([][]byte, len(fields))
 	for i, f := range fields {
@@ -356,36 +321,27 @@ func parseCertificate(der []byte) (c *x509.Certificate, readable bool, err error
 		constructed(asn1.ClassUniversal, asn1.TagSequence, raw...), parts[1].FullBytes, parts[2].FullBytes)
 	c, e = x509.ParseCertificate(shell)
 	if e != nil {
-		return nil, false, err
+		return nil, err
 	}
 	c.Raw, c.RawTBSCertificate, c.RawSubjectPublicKeyInfo = der, parts[0].FullBytes, spki
-	return c, false, nil
+	return c, nil
 }
 
-// parseCertificates reads the certificates of a SignedData (its [0] field),
-// and returns them with the encoding of that field less the certificates
-// the stock parser cannot read.
-func parseCertificates(field asn1.RawValue) ([]*x509.Certificate, []byte, bool) {
+// parseCertificates reads the certificates of a SignedData (its [0] field).
+func parseCertificates(field asn1.RawValue) ([]*x509.Certificate, bool) {
 	elems, ok := elements(field.Bytes)
 	if !ok {
-		return nil, nil, false
+		return nil, false
 	}
 	var certs []*x509.Certificate
-	var stock [][]byte
 	for _, e := range elems {
-		c, readable, err := parseCertificate(e.FullBytes)
+		c, err := parseCertificate(e.FullBytes)
 		if err != nil {
-			return nil, nil, false
+			return nil, false
 		}
 		certs = append(certs, c)
-		if readable {
-			stock = append(stock, e.FullBytes)
-		}
 	}
-	if len(stock) == len(elems) {
-		return certs, field.FullBytes, true
-	}
-	return certs, constructed(asn1.ClassContextSpecific, 0, stock...), true
+	return certs, true
 }
 
 // KeyImplemented reports whether this build verifies signatures under a
@@ -400,14 +356,26 @@ func KeyImplemented(c *x509.Certificate) bool {
 	return false
 }
 
-// signerOf returns the first certificate the SignerInfo names by issuer and
-// serial number, as the CMS library looks it up, or nil.
-func signerOf(si signerInfo, certs []*x509.Certificate) *x509.Certificate {
+// signerOf returns the first certificate the sid of a SignerInfo names, in
+// either form of RFC 5652 §5.3, or nil: by issuerAndSerialNumber, the one
+// whose issuer Name is byte for byte the sid's and whose serial number is
+// the sid's; by subjectKeyIdentifier [0], the one whose
+// subjectKeyIdentifier extension holds, byte for byte, the sid's key
+// identifier.
+func signerOf(sid asn1.RawValue, certs []*x509.Certificate) *x509.Certificate {
+	if sid.Class == asn1.ClassContextSpecific && sid.Tag == 0 && !sid.IsCompound {
+		for _, c := range certs {
+			if id, ok := keyIdentifier(c); ok && bytes.Equal(id, sid.Bytes) {
+				return c
+			}
+		}
+		return nil
+	}
 	var ias struct {
 		Issuer asn1.RawValue
 		Serial *big.Int
 	}
-	if rest, err := asn1.Unmarshal(si.SID.FullBytes, &ias); err != nil || len(rest) != 0 || ias.Serial == nil {
+	if rest, err := asn1.Unmarshal(sid.FullBytes, &ias); err != nil || len(rest) != 0 || ias.Serial == nil {
 		return nil
 	}
 	for _, c := range certs {
@@ -416,6 +384,19 @@ func signerOf(si signerInfo, certs []*x509.Certificate) *x509.Certificate {
 		}
 	}
 	return nil
+}
+
+// keyIdentifier returns the key identifier a certificate's
+// subjectKeyIdentifier extension holds, and whether it has that extension.
+// certificateShape has held the extension's value to one OCTET STRING.
+func keyIdentifier(c *x509.Certificate) ([]byte, bool) {
+	for _, e := range c.Extensions {
+		if e.Id.Equal(oidSubjectKeyID) {
+			v, _, ok := readElement(e.Value)
+			return v.body, ok
+		}
+	}
+	return nil, false
 }
 
 func strictBase64(s string) ([]byte, bool) {
@@ -432,147 +413,52 @@ func strictBase64(s string) ([]byte, bool) {
 	return b, true
 }
 
-// parse is step 1. It returns the token, or the reason step 1 does not
-// hold: "" with a nil token for a token that is not what step 1 requires,
-// or ReasonMissingDependency for one the linked CMS library cannot read.
-func parse(s string) (*token, string) {
-	t, ok, why := parseToken(s)
-	if !ok {
-		return nil, why
-	}
-	return t, ""
-}
-
-func parseToken(s string) (*token, bool, string) {
+// parse is step 1. It returns the token, or nil for one that is not what
+// step 1 requires.
+func parse(s string) *token {
 	der, ok := strictBase64(s)
 	if !ok || !isDER(der) || !tokenShape(der) {
-		return nil, false, ""
+		return nil
 	}
-	t, ok := parseStrict(der)
-	if ok {
-		return t, true, ""
-	}
-	if skiSigner(der) {
-		// A signer named by subjectKeyIdentifier is legal CMS (RFC 5652
-		// §5.3); the linked library finds a signer only by issuer and
-		// serial number. That is a gap in this verifier, not in the token
-		// (§10.5 step 5).
-		return nil, false, ReasonMissingDependency
-	}
-	return nil, false, ""
-}
-
-// skiSigner reports whether a token otherwise well-formed names its signer
-// by subjectKeyIdentifier ([0]), and carries the certificate it names.
-func skiSigner(der []byte) bool {
 	var resp timeStampResp
-	if rest, err := asn1.Unmarshal(der, &resp); err != nil || len(rest) != 0 || len(resp.TimeStampToken.FullBytes) == 0 {
-		return false
+	if rest, err := asn1.Unmarshal(der, &resp); err != nil || len(rest) != 0 {
+		return nil
+	}
+	if resp.Status.Status != 0 && resp.Status.Status != 1 {
+		return nil
+	}
+	if len(resp.TimeStampToken.FullBytes) == 0 {
+		return nil
 	}
 	var ci contentInfo
 	if rest, err := asn1.Unmarshal(resp.TimeStampToken.FullBytes, &ci); err != nil || len(rest) != 0 || !ci.ContentType.Equal(oidSignedData) {
-		return false
-	}
-	var sd signedData
-	if rest, err := asn1.Unmarshal(ci.Content.Bytes, &sd); err != nil || len(rest) != 0 || len(sd.SignerInfos) != 1 {
-		return false
-	}
-	var si signerInfo
-	if rest, err := asn1.Unmarshal(sd.SignerInfos[0].FullBytes, &si); err != nil || len(rest) != 0 {
-		return false
-	}
-	if si.SID.Class != asn1.ClassContextSpecific || si.SID.Tag != 0 || si.SID.IsCompound || len(si.SID.Bytes) == 0 {
-		return false
-	}
-	certs, _, ok := parseCertificates(sd.Certificates)
-	if !ok {
-		return false
-	}
-	for _, c := range certs {
-		if bytes.Equal(c.SubjectKeyId, si.SID.Bytes) {
-			return true
-		}
-	}
-	return false
-}
-
-// parseStrict decodes a token that isDER and tokenShape have checked.
-func parseStrict(der []byte) (*token, bool) {
-	var resp timeStampResp
-	rest, err := asn1.Unmarshal(der, &resp)
-	if err != nil || len(rest) != 0 {
-		return nil, false
-	}
-	if resp.Status.Status != 0 && resp.Status.Status != 1 {
-		return nil, false
-	}
-	if len(resp.TimeStampToken.FullBytes) == 0 {
-		return nil, false
-	}
-	tok := resp.TimeStampToken.FullBytes
-	var ci contentInfo
-	if rest, err := asn1.Unmarshal(tok, &ci); err != nil || len(rest) != 0 || !ci.ContentType.Equal(oidSignedData) {
-		return nil, false
+		return nil
 	}
 	var sd signedData
 	if rest, err := asn1.Unmarshal(ci.Content.Bytes, &sd); err != nil || len(rest) != 0 {
-		return nil, false
+		return nil
 	}
 	if !sd.EncapContentInfo.EContentType.Equal(oidTSTInfo) || len(sd.SignerInfos) != 1 {
-		return nil, false
+		return nil
 	}
 	var octets []byte
 	if rest, err := asn1.Unmarshal(sd.EncapContentInfo.EContent.Bytes, &octets); err != nil || len(rest) != 0 {
-		return nil, false
+		return nil
 	}
-	t := &token{stock: tok}
-	if rest, err := asn1.Unmarshal(octets, &t.tst); err != nil || len(rest) != 0 {
-		return nil, false
+	t := &token{}
+	if t.tst, ok = readTSTInfo(octets); !ok {
+		return nil
 	}
 	if rest, err := asn1.Unmarshal(sd.SignerInfos[0].FullBytes, &t.signerInf); err != nil || len(rest) != 0 {
-		return nil, false
+		return nil
 	}
-	certs, stockCerts, ok := parseCertificates(sd.Certificates)
-	if !ok {
-		return nil, false
+	if t.certs, ok = parseCertificates(sd.Certificates); !ok {
+		return nil
 	}
-	if !bytes.Equal(stockCerts, sd.Certificates.FullBytes) {
-		// Rebuild the token around the certificates the CMS library reads.
-		var sdSeq, ciSeq asn1.RawValue
-		if _, err := asn1.Unmarshal(ci.Content.Bytes, &sdSeq); err != nil {
-			return nil, false
-		}
-		fields, ok := elements(sdSeq.Bytes)
-		if !ok {
-			return nil, false
-		}
-		raw := make([][]byte, 0, len(fields))
-		for _, f := range fields {
-			if f.Class == asn1.ClassContextSpecific && f.Tag == 0 {
-				raw = append(raw, stockCerts)
-			} else {
-				raw = append(raw, f.FullBytes)
-			}
-		}
-		if _, err := asn1.Unmarshal(tok, &ciSeq); err != nil {
-			return nil, false
-		}
-		ciFields, ok := elements(ciSeq.Bytes)
-		if !ok || len(ciFields) != 2 {
-			return nil, false
-		}
-		t.stock = constructed(asn1.ClassUniversal, asn1.TagSequence, ciFields[0].FullBytes,
-			constructed(asn1.ClassContextSpecific, 0, constructed(asn1.ClassUniversal, asn1.TagSequence, raw...)))
+	if t.signer = signerOf(t.signerInf.SID, t.certs); t.signer == nil {
+		return nil
 	}
-	if _, err := pkcs7.Parse(t.stock); err != nil {
-		return nil, false
-	}
-	t.certs = certs
-	t.signer = signerOf(t.signerInf, certs)
-	if t.signer == nil {
-		return nil, false
-	}
-	return t, true
+	return t
 }
 
 func parseAttrs(raw asn1.RawValue) ([]attribute, bool) {
@@ -617,7 +503,7 @@ func singleValue(set asn1.RawValue) ([]byte, bool) {
 
 // certID is the first certificate identifier of a signingCertificate(V2).
 type certID struct {
-	hash     crypto.Hash
+	hash     crypto.Hash // 0 for an ESSCertIDv2 hash algorithm this build does not implement
 	certHash []byte
 	issuer   []byte // Name DER, nil when issuerSerial is absent
 	serial   *big.Int
@@ -646,22 +532,17 @@ func parseCertID(value []byte, v2 bool) (*certID, error) {
 	if v2 {
 		id.hash = crypto.SHA256
 		if i < len(parts) && parts[i].Class == asn1.ClassUniversal && parts[i].Tag == asn1.TagSequence {
+			// An AlgorithmIdentifier of another shape names no algorithm
+			// the certificate's hash was made with (§10.5 step 1).
+			e, _, ok := readElement(parts[i].FullBytes)
+			if !ok || !algorithmIdentifier(e) {
+				return nil, errors.New("bad hashAlgorithm")
+			}
 			var alg pkix.AlgorithmIdentifier
 			if _, err := asn1.Unmarshal(parts[i].FullBytes, &alg); err != nil {
 				return nil, err
 			}
-			switch {
-			case alg.Algorithm.Equal(oidSHA256):
-				id.hash = crypto.SHA256
-			case alg.Algorithm.Equal(oidSHA384):
-				id.hash = crypto.SHA384
-			case alg.Algorithm.Equal(oidSHA512):
-				id.hash = crypto.SHA512
-			case alg.Algorithm.Equal(oidSHA1):
-				id.hash = crypto.SHA1
-			default:
-				return nil, errUnsupportedDigest
-			}
+			id.hash = digestAlgorithm(alg.Algorithm)
 			i++
 		}
 	}
@@ -699,21 +580,39 @@ func parseCertID(value []byte, v2 bool) (*certID, error) {
 	return id, nil
 }
 
-func hashCert(h crypto.Hash, der []byte) []byte {
+// digestAlgorithm is the hash a digest algorithm identifier names, of those
+// this build implements: SHA-1, SHA-256, SHA-384 and SHA-512, or 0.
+func digestAlgorithm(oid asn1.ObjectIdentifier) crypto.Hash {
+	switch {
+	case oid.Equal(oidSHA1):
+		return crypto.SHA1
+	case oid.Equal(oidSHA256):
+		return crypto.SHA256
+	case oid.Equal(oidSHA384):
+		return crypto.SHA384
+	case oid.Equal(oidSHA512):
+		return crypto.SHA512
+	}
+	return 0
+}
+
+// digest is b's digest under h, one of the hashes digestAlgorithm names.
+func digest(h crypto.Hash, b []byte) []byte {
 	switch h {
 	case crypto.SHA1:
-		s := sha1.Sum(der) //nolint:gosec
+		s := sha1.Sum(b) //nolint:gosec
+		return s[:]
+	case crypto.SHA256:
+		s := sha256.Sum256(b)
 		return s[:]
 	case crypto.SHA384:
-		s := sha512.Sum384(der)
+		s := sha512.Sum384(b)
 		return s[:]
 	case crypto.SHA512:
-		s := sha512.Sum512(der)
-		return s[:]
-	default:
-		s := sha256.Sum256(der)
+		s := sha512.Sum512(b)
 		return s[:]
 	}
+	panic(fmt.Sprintf("rfc3161: no digest %v", h))
 }
 
 // timestampingOnly reports whether a certificate's extendedKeyUsage
@@ -736,66 +635,106 @@ func timestampingOnly(c *x509.Certificate) bool {
 	return false
 }
 
-// isMissingDependency reports whether an error of the stock libraries says
-// they do not implement an algorithm, rather than that a check failed. An
-// MD5 signature, which crypto/x509 refuses to verify, is one.
+// isMissingDependency reports whether an error of crypto/x509 says it does
+// not implement an algorithm, rather than that a signature failed. An MD5
+// signature, which crypto/x509 refuses to verify, is one.
 func isMissingDependency(err error) bool {
 	var insecure x509.InsecureAlgorithmError
-	return errors.Is(err, pkcs7.ErrUnsupportedAlgorithm) || errors.Is(err, x509.ErrUnsupportedAlgorithm) ||
-		errors.As(err, &insecure) || errors.Is(err, errUnsupportedDigest)
+	return errors.Is(err, x509.ErrUnsupportedAlgorithm) || errors.As(err, &insecure)
 }
 
-// cmsSignatureImplemented reports whether the stock libraries can check the
-// token's CMS signature: the signer's key is one this build implements, and
-// the SignerInfo names a signature algorithm the CMS library maps.
-func cmsSignatureImplemented(t *token) bool {
-	if !KeyImplemented(t.signer) {
-		return false
-	}
-	for _, oid := range cmsSignatureAlgorithms {
-		if t.signerInf.SignatureAlgorithm.Algorithm.Equal(oid) {
-			return true
-		}
-	}
-	return false
-}
+// The outcome of one requirement of step 3.
+type finding int
 
-// signature is step 3. It returns "" when it holds, or a reason.
+const (
+	met     finding = iota
+	unmet           // the requirement does not hold
+	unknown         // it needs an algorithm or a key this build does not implement
+)
+
+// signature is step 3. It returns "" when every requirement holds, and
+// otherwise a reason: verification_failed when a requirement this build
+// can check does not hold, whatever the others need; missing_dependency
+// when each of those holds and another needs an algorithm or a key this
+// build does not implement (§10.5 step 5: a finding comes before a missing
+// dependency at step 3).
 func signature(t *token) string {
 	attrs, ok := parseAttrs(t.signerInf.SignedAttrs)
 	if !ok {
 		return ReasonVerificationFailed
 	}
-	ct, n := findAttr(attrs, oidContentType)
-	var ctOID asn1.ObjectIdentifier
-	ok2 := false
-	if ctv, ok := singleValue(ct); ok {
-		rest, err := asn1.Unmarshal(ctv, &ctOID)
-		ok2 = err == nil && len(rest) == 0
+	lacking := false
+	for _, requirement := range []func() finding{
+		func() finding { return contentType(attrs) },
+		func() finding { return messageDigest(t, attrs) },
+		func() finding { return signerBinding(t, attrs) },
+		func() finding { return timestamping(t.signer) },
+		func() finding { return cmsSignature(t) },
+	} {
+		switch requirement() {
+		case unmet:
+			return ReasonVerificationFailed
+		case unknown:
+			lacking = true
+		}
 	}
-	if n != 1 || !ok2 || !ctOID.Equal(oidTSTInfo) {
-		return ReasonVerificationFailed
-	}
-	if _, n := findAttr(attrs, oidMessageDigest); n != 1 {
-		return ReasonVerificationFailed
-	}
-	// The CMS signature and message digest, by the stock libraries, over the
-	// key and the algorithm they implement (step 5).
-	if !cmsSignatureImplemented(t) {
+	if lacking {
 		return ReasonMissingDependency
 	}
-	ts, err := timestamp.Parse(t.stock)
-	if err != nil {
-		if isMissingDependency(err) {
-			return ReasonMissingDependency
-		}
-		return ReasonVerificationFailed
+	return ""
+}
+
+// contentType: the signed attributes hold exactly one content-type
+// attribute, whose one value is id-ct-TSTInfo.
+func contentType(attrs []attribute) finding {
+	set, n := findAttr(attrs, oidContentType)
+	if n != 1 {
+		return unmet
 	}
-	if !bytes.Equal(ts.HashedMessage, t.tst.MessageImprint.HashedMessage) || !ts.Time.Equal(t.tst.GenTime) {
-		return ReasonVerificationFailed
+	v, ok := singleValue(set)
+	if !ok {
+		return unmet
 	}
-	// The signer binding.
-	bound := 0
+	var oid asn1.ObjectIdentifier
+	if rest, err := asn1.Unmarshal(v, &oid); err != nil || len(rest) != 0 || !oid.Equal(oidTSTInfo) {
+		return unmet
+	}
+	return met
+}
+
+// messageDigest: the signed attributes hold exactly one message-digest
+// attribute, whose one value is an OCTET STRING holding the digest of the
+// TSTInfo under the SignerInfo's digestAlgorithm.
+func messageDigest(t *token, attrs []attribute) finding {
+	set, n := findAttr(attrs, oidMessageDigest)
+	if n != 1 {
+		return unmet
+	}
+	v, ok := singleValue(set)
+	if !ok {
+		return unmet
+	}
+	e, _, ok := readElement(v)
+	if !ok || !isPrimitive(e, asn1.TagOctetString) {
+		return unmet
+	}
+	h := digestAlgorithm(t.signerInf.DigestAlgorithm.Algorithm)
+	if h == 0 {
+		return unknown
+	}
+	if !bytes.Equal(e.body, digest(h, t.tst.raw)) {
+		return unmet
+	}
+	return met
+}
+
+// signerBinding: the signed attributes hold a signingCertificate or a
+// signingCertificateV2 attribute, or both, neither more than once, and the
+// first certificate identifier of each names the signer's certificate: its
+// certHash is the certificate's hash, and its issuerSerial, when present,
+// names the certificate's issuer and serial number.
+func signerBinding(t *token, attrs []attribute) finding {
+	result, present := met, false
 	for _, v2 := range []bool{false, true} {
 		oid := oidSigningCert
 		if v2 {
@@ -805,35 +744,135 @@ func signature(t *token) string {
 		if n == 0 {
 			continue
 		}
+		present = true
 		if n != 1 {
-			return ReasonVerificationFailed
+			return unmet
 		}
 		val, ok := singleValue(set)
 		if !ok {
-			return ReasonVerificationFailed
+			return unmet
 		}
 		id, err := parseCertID(val, v2)
 		if err != nil {
-			if errors.Is(err, errUnsupportedDigest) {
-				return ReasonMissingDependency
-			}
-			return ReasonVerificationFailed
-		}
-		if !bytes.Equal(id.certHash, hashCert(id.hash, t.signer.Raw)) {
-			return ReasonVerificationFailed
+			return unmet
 		}
 		if id.issuer != nil && (!bytes.Equal(id.issuer, t.signer.RawIssuer) || id.serial == nil || id.serial.Cmp(t.signer.SerialNumber) != 0) {
-			return ReasonVerificationFailed
+			return unmet
 		}
-		bound++
+		if id.hash == 0 {
+			result = unknown
+			continue
+		}
+		if !bytes.Equal(id.certHash, digest(id.hash, t.signer.Raw)) {
+			return unmet
+		}
 	}
-	if bound == 0 {
-		return ReasonVerificationFailed
+	if !present {
+		return unmet
 	}
-	if !timestampingOnly(t.signer) {
-		return ReasonVerificationFailed
+	return result
+}
+
+// timestamping: the signer's certificate is a timestamping certificate.
+func timestamping(c *x509.Certificate) finding {
+	if !timestampingOnly(c) {
+		return unmet
 	}
-	return ""
+	return met
+}
+
+// cmsSignature: the signature of the SignerInfo verifies under the signer's
+// key over the signed attributes as the token carries them: the octets of
+// signedAttrs, with the first, the [0] tag, replaced by 0x31, the tag of a
+// SET OF, and the length and contents octets unchanged (RFC 5652 §5.4).
+// They are never encoded again: step 1 does not require the attributes in
+// DER SET OF order, which an encoder would put them in.
+func cmsSignature(t *token) finding {
+	alg := signatureAlgorithm(t.signerInf)
+	if alg == x509.UnknownSignatureAlgorithm || !KeyImplemented(t.signer) {
+		return unknown
+	}
+	signed := bytes.Clone(t.signerInf.SignedAttrs.FullBytes)
+	signed[0] = 0x31
+	if err := t.signer.CheckSignature(alg, signed, t.signerInf.Signature); err != nil {
+		if isMissingDependency(err) {
+			return unknown
+		}
+		return unmet
+	}
+	return met
+}
+
+// Signature algorithms a SignerInfo names.
+var (
+	oidECDSAWithSHA1   = asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 1}
+	oidECDSAWithSHA256 = asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 2}
+	oidECDSAWithSHA384 = asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 3}
+	oidECDSAWithSHA512 = asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 4}
+	oidRSAEncryption   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
+	oidSHA1WithRSA     = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 5}
+	oidSHA256WithRSA   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 11}
+	oidSHA384WithRSA   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 12}
+	oidSHA512WithRSA   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 13}
+	oidEd25519         = asn1.ObjectIdentifier{1, 3, 101, 112}
+	oidMLDSA44         = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 3, 17}
+	oidMLDSA65         = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 3, 18}
+	oidMLDSA87         = asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 3, 19}
+)
+
+// signatureAlgorithm is the crypto/x509 algorithm of a SignerInfo's
+// signature, or x509.UnknownSignatureAlgorithm for one this build does not
+// implement: ECDSA and RSA PKCS #1 v1.5, each with SHA-1, SHA-256, SHA-384
+// or SHA-512, Ed25519 and ML-DSA. A signature algorithm that names its hash
+// is taken with it (RFC 5754 §3); rsaEncryption (RFC 3370 §3.2), and an EC
+// key's algorithm or curve named where the signature algorithm belongs, as
+// some signers write it, are taken with the hash of the digestAlgorithm.
+// RSASSA-PSS, DSA and MD5 are not implemented.
+func signatureAlgorithm(si signerInfo) x509.SignatureAlgorithm {
+	byDigest := func(rsa bool) x509.SignatureAlgorithm {
+		algs := map[crypto.Hash][2]x509.SignatureAlgorithm{
+			crypto.SHA1:   {x509.ECDSAWithSHA1, x509.SHA1WithRSA},
+			crypto.SHA256: {x509.ECDSAWithSHA256, x509.SHA256WithRSA},
+			crypto.SHA384: {x509.ECDSAWithSHA384, x509.SHA384WithRSA},
+			crypto.SHA512: {x509.ECDSAWithSHA512, x509.SHA512WithRSA},
+		}
+		a, ok := algs[digestAlgorithm(si.DigestAlgorithm.Algorithm)]
+		if !ok {
+			return x509.UnknownSignatureAlgorithm
+		}
+		if rsa {
+			return a[1]
+		}
+		return a[0]
+	}
+	oid := si.SignatureAlgorithm.Algorithm
+	for _, a := range []struct {
+		oid asn1.ObjectIdentifier
+		alg x509.SignatureAlgorithm
+	}{
+		{oidECDSAWithSHA1, x509.ECDSAWithSHA1}, {oidECDSAWithSHA256, x509.ECDSAWithSHA256},
+		{oidECDSAWithSHA384, x509.ECDSAWithSHA384}, {oidECDSAWithSHA512, x509.ECDSAWithSHA512},
+		{oidSHA1WithRSA, x509.SHA1WithRSA}, {oidSHA256WithRSA, x509.SHA256WithRSA},
+		{oidSHA384WithRSA, x509.SHA384WithRSA}, {oidSHA512WithRSA, x509.SHA512WithRSA},
+		{oidEd25519, x509.PureEd25519},
+		{oidMLDSA44, x509.MLDSA44}, {oidMLDSA65, x509.MLDSA65}, {oidMLDSA87, x509.MLDSA87},
+	} {
+		if oid.Equal(a.oid) {
+			return a.alg
+		}
+	}
+	if oid.Equal(oidRSAEncryption) {
+		return byDigest(true)
+	}
+	if oid.Equal(oidPublicKeyEC) {
+		return byDigest(false)
+	}
+	for _, c := range implementedCurves[1:] { // P-256, P-384 and P-521
+		if oid.Equal(c) {
+			return byDigest(false)
+		}
+	}
+	return x509.UnknownSignatureAlgorithm
 }
 
 func validAt(c *x509.Certificate, t time.Time) bool {
@@ -934,7 +973,7 @@ func trust(t *token, cfg Trust) string {
 		}
 		return false
 	}
-	gen := t.tst.GenTime
+	gen := t.tst.genTime
 	edges, sigChecks := 0, 0
 	// sigCache holds an issuer's signature over a subject by the issuer's
 	// public key: certificates that share a key share the answer.
@@ -1149,20 +1188,12 @@ func failed(tokID, trustID, reason string) Result {
 // verifyToken is steps 1 to 4 over a token's base64 text against an
 // imprint.
 func verifyToken(s string, imprint []byte, cfg Trust, tokID, trustID, malformed string) (res Result) {
-	t, why := parse(s)
-	switch {
-	case why == ReasonMissingDependency:
-		res.Token = report.Check{ID: tokID, Outcome: report.NotChecked, Reason: why}
-		res.Trust = report.BlockedBy(trustID, tokID)
-		res.Reason = ReasonNotChecked
-		return res
-	case t == nil:
+	t := parse(s)
+	if t == nil {
 		return failed(tokID, trustID, malformed)
 	}
-	mi := t.tst.MessageImprint
-	params := mi.HashAlgorithm.Parameters.FullBytes
-	if !mi.HashAlgorithm.Algorithm.Equal(oidSHA256) || (len(params) != 0 && !bytes.Equal(params, nullParams)) ||
-		!bytes.Equal(mi.HashedMessage, imprint) {
+	if !bytes.Equal(t.tst.hashAlgorithm, derSHA256) || (t.tst.hashParams != nil && !bytes.Equal(t.tst.hashParams, nullParams)) ||
+		!bytes.Equal(t.tst.hashedMessage, imprint) {
 		return failed(tokID, trustID, ReasonImprintMismatch)
 	}
 	res.Token = report.Check{ID: tokID}
@@ -1181,7 +1212,7 @@ func verifyToken(s string, imprint []byte, cfg Trust, tokID, trustID, malformed 
 	switch trust(t, cfg) {
 	case trustValid:
 		res.Trust.Outcome = report.Correct
-		res.GenTime = t.tst.GenTime
+		res.GenTime = t.tst.genTime
 		res.Authority = Authority(t.signer)
 		res.Trust.SetFact("genTime", report.S(res.GenTime.UTC().Format("2006-01-02T15:04:05.000Z")))
 		res.Trust.SetFact("authority", report.S(res.Authority))

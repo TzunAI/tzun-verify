@@ -5,7 +5,6 @@ go 1.27.0
 toolchain go1.27.1
 
 require (
-	github.com/digitorus/pkcs7 v0.0.0-20260914070511-d678ea5ea03f
 	github.com/digitorus/timestamp v0.0.0-20260914073129-b4b58b92aa51
 	github.com/ethereum/go-ethereum v1.17.8
 	github.com/transparency-dev/formats v0.1.1
@@ -19,6 +18,7 @@ require (
 	github.com/consensys/gnark-crypto v0.18.1 // indirect
 	github.com/crate-crypto/go-eth-kzg v1.5.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
+	github.com/digitorus/pkcs7 v0.0.0-20260914070511-d678ea5ea03f // indirect
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/ethereum/c-kzg-4844/v2 v2.1.8 // indirect
 	github.com/ferranbt/fastssz v0.1.4 // indirect

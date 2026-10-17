@@ -13,9 +13,11 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"maps"
 	"math/big"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -187,20 +189,39 @@ func TestTokens(t *testing.T) {
 	check(t, "built without the signer's certificate",
 		Verify(0, entry(build(testpki.TokenOptions{OmitSignerCert: true})), p, trusted), mf)
 
-	// A signer named by subjectKeyIdentifier is legal CMS that the linked
-	// library cannot read: this verifier's gap, missing_dependency, never a
-	// verdict on the token (§10.5 step 5). Naming a key no carried
-	// certificate has is malformed.
+	// A signer named by subjectKeyIdentifier (RFC 5652 §5.3), which §10.5
+	// step 1 requires a verifier to read: the certificate whose
+	// subjectKeyIdentifier extension holds the sid's key identifier, byte
+	// for byte. Naming a key no carried certificate has is malformed.
 	now = time.Now()
-	skiExt := pkix.Extension{Id: asn1.ObjectIdentifier{2, 5, 29, 14}, Value: []byte{0x04, 0x04, 1, 2, 3, 4}}
-	skiSigner := testpki.Signer("SKI TSA", inter, now.AddDate(-5, 0, 0), now.AddDate(5, 0, 0), testpki.EKU(true, testpki.TimeStamping), skiExt)
-	missing := want{valid: "null", reason: ReasonNotChecked, token: report.NotChecked, tokenReason: ReasonMissingDependency,
-		trust: report.NotChecked, trustReason: "blocked_by:anchor.tsa.token[0]"}
+	ski := func(name string, id ...byte) *testpki.Cert {
+		v, err := asn1.Marshal(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return testpki.Signer(name, inter, now.AddDate(-5, 0, 0), now.AddDate(5, 0, 0), testpki.EKU(true, testpki.TimeStamping),
+			pkix.Extension{Id: asn1.ObjectIdentifier{2, 5, 29, 14}, Value: v})
+	}
+	skiSigner := ski("SKI TSA", 1, 2, 3, 4)
 	check(t, "signer named by subjectKeyIdentifier",
-		Verify(0, entry(build(testpki.TokenOptions{Signer: skiSigner, SKISid: true})), p, trusted), missing)
+		Verify(0, entry(build(testpki.TokenOptions{Signer: skiSigner, SKISid: true})), p, trusted), okw)
 	noSKI := testpki.TSASigner("No SKI", inter)
 	check(t, "subjectKeyIdentifier naming no carried certificate",
 		Verify(0, entry(build(testpki.TokenOptions{Signer: noSKI, SKISid: true})), p, trusted), mf)
+	// The sid names the carried certificate that holds its key identifier,
+	// whose key did not sign: the signature fails at step 3.
+	skiImpostor := ski("SKI TSA", 1, 2, 3, 4)
+	check(t, "subjectKeyIdentifier naming a certificate whose key did not sign",
+		Verify(0, entry(build(testpki.TokenOptions{Signer: skiImpostor, SKISid: true, OmitSignerCert: true,
+			Certs: []*x509.Certificate{skiSigner.Cert, inter.Cert}})), p, trusted), vf)
+	// Byte for byte: a key identifier one octet longer or shorter is
+	// another one.
+	check(t, "a carried certificate whose key identifier is a prefix of the sid's",
+		Verify(0, entry(build(testpki.TokenOptions{Signer: ski("SKI TSA", 1, 2, 3, 4, 5), SKISid: true,
+			Certs: []*x509.Certificate{inter.Cert, ski("Prefix", 1, 2, 3, 4).Cert}})), p, trusted), okw)
+	check(t, "a sid whose key identifier is a prefix of the carried certificate's",
+		Verify(0, entry(build(testpki.TokenOptions{Signer: ski("SKI TSA", 1, 2, 3, 4), SKISid: true, OmitSignerCert: true,
+			Certs: []*x509.Certificate{inter.Cert, ski("Longer", 1, 2, 3, 4, 5).Cert}})), p, trusted), mf)
 }
 
 func TestPathRules(t *testing.T) {
@@ -491,7 +512,7 @@ func TestUnimplementedKeys(t *testing.T) {
 	md5Signer.Cert = testpki.Reissue(md5Signer, root, nil, md5)
 	check(t, "a signer certificate signed with MD5", Verify(0, build(md5Signer), p, trusted), trustMissing)
 
-	// The CMS signature: an algorithm the CMS library does not map cannot
+	// The CMS signature: an algorithm this build does not implement cannot
 	// be checked.
 	tsa := testpki.TSASigner("TSA", root)
 	for name, oid := range map[string]asn1.ObjectIdentifier{
@@ -539,5 +560,223 @@ func TestAuthority(t *testing.T) {
 		if !ok || v.S != c.want || r.Authority != c.want {
 			t.Errorf("%s: authority %v, want %q", c.name, v, c.want)
 		}
+	}
+}
+
+// TestStepThreeFindingFirst: a requirement of step 3 this build can check,
+// and that does not hold, decides step 3, verification_failed, even when
+// another requirement needs an algorithm or a key it does not implement;
+// missing_dependency only when every requirement it can check holds
+// (tzun-anchor/1 §10.5 step 5).
+func TestStepThreeFindingFirst(t *testing.T) {
+	s := newStepOne(t)
+	missing := want{valid: "null", reason: ReasonNotChecked, token: report.NotChecked, tokenReason: ReasonMissingDependency,
+		trust: report.NotChecked, trustReason: "blocked_by:anchor.tsa.token[0]"}
+	pss := asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 10}
+	data := asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 7, 1}
+	wrong := make([]byte, 32)
+	// Signers whose key is left unread at step 1: on brainpoolP256r1.
+	unread := func(c *testpki.Cert) *testpki.Cert {
+		c.Cert = testpki.Reissue(c, s.root, testpki.ECKey(c, testpki.OID(testpki.CurveBrainpoolP256r1)), nil)
+		return c
+	}
+	now := time.Now()
+	unreadTSA := unread(testpki.TSASigner("TSA", s.root))
+	unreadTLS := unread(testpki.Signer("TLS", s.root, now.AddDate(-1, 0, 0), now.AddDate(1, 0, 0), testpki.EKU(false, testpki.ServerAuth)))
+	for _, c := range []struct {
+		name string
+		o    testpki.TokenOptions
+		w    want
+	}{
+		{"a signatureAlgorithm not implemented", testpki.TokenOptions{SignatureAlgorithm: pss}, missing},
+		{"a signatureAlgorithm not implemented, and a message digest that is not the TSTInfo's",
+			testpki.TokenOptions{SignatureAlgorithm: pss, MessageDigest: wrong}, vf},
+		{"a signatureAlgorithm not implemented, and no signer binding", testpki.TokenOptions{SignatureAlgorithm: pss, Binding: "none"}, vf},
+		{"a signatureAlgorithm not implemented, and a content type that is not TSTInfo",
+			testpki.TokenOptions{SignatureAlgorithm: pss, ContentType: data}, vf},
+		{"a digestAlgorithm not implemented", testpki.TokenOptions{DigestAlgorithm: testpki.SHA3_256}, missing},
+		{"a digestAlgorithm not implemented, and a binding to another certificate",
+			testpki.TokenOptions{DigestAlgorithm: testpki.SHA3_256, CertHashOf: s.root.Cert}, vf},
+		{"a digestAlgorithm not implemented, and a content type that is not TSTInfo",
+			testpki.TokenOptions{DigestAlgorithm: testpki.SHA3_256, ContentType: data}, vf},
+		{"a digestAlgorithm not implemented, and no content type", testpki.TokenOptions{DigestAlgorithm: testpki.SHA3_256, OmitContentType: true}, vf},
+		{"an ESSCertIDv2 hash algorithm not implemented", testpki.TokenOptions{Binding: "v2-unknown"}, missing},
+		{"an ESSCertIDv2 hash algorithm not implemented, and a message digest that is not the TSTInfo's",
+			testpki.TokenOptions{Binding: "v2-unknown", MessageDigest: wrong}, vf},
+		{"an ESSCertIDv2 hash algorithm not implemented, and an issuerSerial naming another serial",
+			testpki.TokenOptions{Binding: "v2-unknown", Serial: big.NewInt(7)}, vf},
+		{"an ESSCertIDv2 hashAlgorithm of three members", testpki.TokenOptions{Binding: "v2-alg-three"}, vf},
+		{"a signer key left unread", testpki.TokenOptions{Signer: unreadTSA}, missing},
+		{"a signer key left unread, and not a timestamping certificate", testpki.TokenOptions{Signer: unreadTLS}, vf},
+		{"a signer key left unread, and a message digest that is not the TSTInfo's",
+			testpki.TokenOptions{Signer: unreadTSA, MessageDigest: wrong}, vf},
+		{"a signer key left unread, and no signer binding", testpki.TokenOptions{Signer: unreadTSA, Binding: "none"}, vf},
+		{"a signer key left unread, and a digestAlgorithm not implemented",
+			testpki.TokenOptions{Signer: unreadTSA, DigestAlgorithm: testpki.SHA3_256}, missing},
+	} {
+		s.verify(c.name, s.build(c.o), c.w)
+	}
+	// The signature algorithm, with the hash it names or, for one that
+	// names none, the digestAlgorithm's. The signature is ECDSA with
+	// SHA-256.
+	for _, c := range []struct {
+		name string
+		alg  asn1.ObjectIdentifier
+		w    want
+	}{
+		{"id-ecPublicKey", asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}, okw},
+		{"the P-256 curve", asn1.ObjectIdentifier{1, 2, 840, 10045, 3, 1, 7}, okw},
+		{"ecdsa-with-SHA384", asn1.ObjectIdentifier{1, 2, 840, 10045, 4, 3, 3}, vf},
+		{"sha256WithRSAEncryption", asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 11}, vf},
+		{"rsaEncryption", asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}, vf},
+		{"Ed25519", asn1.ObjectIdentifier{1, 3, 101, 112}, vf},
+		{"ML-DSA-65", asn1.ObjectIdentifier{2, 16, 840, 1, 101, 3, 4, 3, 18}, vf},
+		{"md5WithRSAEncryption", asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 4}, missing},
+		{"an OBJECT IDENTIFIER assigned to no algorithm", asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 0, 2}, missing},
+	} {
+		s.verify("signatureAlgorithm "+c.name, s.build(testpki.TokenOptions{SignatureAlgorithm: c.alg}), c.w)
+	}
+	// A signature this build checks, and that fails, beside a digestAlgorithm
+	// it does not implement: the signature names its own hash.
+	resp, _, si := tokenParts(t, s.build(testpki.TokenOptions{DigestAlgorithm: testpki.SHA3_256}))
+	sig := si.at(5)
+	sig.body = append([]byte{}, sig.body...)
+	sig.body[len(sig.body)-1] ^= 1
+	s.verify("a digestAlgorithm not implemented, and a signature that does not verify", encode(resp), vf)
+	// The record's own token reads the same.
+	r := VerifyRecordToken(report.S(s.build(testpki.TokenOptions{Signer: unreadTLS})), p, s.trusted)
+	if r.Token.Outcome != report.Wrong || r.Token.Reason != ReasonVerificationFailed {
+		t.Errorf("the record's token, a signer key left unread and not a timestamping certificate: %s %q", r.Token.Outcome, r.Token.Reason)
+	}
+}
+
+// TestSignedAttributesAsCarried: the signature is verified over the
+// signedAttrs octets the token carries, with only the [0] tag replaced by
+// 0x31, never over the attributes encoded again: step 1 does not require
+// them in DER SET OF order (RFC 5652 §5.4; tzun-anchor/1 §10.5 step 3).
+func TestSignedAttributesAsCarried(t *testing.T) {
+	s := newStepOne(t)
+	outOfOrder := s.build(testpki.TokenOptions{AttrsOutOfOrder: true})
+	_, _, si := tokenParts(t, outOfOrder)
+	var carried []string
+	for _, a := range si.at(3).kids {
+		carried = append(carried, string(a.der()))
+	}
+	if slices.IsSorted(carried) {
+		t.Fatal("the signed attributes are in DER order")
+	}
+	s.verify("signed attributes out of DER order, signed as carried", outOfOrder, okw)
+	s.verify("signed attributes out of DER order, signed in DER order",
+		s.build(testpki.TokenOptions{AttrsOutOfOrder: true, SignDEROrder: true}), vf)
+	s.verify("signed attributes out of DER order, a binding to another certificate",
+		s.build(testpki.TokenOptions{AttrsOutOfOrder: true, CertHashOf: s.root.Cert}), vf)
+
+	// A public authority's token whose signed attributes are reordered after
+	// signing no longer verifies: the signature covers the order carried.
+	digest, _ := hex.DecodeString(fuzzRealDigest)
+	raw, err := os.ReadFile(filepath.Join("testdata", "freetsa.tsr"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, _, si := tokenParts(t, base64.StdEncoding.EncodeToString(raw))
+	attrs := si.at(3)
+	if len(attrs.kids) < 2 {
+		t.Fatal("fewer than two signed attributes")
+	}
+	slices.Reverse(attrs.kids)
+	r := VerifyRecordToken(report.S(encode(resp)), digest, Trust{})
+	if r.Token.Outcome != report.Wrong || r.Token.Reason != ReasonVerificationFailed {
+		t.Errorf("FreeTSA's token, its signed attributes reversed: %s %q", r.Token.Outcome, r.Token.Reason)
+	}
+}
+
+// TestEdgeTokens: the tokens of testdata/testpki-edge-tokens.json, each at
+// an edge of tzun-anchor/1 §10.5 as revised, give the rows the file states,
+// under the file's root, through the record's own token.
+func TestEdgeTokens(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("testdata", "testpki-edge-tokens.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	type row struct{ Outcome, Reason string }
+	var set struct {
+		Digest   string
+		Roots    map[string]string
+		Expected map[string]struct{ Token, Trust row }
+		Tokens   map[string]string
+	}
+	if err := json.Unmarshal(raw, &set); err != nil {
+		t.Fatal(err)
+	}
+	digest, err := hex.DecodeString(set.Digest)
+	if err != nil || len(set.Roots) != 1 || len(set.Tokens) == 0 {
+		t.Fatalf("digest %q, %d roots, %d tokens", set.Digest, len(set.Roots), len(set.Tokens))
+	}
+	trust := Trust{Roots: []*x509.Certificate{pemCert(t, set.Roots["edge"])}}
+	if !slices.Equal(slices.Sorted(maps.Keys(set.Tokens)), slices.Sorted(maps.Keys(set.Expected))) {
+		t.Fatal("the tokens and their expectations name different tokens")
+	}
+	for _, name := range slices.Sorted(maps.Keys(set.Tokens)) {
+		r := VerifyRecordToken(report.S(set.Tokens[name]), digest, trust)
+		w := set.Expected[name]
+		if got := (row{string(r.Token.Outcome), r.Token.Reason}); got != w.Token {
+			t.Errorf("%s: %s %q, want %s %q", name, got.Outcome, got.Reason, w.Token.Outcome, w.Token.Reason)
+		}
+		if got := (row{string(r.Trust.Outcome), r.Trust.Reason}); got != w.Trust {
+			t.Errorf("%s: trust %s %q, want %s %q", name, got.Outcome, got.Reason, w.Trust.Outcome, w.Trust.Reason)
+		}
+	}
+}
+
+// TestSignedAttributeCounts: exactly one content-type and one
+// message-digest attribute, each with one value, the message digest an
+// OCTET STRING; a signingCertificate or a signingCertificateV2, or both,
+// neither more than once. The tokens are signed over the attributes they
+// carry.
+func TestSignedAttributeCounts(t *testing.T) {
+	s := newStepOne(t)
+	// attrs are content-type, message-digest and the binding, in that order.
+	edit := func(f func(attrs [][]byte) [][]byte) string {
+		return s.build(testpki.TokenOptions{SignedAttrs: f})
+	}
+	twice := func(i int) func([][]byte) [][]byte {
+		return func(a [][]byte) [][]byte { return append(a, a[i]) }
+	}
+	// A second value in the SET of attribute i, as built by add.
+	values := func(i int, add func(first *node) *node) func([][]byte) [][]byte {
+		return func(a [][]byte) [][]byte {
+			n := tree(t, a[i])
+			n.at(1).add(add(n.at(1, 0)))
+			a[i] = n.der()
+			return a
+		}
+	}
+	same := func(first *node) *node { return tree(t, first.der()) }
+	v1 := func() []byte {
+		_, _, si := tokenParts(t, s.build(testpki.TokenOptions{Binding: "v1"}))
+		return attributeOf(t, si.at(3), oidSigningCert).der()
+	}()
+	for _, c := range []struct {
+		name string
+		tok  string
+		w    want
+	}{
+		{"as built", edit(func(a [][]byte) [][]byte { return a }), okw},
+		{"two content-type attributes", edit(twice(0)), vf},
+		{"two message-digest attributes", edit(twice(1)), vf},
+		{"two signingCertificateV2 attributes", edit(twice(2)), vf},
+		{"a content-type attribute of two values", edit(values(0, same)), vf},
+		{"a message-digest attribute of two values", edit(values(1, same)), vf},
+		{"a message-digest value a [4] holding the digest", edit(func(a [][]byte) [][]byte {
+			n := tree(t, a[1])
+			n.at(1, 0).class, n.at(1, 0).tag = asn1.ClassContextSpecific, 4
+			a[1] = n.der()
+			return a
+		}), vf},
+		{"signingCertificate and signingCertificateV2", edit(func(a [][]byte) [][]byte { return append(a, v1) }), okw},
+		{"signingCertificate alone", edit(func(a [][]byte) [][]byte { return append(a[:2], v1) }), okw},
+		{"two signingCertificate attributes", edit(func(a [][]byte) [][]byte { return append(a[:2], v1, v1) }), vf},
+	} {
+		s.verify(c.name, c.tok, c.w)
 	}
 }
