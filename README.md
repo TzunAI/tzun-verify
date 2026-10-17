@@ -66,10 +66,12 @@ Vectors page gives is the archive's, not this copy's.
 of every file of the copy, and where the files come from. The tests fail on a
 file that differs from it, and on a file it does not list (How it is held to
 account, below). The copy leaves out, as the published archive does, the
-cases of material this version does not verify: custody material, model
+cases of material this version does not verify: custody entry hashes, model
 descriptors, and the rule a store applies to records captured before 0.7.0.
-The one custody finding this version decides is tested from the text
-(`internal/corpus/custody_test.go`).
+It keeps the three custody cases of the bundle corpus, which hold
+`custody.ledger` to Verification §4.3: a custody row abstains, a mirror
+entry whose row the bundle leaves out is `mirror_entry_unexpected`, and a
+slot with neither is `not_applicable`.
 
 ## What it checks
 
@@ -453,9 +455,10 @@ Its correctness does not rest on reading the Go:
    vectors do not separate), `internal/corpus/anchoring_test.go`
    (Anchor §10.8 without a composed anchor, an unauthenticated body,
    carried bodies that do not parse, the predecessor),
-   `internal/corpus/custody_test.go` (a mirror entry whose custody row the
-   bundle leaves out, and `custodyChain` elements that are not mirror
-   entries), and each package's own tests.
+   `internal/corpus/custody_test.go` (a mirror entry beside a null slot or
+   under the auditor's allowance, `custodyChain` elements that are not
+   mirror entries, and custody slots of other shapes), and each package's
+   own tests.
 4. **No Tzun imports.** `scripts/check-no-tzun-imports.sh` fails CI if any
    package the build or the tests link, or any module in the build list,
    comes from the TzunAI organisation. CI also refuses a `go.mod` that
@@ -551,12 +554,7 @@ implementation, until the text is revised:
 - in a link record, the fact `missing` on a link row that reads a record
   the bundle does not hold names the subject before the target.
 
-Anchor §10.4 item 13 is one place this build keeps the text: a window that
-excludes the sender at the block time a source confirms fails
-`anchor.evm.tx`, and `anchor.evm.canonical` stays correct, where
-`evm-anchor-vectors.json` blocks it.
-
-Where the vectors state no answer, this build keeps the text too, and its
+Where the vectors state no answer, this build keeps the text, and its
 report can differ from the reference implementation's, in some cases in its
 exit code:
 

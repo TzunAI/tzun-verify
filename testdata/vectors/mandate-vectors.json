@@ -1,5 +1,5 @@
 {
-  "description": "Mandates (Record \u00a79.6 to \u00a79.10): the document tzun-mandate/1, the statement tzun-signoff-mandate/1 without a printed name, the assertion digest, predicates, scope, single-record limits, consumption over a set of records, the issuance row (Verification \u00a74.12), event bodies and their mandate-log leaves, the claim a capture under a mandate makes, and the lifecycle refusals.",
+  "description": "Mandates (Record \u00a79.6 to \u00a79.10): the document tzun-mandate/1, the statement tzun-signoff-mandate/1 without a printed name, the assertion digest, predicates, scope, single-record limits, consumption over a set of records, the issuance row (Verification \u00a74.12), event bodies and their digests, the claim a capture under a mandate makes, and the lifecycle refusals.",
   "source": "Computed by a script that states every expected answer from the rules. W4's assertion is a real Ed25519 signature by the RFC 8037 Appendix A key; every other signature is a placeholder or a constructed ES256 encoding: the checks here read encodings and challenges, never whether a signature verifies. A predicates case with payloadJson is parsed by the implementation's own JSON reader, because the spelling of its number is the point.",
   "documents": [
     {
@@ -32931,8 +32931,7 @@
         "totals": null
       },
       "wellFormed": true,
-      "digest": "82511c5907fe6cc93c23b40b0933d4576ea86af28700eddbadae0856ece9b7b3",
-      "leaf": "3cd80448fd26f5fa662c52e6f637caa300f4aa19d6a5badbc18561b210f1191f"
+      "digest": "82511c5907fe6cc93c23b40b0933d4576ea86af28700eddbadae0856ece9b7b3"
     },
     {
       "case": "revoked, with the values at the revocation",
@@ -32948,8 +32947,7 @@
         }
       },
       "wellFormed": true,
-      "digest": "218a6a13a683959fd6a3bfd6fa6226f39a87f056802c81c1d7c6fdc4895e0f62",
-      "leaf": "824604a298f575ce8341df6f816e2df7c7a30e60f1cf18f20d039f4a1a5d8392"
+      "digest": "218a6a13a683959fd6a3bfd6fa6226f39a87f056802c81c1d7c6fdc4895e0f62"
     },
     {
       "case": "superseded, naming the successor",
@@ -32965,8 +32963,7 @@
         }
       },
       "wellFormed": true,
-      "digest": "bfe1b621c602fe5d054889c5b3462793a85b77d69c301a566c2856d52f946486",
-      "leaf": "5fbae18ef14f1e590f3e9da3cecbcfccd002365ac69434b0d5f5832055a5460e"
+      "digest": "bfe1b621c602fe5d054889c5b3462793a85b77d69c301a566c2856d52f946486"
     },
     {
       "case": "expired, its record the issuance record",
@@ -32982,8 +32979,7 @@
         }
       },
       "wellFormed": true,
-      "digest": "f9fc181c117d71eca7b161f94a56be7121e029662428f330d6546e5474bdeff3",
-      "leaf": "27fb91fd80da6baf4a383736ec39109525bfed2c477682ea7ada6d7c8193f210"
+      "digest": "f9fc181c117d71eca7b161f94a56be7121e029662428f330d6546e5474bdeff3"
     },
     {
       "case": "expired with no cap (totals null)",
@@ -32997,8 +32993,7 @@
         "totals": null
       },
       "wellFormed": true,
-      "digest": "d4e910c77e6c3acbee217f41680cb85634f1d8639b3fcdd12ac9a0656dc40efe",
-      "leaf": "5bb5baee69353a5c533f67b30fdf1da0ab29c29e1dfa0dfe100b7bb63503e2d7"
+      "digest": "d4e910c77e6c3acbee217f41680cb85634f1d8639b3fcdd12ac9a0656dc40efe"
     },
     {
       "case": "an event outside the four",
@@ -33012,8 +33007,7 @@
         "totals": null
       },
       "wellFormed": false,
-      "digest": null,
-      "leaf": null
+      "digest": null
     },
     {
       "case": "a negative used",
@@ -33027,8 +33021,7 @@
         "totals": null
       },
       "wellFormed": false,
-      "digest": null,
-      "leaf": null
+      "digest": null
     },
     {
       "case": "totals {} (write null)",
@@ -33042,8 +33035,7 @@
         "totals": {}
       },
       "wellFormed": false,
-      "digest": null,
-      "leaf": null
+      "digest": null
     },
     {
       "case": "a total that is a string",
@@ -33059,8 +33051,7 @@
         }
       },
       "wellFormed": false,
-      "digest": null,
-      "leaf": null
+      "digest": null
     },
     {
       "case": "a prefixed record digest",
@@ -33074,8 +33065,7 @@
         "totals": null
       },
       "wellFormed": false,
-      "digest": null,
-      "leaf": null
+      "digest": null
     },
     {
       "case": "a member outside the seven",
@@ -33090,8 +33080,7 @@
         "at": "2026-10-01T00:00:00.000Z"
       },
       "wellFormed": false,
-      "digest": null,
-      "leaf": null
+      "digest": null
     }
   ],
   "eventWriterRefusals": [

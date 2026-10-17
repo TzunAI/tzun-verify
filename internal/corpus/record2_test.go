@@ -308,10 +308,6 @@ func TestEVMAnchorVectors(t *testing.T) {
 			noHeader.O = append(noHeader.O, m)
 		}
 	}
-	divergent := 0
-	defer func() {
-		t.Logf("%d cases where anchor.evm.canonical follows Anchor §10.4 item 13 rather than the vectors", divergent)
-	}()
 	for _, c := range get(t, d, "validityBounds").A {
 		name := str(t, c, "name")
 		entry := &jsonv.Value{Kind: jsonv.Object, O: append([]jsonv.Member{}, get(t, d, "manifestEntry").O...)}
@@ -354,16 +350,6 @@ func TestEVMAnchorVectors(t *testing.T) {
 				// its index.
 				if rr == "blocked_by:anchor.evm.tx" {
 					rr = "blocked_by:" + r.Tx.ID
-				}
-				// Item 13 of Anchor §10.4: a window that excludes the
-				// sender at the time the source confirms fails
-				// anchor.evm.tx, and anchor.evm.canonical, having decided
-				// what it checks, stays checked-correct. The vectors block
-				// it instead; the text governs (Specs §7).
-				if x.key == "canonical" && mode == "noHeader" && rr == "blocked_by:"+r.Tx.ID &&
-					str(t, get(t, want, "tx"), "reason") == evm.ReasonSenderMismatch {
-					outcome, rr = "checked-correct", ""
-					divergent++
 				}
 				expectRow(t, name+", "+mode, x.row.ID, report.CheckJSON(x.row), outcome, rr, nil)
 			}

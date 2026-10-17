@@ -9,7 +9,55 @@
     "bundle-b1": {
       "files": {
         "README.md": {
-          "sha256": "b394df285e6e7440b89a8a34b96ad6c699c676ca07af6de2e219e9ad210289b9"
+          "sha256": "82ffa3670ef3bc4246c2bb68d17c82429b78fc94f6181c137737837ffd6257b3"
+        },
+        "anchor-token-no-roots/bundle.json": {
+          "sha256": "dc1b4647726f1f1c9b179f33dbaf6aee19449bc9d52525588b8d1be0074ab4db"
+        },
+        "anchor-token-no-roots/expected-exit": {
+          "sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d"
+        },
+        "anchor-token-no-roots/expected-report.json": {
+          "sha256": "6e3b935aa099439563d1da561136685a588bb443dea017a4ad12d661fb845003"
+        },
+        "anchor-token-no-roots/inputs.json": {
+          "sha256": "633c55faa757c2cbe6ccb9851cf310d94f1f42543268380b3c98a3038c4deb48"
+        },
+        "anchor-token-not-der/bundle.json": {
+          "sha256": "56e06f5ae359852a803e545567fe66f73604ad87ee724dedcf60d98d5c8b0119"
+        },
+        "anchor-token-not-der/expected-exit": {
+          "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+        },
+        "anchor-token-not-der/expected-report.json": {
+          "sha256": "5e7f6bea766a7f77307b59cacb570c066aa3ac9f6048ce9bccb6abbfa92ca8a7"
+        },
+        "anchor-token-not-der/inputs.json": {
+          "sha256": "594ee81c137e72ece7ae7f0dca29d9eb16e34902b64925a08f305654424e9a39"
+        },
+        "anchor-token-other-value/bundle.json": {
+          "sha256": "c7adce3408abe2e57764b55d4b122f01b609ef1e1494d1e2a0b523f23b86ed1a"
+        },
+        "anchor-token-other-value/expected-exit": {
+          "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+        },
+        "anchor-token-other-value/expected-report.json": {
+          "sha256": "1906ce96316ce2e9bcf7ae244064449e3e46467a19c2d2d15737836fc52fbf08"
+        },
+        "anchor-token-other-value/inputs.json": {
+          "sha256": "594ee81c137e72ece7ae7f0dca29d9eb16e34902b64925a08f305654424e9a39"
+        },
+        "anchor-token-trusted/bundle.json": {
+          "sha256": "dc1b4647726f1f1c9b179f33dbaf6aee19449bc9d52525588b8d1be0074ab4db"
+        },
+        "anchor-token-trusted/expected-exit": {
+          "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+        },
+        "anchor-token-trusted/expected-report.json": {
+          "sha256": "0c655d23d88b4eca9cc919d3777c12735946844fa93a1de3d31d36b2507f65cc"
+        },
+        "anchor-token-trusted/inputs.json": {
+          "sha256": "594ee81c137e72ece7ae7f0dca29d9eb16e34902b64925a08f305654424e9a39"
         },
         "anchored-latest-epoch/bundle.json": {
           "sha256": "216de47eb97451dc6ba51fa9dc05b8550f1d8533d2128bc39976a98049589ff7"
@@ -239,6 +287,42 @@
         "contributions-single-model/inputs.json": {
           "sha256": "2ed5664652c578e22f16b8fbb386f1f2e263e2634541af799066939dce6e307c"
         },
+        "custody-ledger/bundle.json": {
+          "sha256": "8772a047de4ac7a62e2f1b9d4b594ebec01541fdce7c3fd728e28187f6529951"
+        },
+        "custody-ledger/expected-exit": {
+          "sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d"
+        },
+        "custody-ledger/expected-report.json": {
+          "sha256": "63614aaed1313532214b0852809287df1bb05e9770d45a1271feee57465ffb43"
+        },
+        "custody-ledger/inputs.json": {
+          "sha256": "2ed5664652c578e22f16b8fbb386f1f2e263e2634541af799066939dce6e307c"
+        },
+        "custody-row-and-mirror-removed/bundle.json": {
+          "sha256": "b46671fb6faf7f74bf7c05c11e6800857a2eee1214a0960c0af726c322178e1e"
+        },
+        "custody-row-and-mirror-removed/expected-exit": {
+          "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+        },
+        "custody-row-and-mirror-removed/expected-report.json": {
+          "sha256": "b8f79647dfc0da5d845ad1070841b715aa5315f1800372043698b11b4d491d10"
+        },
+        "custody-row-and-mirror-removed/inputs.json": {
+          "sha256": "2ed5664652c578e22f16b8fbb386f1f2e263e2634541af799066939dce6e307c"
+        },
+        "custody-row-removed/bundle.json": {
+          "sha256": "ff8daee9b6297a9b49eecbd9ecf2e88d6a9b2325caf9477cd67ccfeac1b2fdeb"
+        },
+        "custody-row-removed/expected-exit": {
+          "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+        },
+        "custody-row-removed/expected-report.json": {
+          "sha256": "f5d3869c17fa629d7d01ab7ac2297612c5df54762071d31b7b809b733edadd30"
+        },
+        "custody-row-removed/inputs.json": {
+          "sha256": "2ed5664652c578e22f16b8fbb386f1f2e263e2634541af799066939dce6e307c"
+        },
         "decider-agent/bundle.json": {
           "sha256": "58f7c91eb85b445ccd575a14b38403151d45e4fc28435afa5d6057856a6f48bb"
         },
@@ -312,7 +396,7 @@
           "sha256": "2ed5664652c578e22f16b8fbb386f1f2e263e2634541af799066939dce6e307c"
         },
         "index.json": {
-          "sha256": "834d8a11ed6e60546f4e7ce54c5053f1ff02cbb2fde5f13d20bbce139f303b1b"
+          "sha256": "1bb190f0343d84007ec341e61fec9a6c0865548db796ef312744cf72682af202"
         },
         "junk-batch-signoff/bundle.json": {
           "sha256": "cb8fbe66106da0cac01f3e172af71d0ee244a5a938842889e23e3ba784f6eaa9"
@@ -1037,7 +1121,7 @@
       }
     },
     "checkpoint-vectors.json": {
-      "sha256": "30c046beefe16827bb4af7dd102ee040c1c8719cb1167ebf7f620283a0ff705b"
+      "sha256": "ce13650365d6d68318791bc5a45b56a4966a10a75b5d905e21198c1c7bffd79c"
     },
     "contributions-vectors.json": {
       "sha256": "a4c6e921c66e0173625a4a0050f42260746bc7ed7be2d6f2ad6cacfde829ab0a"
@@ -1052,13 +1136,13 @@
       "sha256": "1cc9b573fec5fffbf53392483f0487c6acebee9b49c2b4540c8afb307e2cef43"
     },
     "evm-anchor-vectors.json": {
-      "sha256": "c64d5e5266d64c47457df62abcaa6bec58a336ee8a7e41d882db40b2b0f37233"
+      "sha256": "8dac9e9df98b1e7f8854167b69e60a8d3bdd63cb3de6f23524c2a545d96bc233"
     },
     "links-vectors.json": {
       "sha256": "99b73b8375a052621ef2deb2f148994531390543d8981b678a7327df53bab71d"
     },
     "mandate-vectors.json": {
-      "sha256": "99dd5d704a8141a92468d3a37e25881945976e68e363eb80574526989d374dd5"
+      "sha256": "56588b5413efb29c580a4adc3c9f4b4dc9b074d8b8222141269aaa2186561a28"
     },
     "merkle-consistency-vectors.json": {
       "sha256": "541cb3aa96bfb831f15c72100cc9ab7a1f6e46192b74b14091df5e23eff79ee1"
@@ -1079,12 +1163,13 @@
       "sha256": "c8c6e25d89d6b38d42e291a861c657b87b08392833dc2ea9af416c3452a2ddf1"
     },
     "v1.0-worked-example-vectors.json": {
-      "sha256": "d8b757076f17efd86aa8988e93162a19ccc28b7a870fd12933ab27af971a2c2f"
+      "sha256": "53383f732b506769958fb00dee327d73b02e3c903a20e3cca6255f8330c59492"
     }
   },
   "generator": {
     "name": "Tzun reference implementation",
-    "version": "0.8.0"
+    "version": "0.9.0",
+    "commit": "0088f932450766bf0eb19e74c4b086b62989ca2c"
   },
-  "provenance": "Generated by the Tzun reference implementation, version 0.8.0 before its release, except evm-anchor-vectors.json, generated by version 0.8.3 before its release: that version adds the file's transaction cases (Anchor \u00a710.4 item 2) and leaves every other value in it as 0.8.0 generated it. Descriptive text is edited for publication, and the cases and members of material this version does not verify are left out: custody material and the store's custody rows, model descriptors, and the rule a store applies to records captured before 0.7.0. No value a verifier reads differs from the generator's output."
+  "provenance": "Generated by the Tzun reference implementation, version 0.9.0, at the source commit generator.commit gives. Descriptive text is edited for publication, and the cases and members of material this version does not verify are left out: custody entry hashes and the custody summaries an exporter adds to a bundle (the custody slot's hashPreimage, trail and offlineTrail, and the exporter's custodyTrail verdict), the origins of a store's logs other than its evidence and anchor logs, model descriptors, and the rule a store applies to records captured before 0.7.0. The bundle corpus keeps its custody cases, with their custody rows. No value a verifier reads differs from the generator's output."
 }

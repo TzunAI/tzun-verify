@@ -23,8 +23,13 @@ tests.
   of Verification §4.9 to §4.11, between `signoff.key` and `anchor`.
 - Record timestamps are RFC 3161 tokens from a test authority whose root,
   "Tzun Corpus Test Root CA", exists only for this corpus. A case that trusts
-  a root supplies that one in `trustAnchorsPem`. Apart from the
-  `record-token-*` cases, every token passes each step of Anchor §10.5.
+  a root supplies that one in `trustAnchorsPem`. The `anchor-token-*` cases
+  give the record's anchor a second publication, an `rfc3161/1` token over
+  its P from a second test authority, under "Tzun Corpus Anchor Test Root
+  CA", and supply both roots unless the case withholds them. Apart from the
+  `record-token-*` cases and the second publication of
+  `anchor-token-other-value` and `anchor-token-not-der`, every token passes
+  each step of Anchor §10.5.
 - In every case the chain's block times are earlier than the tokens'
   `genTime`. The bound `summary.existedBy` names therefore follows the order
   of Verification §6.4: the record's anchor when `anchor` holds, the
@@ -62,6 +67,16 @@ subjects that shape the fact `authority` (Anchor §10.5 step 4, §10.7):
 `record-token-authority-first-cn`, `-multi-valued-rdn`, `-specials`,
 `-line-feed`, `-utf8-string`, `-bmp-string`, `-teletex-string`, `-empty-cn`,
 `-no-cn` and `-empty-subject`, each (0).
+
+**A second publication, a timestamp over P (Anchor §10.5, §10.6).**
+`anchor-token-trusted` (0): both roots supplied, `anchor.tsa.token[1]` and
+`anchor.tsa.trust[1]` hold. `anchor-token-no-roots` (4): no root supplied;
+steps 1 to 3 need none, so the token check still holds and the trust check
+is `no_matching_trust_anchor`. `anchor-token-other-value` (1): the token is
+over the record's digest instead of P, `imprint_mismatch`.
+`anchor-token-not-der` (1): its `TSTInfo` in a constructed (BER) OCTET
+STRING, `malformed_publication`. In the last two, one false publication
+makes the record's anchor false, and `existedBy` comes from `anchor.newer`.
 
 **Unanchored records.** `unanchored-awaiting-epoch` (4),
 `unanchored-allow-unchecked` (0), `unanchored-awaiting-finality` (4),
@@ -103,6 +118,13 @@ decided on is not the one proposed (`contributions.binding`).
 `links-derived-from-allow-unchecked-scoped` (0) under the scoped allowance of
 `unsupported_link_edge`.
 
+**Custody (Verification §4.3, Bundle §6).** `custody-ledger` (4): a custody
+row an operator recorded after capture, and the envelope's mirror entry of
+it. This version verifies no custody material, so `custody.ledger` abstains,
+`unsupported_artifact`. `custody-row-removed` (1): the row left out and its
+mirror entry kept, `mirror_entry_unexpected`.
+`custody-row-and-mirror-removed` (0): both left out, `not_applicable`.
+
 **Material this version does not read.** `witness-extension` (4),
 `related-records-filled` (4), `policy-filled` (4), `unknown-member` (4),
 `nonrepudiation-unread-members` (4), `subject-extra-member` (0).
@@ -130,6 +152,11 @@ would carry (Bundle §4 step 9): `member-name-lone-surrogate` (2),
   in this version, so every `links[<i>].edge` row abstains (Verification
   §4.11). A bundle holds no target record, so each link reports
   `targetHeld` `false`.
+- `custody-row-and-mirror-removed` exits 0 although a custody row was
+  removed: nothing a bundle carries commits to the ledger, so a row left out
+  together with its mirror entry leaves no trace (Verification §4.3). And
+  `custody-ledger` exits 4 although nothing in it is wrong: custody material
+  is never passed over unexamined.
 
 Where an expected report and the specification disagree, the specification
 governs, and the corrected report names the section it follows (Specs §7).
