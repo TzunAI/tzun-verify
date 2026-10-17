@@ -70,8 +70,8 @@ cases of material this version does not verify: custody entry hashes, model
 descriptors, and the rule a store applies to records captured before 0.7.0.
 It keeps the three custody cases of the bundle corpus, which hold
 `custody.ledger` to Verification §4.3: a custody row abstains, a mirror
-entry whose row the bundle leaves out is `mirror_entry_unexpected`, and
-neither is `not_applicable`.
+entry whose row the bundle leaves out is `mirror_entry_unexpected`, and a
+slot with neither is `not_applicable`.
 
 ## What it checks
 
