@@ -906,6 +906,7 @@ func TestTSTInfo(t *testing.T) {
 		{"messageImprint's hashAlgorithm an OBJECT IDENTIFIER alone", tst(set(2, imprint("0609 608648016503040201"))), mf},
 		{"messageImprint with a member after hashedMessage", tst(set(2, imprint(sha256, "0500"))), mf},
 		{"messageImprint's hashedMessage a BIT STRING", tst(set(2, tlv(0x30, sha256, tlv(0x03, "00"+hex.EncodeToString(p))))), mf},
+		{"messageImprint a SET", tst(set(2, tlv(0x31, sha256, tlv(0x04, hex.EncodeToString(p))))), mf},
 		{"a nonce with a leading zero", with("0202 0001"), mf},
 	} {
 		s.verify(c.name, c.tok, c.w)
@@ -920,6 +921,15 @@ func TestTSTInfo(t *testing.T) {
 	oct := sd.at(2, 1, 0)
 	oct.body = append(oct.body, 0x05, 0x00)
 	s.verify("a NULL after the TSTInfo in eContent", encode(resp), mf)
+
+	// The TSTInfo is a SEQUENCE: one tagged a SET, changed after signing,
+	// fails step 1 before step 3 finds the change.
+	resp, sd, _ = tokenParts(t, with())
+	oct = sd.at(2, 1, 0)
+	asSet := tree(t, oct.body)
+	asSet.tag = asn1.TagSet
+	oct.body = asSet.der()
+	s.verify("the TSTInfo a SET", encode(resp), mf)
 
 	// genTime: a GeneralizedTime in the ranges of a validity time, the year
 	// any of 0000 to 9999, a fraction allowed. A genTime outside the
