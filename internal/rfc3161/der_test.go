@@ -445,13 +445,70 @@ func TestStepOneStrictness(t *testing.T) {
 		verify("an extra certificate, "+name, carried(edit), mf)
 	}
 
-	// A signer named by subjectKeyIdentifier is this build's abstention
-	// (step 5) only for a token that step 1 otherwise reads.
+	// A signer named by subjectKeyIdentifier, read as one named by issuer
+	// and serial number is.
 	now := time.Now()
 	skiExt := pkix.Extension{Id: asn1.ObjectIdentifier{2, 5, 29, 14}, Value: []byte{0x04, 0x04, 1, 2, 3, 4}}
 	skiSigner := testpki.Signer("SKI TSA", root, now.AddDate(-5, 0, 0), now.AddDate(5, 0, 0), testpki.EKU(true, testpki.TimeStamping), skiExt)
 	ski := build(testpki.TokenOptions{Signer: skiSigner, SKISid: true})
-	verify("signer named by subjectKeyIdentifier", ski, tokenMissing)
+	verify("signer named by subjectKeyIdentifier", ski, okw)
 	verify("signer named by subjectKeyIdentifier, an unsigned attribute not DER", unsigned(ski, "300a 0603 2a0304 3103 050100"), mf)
 	verify("signer named by subjectKeyIdentifier, attrValues a SEQUENCE", unsigned(ski, "300a 0603 2a0304 3003 040141"), mf)
+	resp, _, si := tokenParts(t, ski)
+	si.at(1).tag = 1 // [1], a form RFC 5652 §5.3 does not have
+	verify("sid a primitive [1]", encode(resp), mf)
+	resp, _, si = tokenParts(t, ski)
+	si.at(1).compound, si.at(1).kids = true, []*node{{tag: asn1.TagOctetString, body: si.at(1).body}}
+	verify("sid a constructed [0]", encode(resp), mf)
 }
+
+// stepOne is the setting of the step 1 tests: a root, a timestamping
+// signer under it, and the outcomes they expect.
+type stepOne struct {
+	t       *testing.T
+	root    *testpki.Cert
+	signer  *testpki.Cert
+	gen     time.Time
+	trusted Trust
+}
+
+func newStepOne(t *testing.T) *stepOne {
+	root := testpki.Root("Root")
+	return &stepOne{t: t, root: root, signer: testpki.TSASigner("TSA", root), gen: time.Now().Add(-time.Hour),
+		trusted: Trust{Roots: []*x509.Certificate{root.Cert}}}
+}
+
+func (s *stepOne) build(o testpki.TokenOptions) string {
+	o.Digest = p
+	if o.GenTime.IsZero() {
+		o.GenTime = s.gen
+	}
+	if o.Signer == nil {
+		o.Signer = s.signer
+	}
+	return testpki.BuildToken(o)
+}
+
+func (s *stepOne) verify(name, tok string, w want) Result {
+	s.t.Helper()
+	r := Verify(0, entry(tok), p, s.trusted)
+	check(s.t, name, r, w)
+	return r
+}
+
+// extra returns a token that also carries the root "Extra", its
+// certificate as edit leaves its tree: a certificate no step after step 1
+// needs, so its signature is never checked.
+func (s *stepOne) extra(edit func(c, tbs *node)) string {
+	extra := testpki.Root("Extra")
+	c := tree(s.t, extra.Cert.Raw)
+	edit(c, c.at(0))
+	return s.build(testpki.TokenOptions{Certs: []*x509.Certificate{{Raw: c.der()}}})
+}
+
+var (
+	okw         = want{valid: "true", token: report.Correct, trust: report.Correct}
+	mf          = tokenFail(ReasonMalformed)
+	vf          = tokenFail(ReasonVerificationFailed)
+	tokenOKOnly = want{valid: "false", reason: ReasonVerificationFailed, token: report.Correct, trust: report.Wrong, trustReason: ReasonVerificationFailed}
+)
