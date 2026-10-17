@@ -8,26 +8,22 @@
 // The steps run in order and the first that does not hold decides:
 //
 //  1. parse: a granted TimeStampResp that wraps a CMS SignedData over a
-//     TSTInfo, every element of the response with a DER header (X.690
-//     §8.1, §10.1), though not inside an OCTET STRING or BIT STRING (the
-//     TSTInfo, an extension's value, a key), which are encodings of their
-//     own, and one with a universal tag with the form X.690 gives
-//     its type and, if it is a BOOLEAN, INTEGER, ENUMERATED, BIT STRING,
-//     NULL, OBJECT IDENTIFIER, RELATIVE-OID, UTCTime or GeneralizedTime,
-//     the contents der.go's contentsOK names (der.go does not check the
-//     other rules of DER, among them midnight as 000000, the contents of a
-//     REAL or a character string, the order of a SET's components and of a
-//     SET OF's elements, the omission of a DEFAULT value and the removal
-//     of trailing zero bits from a named bit list); the TimeStampResp,
-//     ContentInfo, SignedData, EncapsulatedContentInfo and SignerInfo, and
-//     the AlgorithmIdentifiers and attributes the SignedData and SignerInfo
-//     hold, have their members and nothing else (der.go), while inside the
-//     PKIStatusInfo, an attribute's values, a CRL and the TSTInfo, members
-//     are checked only as far as their decoders read them; the SignedData
-//     has a single SignerInfo, and the token itself holds the certificate
-//     its sid names, by issuer and serial number or by subjectKeyIdentifier;
-//     every certificate it carries has the members of an RFC 5280
-//     certificate and decodes (malformed_publication). A
+//     TSTInfo. The response, and on their own the TSTInfo and the value of
+//     each certificate extension step 1 gives a type, keep to the rules of
+//     DER der.go's isDER checks and to the decoder bounds (der.go does not
+//     check the other rules of DER, among them midnight as 000000, the
+//     contents of a REAL or a character string, the order of a SET's
+//     components and of a SET OF's elements, the omission of a DEFAULT
+//     value and the removal of trailing zero bits from a named bit list);
+//     the TimeStampResp, ContentInfo, SignedData, EncapsulatedContentInfo,
+//     SignerInfo and TSTInfo, and the AlgorithmIdentifiers and attributes
+//     the SignedData and SignerInfo hold, have their members and nothing
+//     else (der.go), while inside the PKIStatusInfo, an attribute's values
+//     and a CRL, members are checked only as far as their decoders read
+//     them; the SignedData has a single SignerInfo, and the token itself
+//     holds the certificate its sid names, by issuer and serial number or by
+//     subjectKeyIdentifier; every certificate it carries has the members of
+//     an RFC 5280 certificate and decodes (malformed_publication). A
 //     certificate whose key uses an algorithm or curve this build does not
 //     implement is read with its key left unread;
 //  2. imprint: SHA-256 and P (imprint_mismatch);
@@ -117,10 +113,20 @@ var (
 	// that the stock parser reads the rest of its certificate. It lies under
 	// the enterprise arc IANA reserves (1.3.6.1.4.1.0), which names no
 	// algorithm.
-	oidKeyUnread      = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 0}
+	oidKeyUnread = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 0}
+	// derSHA256 is the DER of id-sha256, the hash algorithm of step 2.
+	derSHA256         = mustMarshal(oidSHA256)
 	nullParams        = []byte{0x05, 0x00}
 	errNotCertificate = errors.New("rfc3161: not an RFC 5280 certificate")
 )
+
+func mustMarshal(v any) []byte {
+	b, err := asn1.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
 
 // RFC 3161 §2.4.2 and RFC 5652, transcribed.
 type pkiStatusInfo struct {
@@ -170,30 +176,6 @@ type attribute struct {
 	Values asn1.RawValue
 }
 
-type messageImprint struct {
-	HashAlgorithm pkix.AlgorithmIdentifier
-	HashedMessage []byte
-}
-
-type accuracy struct {
-	Seconds int `asn1:"optional"`
-	Millis  int `asn1:"tag:0,optional"`
-	Micros  int `asn1:"tag:1,optional"`
-}
-
-type tstInfo struct {
-	Version        int
-	Policy         asn1.ObjectIdentifier
-	MessageImprint messageImprint
-	SerialNumber   *big.Int
-	GenTime        time.Time        `asn1:"generalized"`
-	Accuracy       accuracy         `asn1:"optional"`
-	Ordering       bool             `asn1:"optional,default:false"`
-	Nonce          *big.Int         `asn1:"optional"`
-	TSA            asn1.RawValue    `asn1:"tag:0,optional"`
-	Extensions     []pkix.Extension `asn1:"tag:1,optional"`
-}
-
 // Trust is the auditor's RFC 3161 configuration: the roots it trusts and
 // any intermediates it supplies.
 type Trust struct {
@@ -215,7 +197,6 @@ type Result struct {
 // token is the output of step 1.
 type token struct {
 	tst       tstInfo
-	tstRaw    []byte // the TSTInfo's encoding, which the message-digest attribute covers
 	signer    *x509.Certificate
 	certs     []*x509.Certificate
 	signerInf signerInfo
@@ -464,8 +445,8 @@ func parse(s string) *token {
 	if rest, err := asn1.Unmarshal(sd.EncapContentInfo.EContent.Bytes, &octets); err != nil || len(rest) != 0 {
 		return nil
 	}
-	t := &token{tstRaw: octets}
-	if rest, err := asn1.Unmarshal(octets, &t.tst); err != nil || len(rest) != 0 {
+	t := &token{}
+	if t.tst, ok = readTSTInfo(octets); !ok {
 		return nil
 	}
 	if rest, err := asn1.Unmarshal(sd.SignerInfos[0].FullBytes, &t.signerInf); err != nil || len(rest) != 0 {
@@ -741,7 +722,7 @@ func messageDigest(t *token, attrs []attribute) finding {
 	if h == 0 {
 		return unknown
 	}
-	if !bytes.Equal(e.body, digest(h, t.tstRaw)) {
+	if !bytes.Equal(e.body, digest(h, t.tst.raw)) {
 		return unmet
 	}
 	return met
@@ -992,7 +973,7 @@ func trust(t *token, cfg Trust) string {
 		}
 		return false
 	}
-	gen := t.tst.GenTime
+	gen := t.tst.genTime
 	edges, sigChecks := 0, 0
 	// sigCache holds an issuer's signature over a subject by the issuer's
 	// public key: certificates that share a key share the answer.
@@ -1211,10 +1192,8 @@ func verifyToken(s string, imprint []byte, cfg Trust, tokID, trustID, malformed 
 	if t == nil {
 		return failed(tokID, trustID, malformed)
 	}
-	mi := t.tst.MessageImprint
-	params := mi.HashAlgorithm.Parameters.FullBytes
-	if !mi.HashAlgorithm.Algorithm.Equal(oidSHA256) || (len(params) != 0 && !bytes.Equal(params, nullParams)) ||
-		!bytes.Equal(mi.HashedMessage, imprint) {
+	if !bytes.Equal(t.tst.hashAlgorithm, derSHA256) || (t.tst.hashParams != nil && !bytes.Equal(t.tst.hashParams, nullParams)) ||
+		!bytes.Equal(t.tst.hashedMessage, imprint) {
 		return failed(tokID, trustID, ReasonImprintMismatch)
 	}
 	res.Token = report.Check{ID: tokID}
@@ -1233,7 +1212,7 @@ func verifyToken(s string, imprint []byte, cfg Trust, tokID, trustID, malformed 
 	switch trust(t, cfg) {
 	case trustValid:
 		res.Trust.Outcome = report.Correct
-		res.GenTime = t.tst.GenTime
+		res.GenTime = t.tst.genTime
 		res.Authority = Authority(t.signer)
 		res.Trust.SetFact("genTime", report.S(res.GenTime.UTC().Format("2006-01-02T15:04:05.000Z")))
 		res.Trust.SetFact("authority", report.S(res.Authority))

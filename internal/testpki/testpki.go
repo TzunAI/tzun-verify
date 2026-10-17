@@ -120,10 +120,12 @@ func TSASigner(name string, parent *Cert) *Cert {
 }
 
 // Token returns a base64 DER TimeStampResp over digest (SHA-256 imprint),
-// signed by signer, carrying signer and chain, at genTime.
+// signed by signer, carrying signer and chain, at genTime. The signing
+// library writes genTime in its time zone, so it is handed genTime in UTC: a
+// GeneralizedTime with an offset is not DER.
 func Token(digest []byte, signer *Cert, chain []*x509.Certificate, genTime time.Time, withCerts bool) string {
 	ts := timestamp.Timestamp{
-		HashAlgorithm: crypto.SHA256, HashedMessage: digest, Time: genTime,
+		HashAlgorithm: crypto.SHA256, HashedMessage: digest, Time: genTime.UTC(),
 		Policy: asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 99999, 1}, AddTSACertificate: withCerts, Certificates: chain,
 	}
 	der, err := ts.CreateResponseWithOpts(signer.Cert, signer.Key, crypto.SHA256)
