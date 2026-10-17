@@ -152,6 +152,7 @@ M = [
     ("internal/bundle/record.go", "if s, ok := member(v.env, \"envelopeVersion\").Str(); !ok || s != EnvelopeVersion {", "if false {", "the envelope version"),
     ("internal/bundle/record.go", "return report.Check{ID: IDCustody, Outcome: report.Abstain, Reason: ReasonUnsupported}", "return report.Check{ID: IDCustody, Outcome: report.NotChecked, Reason: ReasonNA}", "custody material is never passed over"),
     ("internal/bundle/record.go", "slot == nil || entries != nil", "entries != nil", "a null custody slot holds no row"),
+    ("internal/bundle/record.go", "entries != nil && entries.Kind == jsonv.Array && len(entries.A) == 0", "entries != nil && len(entries.A) == 0", "entries that are not an array are not an empty slot"),
     ("internal/bundle/record.go", "\tcase noRow && holdsMirrorEntry(v.env):\n", "\tcase false:\n", "a mirror entry beside a slot that holds no row is checked-wrong"),
     ("internal/bundle/record.go", "\tcase noRow && holdsMirrorEntry(v.env):\n", "\tcase holdsMirrorEntry(v.env):\n", "the mirror entry finding is for a slot that holds no row"),
     ("internal/bundle/record.go", "\t\tif isMirrorEntry(e) {\n\t\t\treturn true\n\t\t}\n", "\t\treturn isMirrorEntry(e)\n", "any element of the chain can be a mirror entry"),

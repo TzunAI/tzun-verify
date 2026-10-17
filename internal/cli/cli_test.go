@@ -627,6 +627,9 @@ func TestNothingPresentPassesSilently(t *testing.T) {
 			"custody.ledger", "abstain", "unsupported_artifact", 4},
 		{"a custody slot without entries", with(base, "custody", report.Obj("entries", report.Null())),
 			"custody.ledger", "abstain", "unsupported_artifact", 4},
+		// Entries that are not an array are no empty slot (rule 2).
+		{"custody entries that are an object", with(base, "custody", report.Obj("entries", report.Obj())),
+			"custody.ledger", "abstain", "unsupported_artifact", 4},
 		{"an empty custody slot", with(base, "custody", report.Obj("entries", report.Arr())),
 			"custody.ledger", "not-checked", "not_applicable", 0},
 		{"a null custody slot", with(base, "custody", report.Null()),

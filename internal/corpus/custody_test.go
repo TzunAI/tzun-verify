@@ -26,9 +26,9 @@ import (
 // row and its outcome counts changed, byte for byte, checkedAt left out.
 //
 // An element whose entryHash is not 64 lowercase hex digits is no mirror
-// entry, and the report is the corpus's own. A slot that holds a row, or an
-// object without entries, abstains, unsupported_artifact, whatever the
-// chain holds (rule 2).
+// entry, and the report is the corpus's own. A slot that holds a row, an
+// object without entries, or one whose entries are an object or a string
+// abstains, unsupported_artifact, whatever the chain holds (rule 2).
 func TestCustodyMirrorEntry(t *testing.T) {
 	dir := filepath.Join(vectorDir, "bundle-b1", "anchored-with-newer")
 	in, err := jsonv.Parse(readCase(t, dir, "inputs.json"))
@@ -182,9 +182,9 @@ func TestCustodyMirrorEntry(t *testing.T) {
 		}
 	}
 
-	// A slot that holds a row, or an object without entries, abstains
-	// whatever the chain holds (rule 2): the finding is for a slot that
-	// holds no row.
+	// A slot that holds a row, an object without entries, or one whose
+	// entries are not an array abstains whatever the chain holds (rule 2):
+	// the finding is for a slot that holds no row.
 	abstain := expected("abstain", "unsupported_artifact")
 	for _, c := range []struct {
 		name  string
@@ -195,6 +195,9 @@ func TestCustodyMirrorEntry(t *testing.T) {
 		{"custody entries without a mirror entry", doc{"entries": []any{doc{"entryHash": hash}}}, nil},
 		{"a custody slot without entries beside a mirror entry", doc{}, []any{mirror}},
 		{"a custody slot whose entries are null beside a mirror entry", doc{"entries": nil}, []any{mirror}},
+		{"custody entries that are an object", doc{"entries": doc{}}, nil},
+		{"custody entries that are an object beside a mirror entry", doc{"entries": doc{}}, []any{mirror}},
+		{"custody entries that are a string", doc{"entries": ""}, nil},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			check(t, bundle(c.slot, c.elems...), 4, abstain)
