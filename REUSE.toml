@@ -29,6 +29,7 @@ path = [
   "go.sum",
   "publishers/publishers.json",
   "internal/rfc3161/testdata/openssl-tokens.json",
+  "internal/rfc3161/testdata/testpki-edge-tokens.json",
   "internal/rfc3161/testdata/testpki-tokens.json",
 ]
 precedence = "aggregate"

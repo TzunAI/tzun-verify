@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"maps"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -686,6 +687,44 @@ func TestSignedAttributesAsCarried(t *testing.T) {
 	r := VerifyRecordToken(report.S(encode(resp)), digest, Trust{})
 	if r.Token.Outcome != report.Wrong || r.Token.Reason != ReasonVerificationFailed {
 		t.Errorf("FreeTSA's token, its signed attributes reversed: %s %q", r.Token.Outcome, r.Token.Reason)
+	}
+}
+
+// TestEdgeTokens: the tokens of testdata/testpki-edge-tokens.json, each at
+// an edge of tzun-anchor/1 §10.5 as revised, give the rows the file states,
+// under the file's root, through the record's own token.
+func TestEdgeTokens(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("testdata", "testpki-edge-tokens.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	type row struct{ Outcome, Reason string }
+	var set struct {
+		Digest   string
+		Roots    map[string]string
+		Expected map[string]struct{ Token, Trust row }
+		Tokens   map[string]string
+	}
+	if err := json.Unmarshal(raw, &set); err != nil {
+		t.Fatal(err)
+	}
+	digest, err := hex.DecodeString(set.Digest)
+	if err != nil || len(set.Roots) != 1 || len(set.Tokens) == 0 {
+		t.Fatalf("digest %q, %d roots, %d tokens", set.Digest, len(set.Roots), len(set.Tokens))
+	}
+	trust := Trust{Roots: []*x509.Certificate{pemCert(t, set.Roots["edge"])}}
+	if !slices.Equal(slices.Sorted(maps.Keys(set.Tokens)), slices.Sorted(maps.Keys(set.Expected))) {
+		t.Fatal("the tokens and their expectations name different tokens")
+	}
+	for _, name := range slices.Sorted(maps.Keys(set.Tokens)) {
+		r := VerifyRecordToken(report.S(set.Tokens[name]), digest, trust)
+		w := set.Expected[name]
+		if got := (row{string(r.Token.Outcome), r.Token.Reason}); got != w.Token {
+			t.Errorf("%s: %s %q, want %s %q", name, got.Outcome, got.Reason, w.Token.Outcome, w.Token.Reason)
+		}
+		if got := (row{string(r.Trust.Outcome), r.Trust.Reason}); got != w.Trust {
+			t.Errorf("%s: trust %s %q, want %s %q", name, got.Outcome, got.Reason, w.Trust.Outcome, w.Trust.Reason)
+		}
 	}
 }
 
