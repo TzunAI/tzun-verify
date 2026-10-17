@@ -64,6 +64,14 @@ func TestIsDER(t *testing.T) {
 		{"a context-specific primitive is not read inside", "8001ff", true},
 		{"an OCTET STRING is not read inside", "0403 050100", true},
 		{"a universal number X.680 assigns to no type", "3f2500", true},
+		{"a constructed reserved universal 15", "2f00", true},
+		{"a primitive OID-IRI", "1f2300", true},
+		{"a constructed OID-IRI", "3f2300", false},
+		{"a primitive RELATIVE-OID-IRI", "1f2400", true},
+		{"a constructed RELATIVE-OID-IRI", "3f2400", false},
+		{"a constructed TIME", "2e00", false},
+		{"a constructed DATE", "3f1f00", false},
+		{"a constructed DURATION", "3f2200", false},
 		{"BOOLEAN FF", "0101ff", true},
 		{"BOOLEAN 00", "010100", true},
 		{"BOOLEAN 01", "010101", false},
@@ -512,6 +520,34 @@ func TestStepOneStrictness(t *testing.T) {
 	verify("the signer's tbsCertificate, a member after extensions", rebuilt(func(f [][]byte) [][]byte {
 		return append(f, []byte{0x05, 0x00})
 	}), mf)
+	// Each at most once, in this order, in this form; nothing else
+	// (tzun-anchor/1 §10.5 step 1).
+	verify("the signer with subjectUniqueID alone", rebuilt(uniqueIDs("82020001")), okw)
+	verify("the signer's subjectUniqueID before its issuerUniqueID", rebuilt(uniqueIDs("82020001", "81020001")), mf)
+	verify("the signer with two issuerUniqueIDs", rebuilt(uniqueIDs("81020001", "81020001")), mf)
+	verify("the signer's subjectUniqueID constructed", rebuilt(uniqueIDs("a2020500")), mf)
+	verify("the signer's tbsCertificate, a [4] after subjectPublicKeyInfo", rebuilt(uniqueIDs("84020001")), mf)
+	verify("the signer's tbsCertificate, an issuerUniqueID after extensions", rebuilt(func(f [][]byte) [][]byte {
+		return append(f, unhex(t, "81020001"))
+	}), mf)
+	verify("the signer's tbsCertificate, two extensions [3]", rebuilt(func(f [][]byte) [][]byte {
+		return append(f, f[exts])
+	}), mf)
+	verify("the signer's extensions [3] primitive", rebuilt(func(f [][]byte) [][]byte {
+		f[exts] = append([]byte{0x83}, f[exts][1:]...)
+		return f
+	}), mf)
+	verify("the signer's extensions [3] holding a SET", rebuilt(func(f [][]byte) [][]byte {
+		e := tree(t, f[exts])
+		e.at(0).tag = asn1.TagSet
+		f[exts] = e.der()
+		return f
+	}), mf)
+	verify("the signer's extensions [3] empty", rebuilt(func(f [][]byte) [][]byte {
+		f[exts] = []byte{0xa3, 0x00}
+		return f
+	}), mf)
+
 	// A certificate no step needs: step 1 reads it, and no later step does.
 	extra := testpki.Root("Extra")
 	carried := func(edit func(c, tbs *node)) string {
@@ -984,5 +1020,56 @@ func TestTypedExtensionValues(t *testing.T) {
 		{"an extension of another type, empty", oid(1, 2, 3, 4), "", okw},
 	} {
 		s.verify(c.name, ext(c.id, c.value), c.w)
+	}
+}
+
+// TestValidityTimes: a validity time is a UTCTime or a GeneralizedTime
+// without a fraction of a second, whose fields are in their ranges: a
+// GeneralizedTime's year its four digits, 0000 to 9999; a UTCTime's 19YY
+// for 50 to 99 and 20YY for 00 to 49; the Gregorian leap years, applied to
+// every year. On a carried certificate no later step needs.
+func TestValidityTimes(t *testing.T) {
+	s := newStepOne(t)
+	validity := func(notBefore, notAfter string) string {
+		return s.extra(func(_, tbs *node) {
+			v := tbs.at(4)
+			v.kids = []*node{raw(t, notBefore), raw(t, notAfter)}
+		})
+	}
+	end := gtime("99991231235959Z")
+	for _, c := range []struct {
+		time string
+		w    want
+	}{
+		{gtime("20500101000000Z"), okw},
+		{gtime("00000101000000Z"), okw},
+		{gtime("00990101000000Z"), okw},
+		{gtime("00000229000000Z"), okw},
+		{gtime("20000229000000Z"), okw},
+		{gtime("20240229000000Z"), okw},
+		{gtime("01000229000000Z"), mf},
+		{gtime("19000229000000Z"), mf},
+		{gtime("20260229000000Z"), mf},
+		{gtime("20500101000000.5Z"), mf},
+		{gtime("20500101000000.1Z"), mf},
+		{gtime("20501301000000Z"), mf},
+		{gtime("20500001000000Z"), mf},
+		{gtime("20500100000000Z"), mf},
+		{gtime("20500132000000Z"), mf},
+		{gtime("20500431000000Z"), mf},
+		{gtime("20500101240000Z"), mf},
+		{gtime("20500101006000Z"), mf},
+		{gtime("20500101000060Z"), mf},
+		{utime("000229000000Z"), okw},
+		{utime("520229000000Z"), okw},
+		{utime("960229000000Z"), okw},
+		{utime("500229000000Z"), mf},
+		{utime("490229000000Z"), mf},
+		{utime("501231235959Z"), okw},
+		{utime("491231235959Z"), okw},
+		{utime("500101000060Z"), mf},
+	} {
+		s.verify("notBefore "+c.time, validity(c.time, end), c.w)
+		s.verify("notAfter "+c.time, validity(gtime("00000101000000Z"), c.time), c.w)
 	}
 }

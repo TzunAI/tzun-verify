@@ -237,6 +237,7 @@ M = [
     ("internal/rfc3161/der.go", "if n++; n > maxElements {", "if n++; n >= maxElements {", "bounds: exactly 100,000 elements pass"),
     ("internal/rfc3161/der.go", "if len(stack) > maxDepth {", "if len(stack) > maxDepth+1 {", "bounds: constructed elements at most 64 deep"),
     ("internal/rfc3161/der.go", "if len(stack) > maxDepth {", "if len(stack) >= maxDepth {", "bounds: exactly 64 deep passes"),
+    ("internal/rfc3161/der.go", "\ttagLastUniversal   = 36", "\ttagLastUniversal   = 34", "DER: OID-IRI and RELATIVE-OID-IRI primitive"),
     ("internal/rfc3161/der.go", "\tif !isDER(der) {\n\t\treturn t, false\n\t}\n\tseq, _, _ := readElement(der)", "\tseq, _, _ := readElement(der)", "TSTInfo: DER, and the bounds, as an encoding of its own"),
     ("internal/rfc3161/der.go", "\tif i != len(m) {\n\t\treturn t, false\n\t}\n\talg, _ := members(imprint[0])", "\talg, _ := members(imprint[0])", "TSTInfo: nothing after its members"),
     ("internal/rfc3161/der.go", "if !ok || !isSequence(seq) || len(m) < 5 || !isPrimitive(m[0], asn1.TagInteger) ||", "if !ok || !isSequence(seq) || len(m) < 5 ||", "TSTInfo: version an INTEGER"),
